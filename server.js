@@ -70,7 +70,7 @@ class SupabaseStore extends session.Store {
       const { data } = await supabase.from('session').select('sess,expire').eq('sid', sid).maybeSingle();
       if (!data) return cb(null, null);
       if (new Date(data.expire) < new Date()) { this.destroy(sid, () => {}); return cb(null, null); }
-      this._mem.set(sid, { sess: data.sess, exp: Date.now() + 30_000 });
+      this._mem.set(sid, { sess: data.sess, exp: Date.now() + 300_000 });
       cb(null, data.sess);
     } catch(e) { cb(e); }
   }
@@ -78,7 +78,7 @@ class SupabaseStore extends session.Store {
     try {
       const expire = sess.cookie?.expires || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
-      this._mem.set(sid, { sess, exp: Date.now() + 30_000 });
+      this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
       cb(null);
     } catch(e) { cb(e); }
   }
@@ -132,7 +132,7 @@ async function requireAdmin(req, res, next) {
 // ── User cache (10s TTL — avoids repeated DB lookups per request) ─────────────
 const _uc = new Map();
 function _ucGet(id)       { const e = _uc.get(id); return (e && e.exp > Date.now()) ? e.d : null; }
-function _ucSet(id, data) { _uc.set(id, { d: data, exp: Date.now() + 10_000 }); }
+function _ucSet(id, data) { _uc.set(id, { d: data, exp: Date.now() + 60_000 }); }
 function _ucDel(id)       { _uc.delete(id); }
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
