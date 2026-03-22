@@ -52,13 +52,25 @@ app.use(helmet({
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('trust proxy', 1);
-// ── Custom Supabase session store (uses REST API, no direct PG connection) ────
+// ── Custom Supabase session store with in-memory cache ────────────────────────
 class SupabaseStore extends session.Store {
+  constructor() { super(); this._mem = new Map(); }
+
+  _mc(sid) {
+    const e = this._mem.get(sid);
+    if (e && e.exp > Date.now()) return e.sess;
+    this._mem.delete(sid);
+    return null;
+  }
+
   async get(sid, cb) {
+    const cached = this._mc(sid);
+    if (cached) return cb(null, cached);
     try {
       const { data } = await supabase.from('session').select('sess,expire').eq('sid', sid).maybeSingle();
       if (!data) return cb(null, null);
       if (new Date(data.expire) < new Date()) { this.destroy(sid, () => {}); return cb(null, null); }
+      this._mem.set(sid, { sess: data.sess, exp: Date.now() + 30_000 });
       cb(null, data.sess);
     } catch(e) { cb(e); }
   }
@@ -66,10 +78,12 @@ class SupabaseStore extends session.Store {
     try {
       const expire = sess.cookie?.expires || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
+      this._mem.set(sid, { sess, exp: Date.now() + 30_000 });
       cb(null);
     } catch(e) { cb(e); }
   }
   async destroy(sid, cb) {
+    this._mem.delete(sid);
     try { await supabase.from('session').delete().eq('sid', sid); cb(null); } catch(e) { cb(e); }
   }
   async touch(sid, sess, cb) { return this.set(sid, sess, cb); }
@@ -115,6 +129,12 @@ async function requireAdmin(req, res, next) {
   next();
 }
 
+// ── User cache (10s TTL — avoids repeated DB lookups per request) ─────────────
+const _uc = new Map();
+function _ucGet(id)       { const e = _uc.get(id); return (e && e.exp > Date.now()) ? e.d : null; }
+function _ucSet(id, data) { _uc.set(id, { d: data, exp: Date.now() + 10_000 }); }
+function _ucDel(id)       { _uc.delete(id); }
+
 // ── DB helpers ────────────────────────────────────────────────────────────────
 async function getUserByUsername(username) {
   const { data } = await supabase
@@ -125,12 +145,14 @@ async function getUserByUsername(username) {
   return data;
 }
 
-async function getUserById(id) {
+async function getUserById(id, { fresh = false } = {}) {
+  if (!fresh) { const c = _ucGet(id); if (c) return c; }
   const { data } = await supabase
     .from('users')
     .select('id, username, balance, last_daily_claim, last_minigame_claim, is_admin')
     .eq('id', id)
     .maybeSingle();
+  if (data) _ucSet(id, data);
   return data;
 }
 
@@ -154,14 +176,16 @@ async function updateUser(id, patch) {
 async function deductBalance(userId, amount) {
   const { data, error } = await supabase.rpc('deduct_balance', { p_user_id: userId, p_amount: amount });
   if (error) throw { error: 'Solde insuffisant' };
-  return data; // nouveau solde
+  _ucDel(userId); // invalidate cache — balance changed
+  return data;
 }
 
 async function addBalance(userId, amount) {
-  if (amount <= 0) return;
+  if (amount <= 0) return null;
   const { data, error } = await supabase.rpc('add_balance', { p_user_id: userId, p_amount: amount });
   if (error) throw error;
-  return data; // nouveau solde
+  _ucDel(userId); // invalidate cache — balance changed
+  return data;
 }
 
 async function getGame(userId) {
@@ -391,7 +415,8 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   const u = req.user;
   if (u.balance < bet) return res.status(400).json({ error: 'Solde insuffisant' });
 
-  try { await deductBalance(u.id, bet); } catch { return res.status(400).json({ error: 'Solde insuffisant' }); }
+  let bal;
+  try { bal = await deductBalance(u.id, bet); } catch { return res.status(400).json({ error: 'Solde insuffisant' }); }
 
   const prev = await getGame(u.id);
   const shoe = prev ? (prev.shoe ?? createShoe()) : createShoe();
@@ -407,11 +432,10 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   if (isBlackjack(playerHand) || isBlackjack(dealerHand)) {
     gs.phase  = 'complete';
     gs.result = resolveGame(gs);
-    await addBalance(u.id, gs.result.totalWin);
+    bal = await addBalance(u.id, gs.result.totalWin) ?? bal;
   }
 
   await setGame(u.id, gs);
-  const bal = (await getUserById(u.id)).balance;
   res.json({ success: true, game: sanitize(gs), balance: bal });
 });
 
@@ -423,13 +447,14 @@ app.post('/api/game/hit', requireAuth, gameLimiter, async (req, res) => {
   const idx = gs.activeHandIndex;
   gs.hands[idx].push(drawCard(gs.shoe));
 
+  let bal;
   const val = handValue(gs.hands[idx]);
   if (isBust(gs.hands[idx]) || val === 21) {
     if (idx < gs.hands.length - 1) gs.activeHandIndex++;
-    else await _runDealer(gs, req.user.id);
+    else bal = await _runDealer(gs, req.user.id);
   }
 
-  await _save(req.user.id, gs, res);
+  await _save(req.user.id, gs, res, bal ?? req.user.balance);
 });
 
 app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
@@ -437,10 +462,11 @@ app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   if (gs.phase !== 'player_turn') return res.status(400).json({ error: 'Action impossible' });
 
+  let bal;
   if (gs.activeHandIndex < gs.hands.length - 1) gs.activeHandIndex++;
-  else await _runDealer(gs, req.user.id);
+  else bal = await _runDealer(gs, req.user.id);
 
-  await _save(req.user.id, gs, res);
+  await _save(req.user.id, gs, res, bal ?? req.user.balance);
 });
 
 app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
@@ -458,10 +484,11 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   gs.bets[idx] *= 2;
   gs.hands[idx].push(drawCard(gs.shoe));
 
+  let bal;
   if (idx < gs.hands.length - 1) gs.activeHandIndex++;
-  else await _runDealer(gs, req.user.id);
+  else bal = await _runDealer(gs, req.user.id);
 
-  await _save(req.user.id, gs, res);
+  await _save(req.user.id, gs, res, bal ?? req.user.balance);
 });
 
 app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
@@ -484,7 +511,7 @@ app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
   gs.hands.splice(idx + 1, 0, [c2, drawCard(gs.shoe)]);
   gs.bets.splice(idx + 1, 0, splitBet);
 
-  await _save(req.user.id, gs, res);
+  await _save(req.user.id, gs, res, req.user.balance);
 });
 
 app.get('/api/game/state', requireAuth, async (req, res) => {
@@ -503,12 +530,14 @@ async function _runDealer(gs, userId) {
   while (handValue(gs.dealerHand) < 17) gs.dealerHand.push(drawCard(gs.shoe));
   gs.phase  = 'complete';
   gs.result = resolveGame(gs);
-  await addBalance(userId, gs.result.totalWin);
+  const newBal = await addBalance(userId, gs.result.totalWin);
+  return newBal; // return new balance to avoid re-fetch
 }
 
-async function _save(userId, gs, res) {
+async function _save(userId, gs, res, balance) {
   await setGame(userId, gs);
-  const bal = (await getUserById(userId)).balance;
+  // balance passed in — no extra DB call needed
+  const bal = balance ?? (await getUserById(userId, { fresh: true })).balance;
   res.json({ success: true, game: sanitize(gs), balance: bal });
 }
 
