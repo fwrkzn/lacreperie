@@ -4,4 +4,4 @@ COPY package*.json ./
 RUN npm install --omit=dev
 COPY . .
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "--dns-result-order=ipv4first", "server.js"]
