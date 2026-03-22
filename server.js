@@ -188,14 +188,25 @@ async function addBalance(userId, amount) {
   return data;
 }
 
+// ── Game state cache (avoids re-reading 10KB shoe JSON from Supabase each action)
+const _gc = new Map();
+function _gcGet(uid) { const e = _gc.get(uid); return (e && e.exp > Date.now()) ? e.d : null; }
+function _gcSet(uid, d) { _gc.set(uid, { d, exp: Date.now() + 120_000 }); }
+function _gcDel(uid) { _gc.delete(uid); }
+
 async function getGame(userId) {
+  const cached = _gcGet(userId);
+  if (cached) return cached;
   const { data } = await supabase
     .from('active_games').select('game_state')
     .eq('user_id', userId).maybeSingle();
-  return data ? data.game_state : null;
+  const gs = data ? data.game_state : null;
+  if (gs) _gcSet(userId, gs);
+  return gs;
 }
 
 async function setGame(userId, gameState) {
+  _gcSet(userId, gameState); // update cache immediately — no need to wait for DB
   await supabase.from('active_games').upsert(
     { user_id: userId, game_state: gameState, updated_at: new Date().toISOString() },
     { onConflict: 'user_id' }
@@ -203,6 +214,7 @@ async function setGame(userId, gameState) {
 }
 
 async function deleteGame(userId) {
+  _gcDel(userId);
   await supabase.from('active_games').delete().eq('user_id', userId);
 }
 
@@ -447,14 +459,13 @@ app.post('/api/game/hit', requireAuth, gameLimiter, async (req, res) => {
   const idx = gs.activeHandIndex;
   gs.hands[idx].push(drawCard(gs.shoe));
 
-  let bal;
   const val = handValue(gs.hands[idx]);
   if (isBust(gs.hands[idx]) || val === 21) {
     if (idx < gs.hands.length - 1) gs.activeHandIndex++;
-    else bal = await _runDealer(gs, req.user.id);
+    else await _runDealer(gs, req.user.id);
   }
 
-  await _save(req.user.id, gs, res, bal ?? req.user.balance);
+  await _save(req.user.id, gs, res, req.user.balance);
 });
 
 app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
@@ -462,11 +473,10 @@ app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   if (gs.phase !== 'player_turn') return res.status(400).json({ error: 'Action impossible' });
 
-  let bal;
   if (gs.activeHandIndex < gs.hands.length - 1) gs.activeHandIndex++;
-  else bal = await _runDealer(gs, req.user.id);
+  else await _runDealer(gs, req.user.id);
 
-  await _save(req.user.id, gs, res, bal ?? req.user.balance);
+  await _save(req.user.id, gs, res, req.user.balance);
 });
 
 app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
@@ -484,11 +494,10 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   gs.bets[idx] *= 2;
   gs.hands[idx].push(drawCard(gs.shoe));
 
-  let bal;
   if (idx < gs.hands.length - 1) gs.activeHandIndex++;
-  else bal = await _runDealer(gs, req.user.id);
+  else await _runDealer(gs, req.user.id);
 
-  await _save(req.user.id, gs, res, bal ?? req.user.balance);
+  await _save(req.user.id, gs, res, req.user.balance);
 });
 
 app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
@@ -530,14 +539,17 @@ async function _runDealer(gs, userId) {
   while (handValue(gs.dealerHand) < 17) gs.dealerHand.push(drawCard(gs.shoe));
   gs.phase  = 'complete';
   gs.result = resolveGame(gs);
-  const newBal = await addBalance(userId, gs.result.totalWin);
-  return newBal; // return new balance to avoid re-fetch
+  return gs.result.totalWin; // balance handled in _save via parallel calls
 }
 
 async function _save(userId, gs, res, balance) {
-  await setGame(userId, gs);
-  // balance passed in — no extra DB call needed
-  const bal = balance ?? (await getUserById(userId, { fresh: true })).balance;
+  // Run setGame and addBalance in parallel — they are independent
+  const win = gs.phase === 'complete' && gs.result?.totalWin > 0 ? gs.result.totalWin : 0;
+  const [, newBal] = await Promise.all([
+    setGame(userId, gs),
+    win > 0 ? addBalance(userId, win) : Promise.resolve(null),
+  ]);
+  const bal = newBal ?? balance ?? (await getUserById(userId, { fresh: true })).balance;
   res.json({ success: true, game: sanitize(gs), balance: bal });
 }
 
