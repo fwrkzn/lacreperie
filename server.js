@@ -3,7 +3,6 @@ require('dotenv').config();
 
 const express    = require('express');
 const session    = require('express-session');
-const PgSession  = require('connect-pg-simple')(session);
 const bcrypt     = require('bcryptjs');
 const rateLimit  = require('express-rate-limit');
 const path       = require('path');
@@ -53,12 +52,31 @@ app.use(helmet({
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('trust proxy', 1);
+// ── Custom Supabase session store (uses REST API, no direct PG connection) ────
+class SupabaseStore extends session.Store {
+  async get(sid, cb) {
+    try {
+      const { data } = await supabase.from('session').select('sess,expire').eq('sid', sid).maybeSingle();
+      if (!data) return cb(null, null);
+      if (new Date(data.expire) < new Date()) { this.destroy(sid, () => {}); return cb(null, null); }
+      cb(null, data.sess);
+    } catch(e) { cb(e); }
+  }
+  async set(sid, sess, cb) {
+    try {
+      const expire = sess.cookie?.expires || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
+      cb(null);
+    } catch(e) { cb(e); }
+  }
+  async destroy(sid, cb) {
+    try { await supabase.from('session').delete().eq('sid', sid); cb(null); } catch(e) { cb(e); }
+  }
+  async touch(sid, sess, cb) { return this.set(sid, sess, cb); }
+}
+
 app.use(session({
-  store: new PgSession({
-    conString: process.env.DATABASE_URL,
-    tableName: 'session',
-    pruneSessionInterval: 60 * 60, // clean expired sessions every hour
-  }),
+  store: new SupabaseStore(),
   secret: getOrCreateSecret(),
   resave: false,
   saveUninitialized: false,
