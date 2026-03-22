@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>🥞 Le Casino des Crêpes</title>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #0b0b0e;
+  --surface:  #141418;
+  --surface2: #1c1c22;
+  --border:   #2a2a34;
+  --gold:     #c9a84c;
+  --gold2:    #e8c97d;
+  --gold3:    #f5dfa0;
+  --felt:     #0d3d24;
+  --felt2:    #0f4a2b;
+  --text:     #f0ede8;
+  --muted:    #7a7680;
+  --red:      #e04444;
+  --green:    #3fb56e;
+  --radius:   12px;
+  --card-w:   70px;
+  --card-h:   100px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family: 'Georgia', serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Scrollable page wrapper ──────────────────────────────────────────────── */
+#app{
+  flex:1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+@keyframes fadeIn    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:none} }
+@keyframes dealCard  { from{opacity:0;transform:translateY(-60px) rotate(-8deg) scale(.8)} to{opacity:1;transform:none} }
+@keyframes flip      { 0%{transform:rotateY(0deg)} 50%{transform:rotateY(90deg)} 100%{transform:rotateY(0deg)} }
+@keyframes pop       { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+@keyframes shimmer   { 0%,100%{opacity:0.6} 50%{opacity:1} }
+@keyframes countUp   { from{opacity:0;transform:scale(1.4)} to{opacity:1;transform:scale(1)} }
+@keyframes chipBounce{ 0%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.1)} 100%{transform:translateY(0) scale(1)} }
+@keyframes glow      { 0%,100%{box-shadow:0 0 12px rgba(201,168,76,.3)} 50%{box-shadow:0 0 28px rgba(201,168,76,.7)} }
+@keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+#header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: linear-gradient(to bottom, #0f0f14, #0b0b0e);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+#header-logo{
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(201,168,76,.5);
+}
+#header-logo span{ color: var(--text); font-size:14px; opacity:.7 }
+#header-right{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#balance-display{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--gold2);
+  min-width: 120px;
+  justify-content: center;
+}
+#balance-display .icon{ font-size:18px }
+#balance-display .amount{ transition: all .3s }
+#balance-display .amount.changed{ animation: countUp .4s ease }
+#btn-logout{
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all .2s;
+}
+#btn-logout:hover{ border-color: var(--gold); color: var(--gold) }
+
+/* ── Auth Screen ──────────────────────────────────────────────────────────── */
+#screen-auth{
+  flex:1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: radial-gradient(ellipse at 50% 30%, #1a1a22 0%, var(--bg) 70%);
+}
+.auth-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  animation: fadeIn .4s ease;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+.auth-logo{
+  text-align: center;
+  margin-bottom: 32px;
+}
+.auth-logo .big{ font-size: 48px; display:block; margin-bottom:8px }
+.auth-logo h1{
+  font-size: 22px;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.auth-logo p{ color: var(--muted); font-size: 13px; margin-top: 6px; font-family: sans-serif; }
+.auth-tabs{
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.auth-tab{
+  flex:1;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  transition: all .2s;
+  font-family: sans-serif;
+  letter-spacing: 1px;
+}
+.auth-tab.active{
+  background: var(--surface2);
+  color: var(--gold);
+}
+.field{
+  margin-bottom: 16px;
+}
+.field label{
+  display: block;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.field input{
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 12px 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+  font-family: sans-serif;
+}
+.field input:focus{ border-color: var(--gold) }
+.field input::placeholder{ color: var(--muted) }
+.btn-primary{
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
+  color: #0b0b0e;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  margin-top: 8px;
+}
+.btn-primary:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+.btn-primary:active{ transform: translateY(0) }
+.btn-primary:disabled{ opacity: .5; cursor: not-allowed; transform: none }
+.auth-error{
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 12px;
+  font-family: sans-serif;
+  animation: fadeIn .3s;
+}
+
+/* ── Lobby Screen ─────────────────────────────────────────────────────────── */
+#screen-lobby{
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 16px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+#screen-lobby h2{
+  color: var(--gold);
+  letter-spacing: 3px;
+  font-size: 13px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  font-family: sans-serif;
+  margin-bottom: 2px;
+}
+.lobby-greeting{
+  text-align: center;
+  padding: 20px 0 4px;
+  animation: slideDown .4s ease;
+}
+.lobby-greeting h2{
+  font-size: 28px;
+  color: var(--gold2);
+  letter-spacing: 2px;
+  border: none;
+  text-transform: none;
+}
+.lobby-greeting p{
+  color: var(--muted);
+  margin-top: 4px;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+/* Bonus cards */
+.bonus-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.bonus-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn .5s ease;
+  transition: border-color .2s;
+}
+.bonus-card:hover{ border-color: var(--gold) }
+.bonus-card .icon{ font-size: 32px }
+.bonus-card h3{
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-family: sans-serif;
+  text-align: center;
+}
+.bonus-card .reward{
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--gold2);
+}
+.btn-bonus{
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: sans-serif;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.btn-bonus:hover:not(:disabled){ background: rgba(201,168,76,.1) }
+.btn-bonus:disabled{
+  border-color: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.countdown{
+  font-size: 11px;
+  color: var(--muted);
+  font-family: monospace;
+  min-height: 16px;
+  text-align: center;
+}
+
+/* Spatule animation */
+.spatula-btn{
+  font-size: 40px;
+  cursor: pointer;
+  transition: transform .1s;
+  display: inline-block;
+  user-select: none;
+  line-height: 1;
+  animation: glow 2s infinite;
+}
+.spatula-btn:active{ transform: scale(.9) rotate(-20deg) }
+.spatula-btn.disabled{ opacity:.4; cursor:not-allowed; animation:none }
+.spatula-reward{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--gold2);
+  text-shadow: 0 0 20px rgba(201,168,76,.8);
+  pointer-events: none;
+  z-index: 999;
+  animation: countUp .6s ease forwards;
+}
+
+/* Play button */
+.play-section{
+  background: linear-gradient(135deg, var(--felt) 0%, #0a3020 100%);
+  border: 1px solid #1d6040;
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: fadeIn .6s ease;
+}
+.play-section h3{
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,.5);
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.bet-input-row{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+.bet-input{
+  flex:1;
+  background: rgba(0,0,0,.3);
+  border: 1px solid #1d6040;
+  border-radius: 8px;
+  color: var(--gold2);
+  font-size: 20px;
+  font-weight: bold;
+  padding: 10px 14px;
+  text-align: center;
+  outline: none;
+  font-family: Georgia, serif;
+}
+.bet-input:focus{ border-color: var(--gold) }
+.chip-btns{ display: flex; gap: 6px; flex-wrap: wrap; justify-content: center }
+.chip{
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 3px dashed var(--chip-border, var(--gold));
+  background: var(--chip-bg, rgba(201,168,76,.15));
+  color: var(--chip-color, var(--gold2));
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  font-family: sans-serif;
+  user-select: none;
+}
+.chip:hover{ transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.4) }
+.chip:active{ animation: chipBounce .3s ease }
+.chip.c10  { --chip-bg: rgba(255,255,255,.08); --chip-border: #aaa; --chip-color: #ccc }
+.chip.c50  { --chip-bg: rgba(63,181,110,.12);  --chip-border: #3fb56e; --chip-color: #3fb56e }
+.chip.c100 { --chip-bg: rgba(201,168,76,.12);  --chip-border: var(--gold); --chip-color: var(--gold2) }
+.chip.c500 { --chip-bg: rgba(224,68,68,.12);   --chip-border: var(--red); --chip-color: #f06060 }
+.chip.c1k  { --chip-bg: rgba(140,100,220,.15); --chip-border: #9b72d4; --chip-color: #c0a0f0 }
+.chip.clear{ --chip-bg: rgba(255,255,255,.04); --chip-border: var(--border); --chip-color: var(--muted); font-size:18px }
+.btn-deal{
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #1d7a45 0%, #145530 100%);
+  border: 1px solid #2a9458;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}
+.btn-deal:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+.btn-deal:disabled{ opacity:.4; cursor:not-allowed; transform:none }
+
+/* ── Game Screen ──────────────────────────────────────────────────────────── */
+#screen-game{
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.game-table{
+  flex:1;
+  background: radial-gradient(ellipse at 50% 50%, var(--felt2) 0%, var(--felt) 50%, #082a18 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Dealer zone */
+.dealer-zone{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+.dealer-label{
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.hand-score{
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--gold2);
+  min-height: 24px;
+  text-align: center;
+  font-family: sans-serif;
+  transition: all .3s;
+}
+.hand-score.bust { color: var(--red) }
+.hand-score.bj   { color: #ffe066; text-shadow: 0 0 12px rgba(255,224,100,.6) }
+
+/* Cards container */
+.cards-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: calc(var(--card-h) + 4px);
+}
+
+/* Card */
+.card{
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 18px;
+  font-weight: bold;
+  flex-shrink: 0;
+  animation: dealCard .35s cubic-bezier(.34,1.56,.64,1) both;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  user-select: none;
+}
+.card.face-up{
+  background: #fdfaf4;
+  color: #1a1a1a;
+  border: 1px solid #e8dfc4;
+}
+.card.face-up.red{ color: #c0252a }
+.card.face-down{
+  background: linear-gradient(135deg, #1a3a6e 0%, #0e2246 100%);
+  border: 2px solid #2a5298;
+  color: transparent;
+}
+.card.face-down::after{
+  content: '🂠';
+  font-size: 48px;
+  opacity: .3;
+  position: absolute;
+}
+.card.flipping{ animation: flip .5s ease }
+.card-rank{
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  font-size: 14px;
+  line-height: 1;
+}
+.card-suit{
+  font-size: 24px;
+  line-height: 1;
+}
+.card-rank-br{
+  position: absolute;
+  bottom: 5px;
+  right: 7px;
+  font-size: 14px;
+  transform: rotate(180deg);
+  line-height: 1;
+}
+
+/* New game overlay */
+.result-banner{
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  animation: pop .4s ease;
+  margin: 4px 0;
+}
+.result-banner.win       { background: rgba(63,181,110,.25); border:1px solid #3fb56e; color:#3fb56e }
+.result-banner.lose      { background: rgba(224,68,68,.2);   border:1px solid var(--red); color:var(--red) }
+.result-banner.push      { background: rgba(255,255,255,.1); border:1px solid #aaa; color:#aaa }
+.result-banner.blackjack { background: rgba(255,224,100,.2); border:1px solid #ffe066; color:#ffe066 }
+.result-banner.bust      { background: rgba(224,68,68,.2);   border:1px solid var(--red); color:var(--red) }
+
+/* Middle area */
+.middle-zone{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.bet-chips-display{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,.3);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 14px;
+  color: var(--gold2);
+  font-family: sans-serif;
+  border: 1px solid rgba(201,168,76,.2);
+}
+
+
+/* Player zone */
+.player-zone{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+.hands-container{
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
+}
+.hand-wrapper{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  transition: border-color .2s;
+}
+.hand-wrapper.active{ border-color: rgba(201,168,76,.4) }
+
+/* Action buttons */
+.action-bar{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 4px 0;
+}
+.btn-action{
+  flex: 1;
+  min-width: 70px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: 1px;
+  font-family: sans-serif;
+  text-transform: uppercase;
+}
+.btn-action:hover:not(:disabled){
+  background: rgba(255,255,255,.12);
+  border-color: var(--gold);
+  color: var(--gold2);
+  transform: translateY(-1px);
+}
+.btn-action:disabled{ opacity:.3; cursor:not-allowed; transform:none }
+.btn-action.hit  { border-color: #2a9458; color: #3fb56e }
+.btn-action.hit:hover:not(:disabled){ background: rgba(63,181,110,.15) }
+.btn-action.stand{ border-color: #9b3838; color: #e06060 }
+.btn-action.stand:hover:not(:disabled){ background: rgba(224,80,80,.15) }
+.btn-action.double{ border-color: var(--gold); color: var(--gold2) }
+.btn-action.double:hover:not(:disabled){ background: rgba(201,168,76,.15) }
+.btn-new-game{
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0b0b0e;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  margin-top: 4px;
+  animation: fadeIn .4s ease;
+}
+.btn-new-game:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+
+/* Toast notification */
+#toast{
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: sans-serif;
+  color: var(--text);
+  opacity: 0;
+  transition: all .3s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1000;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+#toast.show{ opacity:1; transform: translateX(-50%) translateY(0) }
+#toast.success{ border-color: #3fb56e; color: #3fb56e }
+#toast.error  { border-color: var(--red); color: var(--red) }
+#toast.gold   { border-color: var(--gold); color: var(--gold2) }
+
+/* Loading spinner */
+.spinner{
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto;
+}
+
+/* Utility */
+.hidden{ display:none!important }
+.screen{ display:flex; flex-direction:column; flex:1 }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media(max-width:480px){
+  :root{ --card-w: 58px; --card-h: 84px }
+  .auth-card{ padding: 28px 20px }
+  #header-logo span{ display:none }
+  .chip{ width:42px; height:42px; font-size:10px }
+  .lobby-greeting h2{ font-size:22px }
+  .btn-action{ font-size:12px; padding:10px 6px; min-width:60px }
+  .card-suit{ font-size:20px }
+  .card-rank,.card-rank-br{ font-size:12px }
+}
+@media(max-width:360px){
+  :root{ --card-w: 50px; --card-h: 74px }
+  .bonus-row{ grid-template-columns: 1fr }
+}
+
+/* ── Background floating suits ───────────────────────────────────────────── */
+@keyframes floatUp {
+  0%   { transform: translateY(0)     rotateZ(0deg);             opacity: 0 }
+  6%   { opacity: 1 }
+  94%  { opacity: 1 }
+  100% { transform: translateY(-110vh) rotateZ(var(--rot,180deg)); opacity: 0 }
+}
+#casino-bg {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+#casino-bg .suit {
+  position: absolute; bottom: -60px; left: var(--x,50%);
+  font-size: var(--size,20px); color: var(--color,rgba(201,168,76,.06));
+  opacity: 0; user-select: none; line-height: 1;
+  animation: floatUp var(--dur,18s) var(--delay,0s) infinite linear;
+}
+
+/* ── Grain overlay ────────────────────────────────────────────────────────── */
+#app { position: relative; z-index: 1; }
+
+/* ── Auth screen enhancement ─────────────────────────────────────────────── */
+#screen-auth {
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 85%, rgba(201,168,76,.05) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 15%, rgba(201,168,76,.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 30%, #161622 0%, var(--bg) 65%);
+  position: relative;
+}
+#screen-auth::before, #screen-auth::after {
+  content: '';
+  position: absolute;
+  border: 1px solid rgba(201,168,76,.06);
+  border-radius: 50%;
+  pointer-events: none;
+}
+#screen-auth::before {
+  width: min(600px, 80vw); height: min(600px, 80vw);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+}
+#screen-auth::after {
+  width: min(900px, 120vw); height: min(900px, 120vw);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+}
+/* Gold top accent line on auth card */
+.auth-card {
+  position: relative;
+  border-top: 2px solid transparent;
+  background-clip: padding-box;
+}
+.auth-card-accent {
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold2) 50%, var(--gold) 70%, transparent 100%);
+  margin: -40px -40px 28px;
+  opacity: .7;
+}
+/* Corner ornaments via extra element */
+.auth-card-corners::before,
+.auth-card-corners::after {
+  content: '◈';
+  position: absolute;
+  color: rgba(201,168,76,.22);
+  font-size: 22px;
+  line-height: 1;
+  top: 14px;
+}
+.auth-card-corners::before { left: 14px; }
+.auth-card-corners::after  { right: 14px; }
+.auth-card-corners-br::before,
+.auth-card-corners-br::after {
+  content: '◈';
+  position: absolute;
+  color: rgba(201,168,76,.22);
+  font-size: 22px;
+  line-height: 1;
+  bottom: 14px;
+  transform: rotate(180deg);
+}
+.auth-card-corners-br::before { left: 14px; transform: rotate(0deg); }
+.auth-card-corners-br::after  { right: 14px; transform: rotate(0deg); }
+
+/* ── Lobby 3-col desktop layout ───────────────────────────────────────────── */
+.lobby-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  width: 100%;
+}
+.lobby-side {
+  display: none;
+}
+@media (min-width: 1080px) {
+  #screen-lobby {
+    flex-direction: row;
+    max-width: none;
+    width: 100%;
+    padding: 24px 28px;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .lobby-main { flex-shrink: 0; }
+  .lobby-side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 220px;
+    flex-shrink: 0;
+    padding-top: 6px;
+    animation: fadeIn .7s ease;
+  }
+}
+
+/* ── Side panel cards ─────────────────────────────────────────────────────── */
+.panel-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeIn .6s ease;
+}
+.panel-head {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(to bottom, rgba(255,255,255,.02), transparent);
+}
+.panel-head h3 {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-family: sans-serif;
+  font-weight: bold;
+}
+.panel-body { padding: 12px 14px; }
+
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  font-family: sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.rule-item:last-child { border-bottom: none; }
+.rule-item .ri { color: var(--gold); font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+
+.tip-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-family: sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.tip-item:last-child { border-bottom: none; }
+.tip-item .ti { color: var(--gold); flex-shrink: 0; font-size: 10px; margin-top: 3px; }
+.tip-item strong { color: var(--text); }
+
+.stat-row-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-family: sans-serif;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.stat-row-mini:last-child { border-bottom: none; }
+.stat-row-mini .srm-label { color: var(--muted); }
+.stat-row-mini .srm-val   { color: var(--gold2); font-weight: bold; font-family: monospace; }
+
+/* Suit deco grid */
+.suit-deco-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 10px 14px;
+  text-align: center;
+}
+.suit-deco-grid span {
+  font-size: 34px;
+  line-height: 1.7;
+  opacity: .12;
+  transition: opacity .4s;
+  cursor: default;
+}
+.suit-deco-grid span:nth-child(1) { animation: shimmer 4s 0s    infinite }
+.suit-deco-grid span:nth-child(2) { animation: shimmer 4s 1s    infinite }
+.suit-deco-grid span:nth-child(3) { animation: shimmer 4s 2s    infinite }
+.suit-deco-grid span:nth-child(4) { animation: shimmer 4s 3s    infinite }
+.suit-deco-grid span:hover        { opacity: .45 }
+
+/* ── Leaderboard ──────────────────────────────────────────────────────────── */
+.leaderboard{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeIn .5s ease;
+}
+.lb-row{
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+  font-family: sans-serif;
+}
+.lb-row:last-child{ border-bottom: none }
+.lb-row:hover{ background: rgba(255,255,255,.03) }
+.lb-row.me{
+  background: rgba(201,168,76,.07);
+  border-color: rgba(201,168,76,.25);
+}
+.lb-row.separator{
+  border-top: 2px dashed var(--border);
+  margin-top: -1px;
+}
+.lb-rank{
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--muted);
+  text-align: center;
+  font-family: monospace;
+}
+.lb-rank.gold  { color: #ffd700 }
+.lb-rank.silver{ color: #c0c0c0 }
+.lb-rank.bronze{ color: #cd7f32 }
+.lb-name{
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-row.me .lb-name{ color: var(--gold2); font-weight: bold }
+.lb-balance{
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--muted);
+  white-space: nowrap;
+  font-family: monospace;
+}
+.lb-row.me .lb-balance{ color: var(--gold2) }
+.lb-empty{
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: sans-serif;
+}
+</style>
+</head>
+<body>
+
+<!-- Header (always visible when logged in) -->
+<div id="header" class="hidden">
+  <div id="header-logo">🥞 <span>LE CASINO DES</span> CRÊPES</div>
+  <div id="header-right">
+    <div id="balance-display">
+      <span class="icon">🥞</span>
+      <span class="amount" id="header-balance">0</span>
+    </div>
+    <button id="btn-logout">Déconnexion</button>
+  </div>
+</div>
+
+<div id="casino-bg"></div>
+
+<div id="app">
+
+<!-- AUTH ──────────────────────────────────────────────────────────────────── -->
+<div id="screen-auth" class="screen">
+  <div class="auth-card">
+    <div class="auth-card-corners"></div>
+    <div class="auth-card-corners-br"></div>
+    <div class="auth-card-accent"></div>
+    <div class="auth-logo">
+      <span class="big">🥞</span>
+      <h1>Casino des Crêpes</h1>
+      <p>Blackjack en monnaie de crêpe</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Connexion</button>
+      <button class="auth-tab" data-tab="register">Inscription</button>
+    </div>
+    <div id="auth-error" class="auth-error hidden"></div>
+    <div class="field">
+      <label>Nom d'utilisateur</label>
+      <input id="auth-username" type="text" placeholder="votre_pseudo" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" id="auth-submit">Se connecter</button>
+  </div>
+</div>
+
+<!-- LOBBY ─────────────────────────────────────────────────────────────────── -->
+<div id="screen-lobby" class="screen hidden">
+
+  <!-- Left panel (desktop only) -->
+  <div class="lobby-side lobby-side-left">
+    <div class="panel-block">
+      <div class="panel-head"><span>📋</span><h3>Règles du Jeu</h3></div>
+      <div class="panel-body">
+        <div class="rule-item"><span class="ri">♠</span><span>6 jeux de 52 cartes</span></div>
+        <div class="rule-item"><span class="ri">♣</span><span>Blackjack paie <strong style="color:var(--gold2)">3:2</strong></span></div>
+        <div class="rule-item"><span class="ri">♦</span><span>Croupier tire jusqu'à <strong style="color:var(--gold2)">17</strong></span></div>
+        <div class="rule-item"><span class="ri">♥</span><span>Égalité → mise remboursée</span></div>
+        <div class="rule-item"><span class="ri">♠</span><span>Division jusqu'à <strong style="color:var(--gold2)">4 mains</strong></span></div>
+        <div class="rule-item"><span class="ri">♣</span><span>Double sur 2 cartes seulement</span></div>
+        <div class="rule-item"><span class="ri">♦</span><span>Mise <strong style="color:var(--gold2)">10</strong> – <strong style="color:var(--gold2)">50 000</strong> 🥞</span></div>
+      </div>
+    </div>
+    <div class="panel-block">
+      <div class="suit-deco-grid">
+        <span>♠</span>
+        <span style="color:#c0252a">♥</span>
+        <span style="color:#c0252a">♦</span>
+        <span>♣</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="lobby-main">
+  <div class="lobby-greeting">
+    <h2>Bonsoir, <span id="lobby-username">Joueur</span> 👋</h2>
+    <p>Bienvenue au Casino des Crêpes</p>
+  </div>
+
+  <h2>Récompenses Quotidiennes</h2>
+  <div class="bonus-row">
+    <!-- Daily -->
+    <div class="bonus-card">
+      <div class="icon">🌅</div>
+      <h3>Bonus Quotidien</h3>
+      <div class="reward">+2 000 🥞</div>
+      <button class="btn-bonus" id="btn-daily">Réclamer</button>
+      <div class="countdown" id="daily-countdown"></div>
+    </div>
+
+    <!-- Spatula minigame -->
+    <div class="bonus-card">
+      <div class="icon">
+        <span class="spatula-btn" id="spatula-emoji">🍳</span>
+      </div>
+      <h3>Mini-jeu Spatule</h3>
+      <div class="reward">30–5 000 🥞</div>
+      <button class="btn-bonus" id="btn-minigame">Jouer</button>
+      <div class="countdown" id="minigame-countdown"></div>
+    </div>
+  </div>
+
+  <h2>Jouer au Blackjack</h2>
+  <div class="play-section">
+    <h3>6 Jeux · Croupier S'arrête sur 17 · Blackjack 3:2</h3>
+    <div class="chip-btns">
+      <div class="chip c10"  data-add="10">10</div>
+      <div class="chip c50"  data-add="50">50</div>
+      <div class="chip c100" data-add="100">100</div>
+      <div class="chip c500" data-add="500">500</div>
+      <div class="chip c1k"  data-add="1000">1K</div>
+      <div class="chip clear" data-add="clear">✕</div>
+    </div>
+    <div class="bet-input-row">
+      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise"/>
+      <span style="color:var(--gold2);font-size:18px">🥞</span>
+    </div>
+    <button class="btn-deal" id="btn-deal">Distribuer</button>
+  </div>
+
+  <h2>Classement 🏆</h2>
+  <div class="leaderboard" id="leaderboard">
+    <div class="lb-empty">Chargement…</div>
+  </div>
+
+  </div><!-- /.lobby-main -->
+
+  <!-- Right panel (desktop only) -->
+  <div class="lobby-side lobby-side-right">
+    <div class="panel-block">
+      <div class="panel-head"><span>💡</span><h3>Stratégie de Base</h3></div>
+      <div class="panel-body">
+        <div class="tip-item"><span class="ti">◆</span><span>Toujours séparer les <strong>As</strong> et les <strong>8</strong></span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Doubler sur <strong>11</strong> vs croupier &lt; 11</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>S'arrêter sur <strong>17+</strong>, toujours</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Tirer sur <strong>16</strong> vs As du croupier</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Ne jamais séparer les <strong>10</strong></span></div>
+      </div>
+    </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
+      <div class="panel-body">
+        <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
+        <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
+          Bonus disponible toutes les <strong style="color:var(--text)">24h</strong>.<br>
+          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
+        </p>
+      </div>
+    </div>
+  </div><!-- /.lobby-side-right -->
+
+</div>
+
+<!-- GAME ──────────────────────────────────────────────────────────────────── -->
+<div id="screen-game" class="screen hidden">
+  <div class="game-table">
+
+    <!-- Dealer -->
+    <div class="dealer-zone">
+      <div class="dealer-label">Croupier</div>
+      <div class="hand-score" id="dealer-score"></div>
+      <div class="cards-row" id="dealer-cards"></div>
+    </div>
+
+    <!-- Middle (bet display, results) -->
+    <div class="middle-zone" id="middle-zone">
+      <div class="bet-chips-display" id="bet-display">
+        <span>Mise :</span><span id="current-bet">—</span>
+      </div>
+    </div>
+
+    <!-- Player -->
+    <div class="player-zone">
+      <div class="hands-container" id="player-hands"></div>
+      <div class="action-bar" id="action-bar"></div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const S = {
+  user: null,
+  game: null,
+  balance: 0,
+  dailyCooldown: 0,
+  minigameCooldown: 0,
+  currentTab: 'login',
+  countdownInterval: null,
+  busy: false,
+};
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function show(id)    { $(id).classList.remove('hidden') }
+function hide(id)    { $(id).classList.add('hidden') }
+function toggle(id,v){ v ? show(id) : hide(id) }
+
+let toastTimer;
+function toast(msg, type='info', dur=2800) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', dur);
+}
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  try {
+    const res = await fetch(path, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    return data;
+  } catch(e) {
+    if (e.error) throw e;
+    throw { error: 'Erreur réseau' };
+  }
+}
+
+// ── Balance animation ─────────────────────────────────────────────────────────
+let balanceAnimFrame;
+function setBalance(val) {
+  S.balance = val;
+  const el = $('header-balance');
+  const prev = parseInt(el.textContent.replace(/\s/g,'')) || 0;
+  if (prev === val) return;
+
+  cancelAnimationFrame(balanceAnimFrame);
+  const diff = val - prev;
+  const dur  = Math.min(800, Math.abs(diff) * 2);
+  const start = performance.now();
+
+  function frame(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const cur = Math.round(prev + diff * t);
+    el.textContent = cur.toLocaleString('fr-FR');
+    el.classList.toggle('changed', true);
+    if (t < 1) balanceAnimFrame = requestAnimationFrame(frame);
+    else el.classList.remove('changed');
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── Countdown timer ───────────────────────────────────────────────────────────
+function formatTime(s) {
+  if (s <= 0) return '';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m.toString().padStart(2,'0')}m`;
+  if (m > 0) return `${m}m ${sec.toString().padStart(2,'0')}s`;
+  return `${sec}s`;
+}
+
+function startCountdowns() {
+  clearInterval(S.countdownInterval);
+  S.countdownInterval = setInterval(() => {
+    if (S.dailyCooldown > 0) {
+      S.dailyCooldown--;
+      $('daily-countdown').textContent = formatTime(S.dailyCooldown) ? `Disponible dans ${formatTime(S.dailyCooldown)}` : '';
+      $('btn-daily').disabled = S.dailyCooldown > 0;
+    }
+    if (S.minigameCooldown > 0) {
+      S.minigameCooldown--;
+      const sp  = $('spatula-emoji');
+      const btn = $('btn-minigame');
+      if (S.minigameCooldown <= 0) {
+        sp.classList.remove('disabled');
+        if (btn) btn.disabled = false;
+        $('minigame-countdown').textContent = 'Prêt !';
+      } else {
+        $('minigame-countdown').textContent = `Recharge: ${formatTime(S.minigameCooldown)}`;
+      }
+    }
+  }, 1000);
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+function showAuth() {
+  hide('header');
+  hide('screen-lobby');
+  hide('screen-game');
+  show('screen-auth');
+  clearInterval(S.countdownInterval);
+}
+
+function showLobby() {
+  show('header');
+  hide('screen-auth');
+  hide('screen-game');
+  show('screen-lobby');
+  $('lobby-username').textContent = S.user.username;
+  loadLobbyData();
+}
+
+function showGame() {
+  show('header');
+  hide('screen-auth');
+  hide('screen-lobby');
+  show('screen-game');
+}
+
+async function loadLobbyData() {
+  try {
+    const d = await api('GET', '/api/user/me');
+    setBalance(d.user.balance);
+    S.dailyCooldown    = d.user.dailyCooldown;
+    S.minigameCooldown = d.user.minigameCooldown;
+
+    $('btn-daily').disabled = S.dailyCooldown > 0;
+    $('daily-countdown').textContent = S.dailyCooldown > 0
+      ? `Disponible dans ${formatTime(S.dailyCooldown)}` : '';
+
+    const sp  = $('spatula-emoji');
+    const btn = $('btn-minigame');
+    if (S.minigameCooldown > 0) {
+      sp.classList.add('disabled');
+      if (btn) btn.disabled = true;
+      $('minigame-countdown').textContent = `Recharge: ${formatTime(S.minigameCooldown)}`;
+    } else {
+      sp.classList.remove('disabled');
+      if (btn) btn.disabled = false;
+      $('minigame-countdown').textContent = 'Prêt !';
+    }
+    startCountdowns();
+  } catch(e) { /* silent */ }
+
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  try {
+    const d = await api('GET', '/api/leaderboard');
+    renderLeaderboard(d.top10, d.me);
+  } catch(e) { /* silent */ }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderLeaderboard(top10, me) {
+  const el = $('leaderboard');
+  if (!el) return;
+  if (!top10 || top10.length === 0) {
+    el.innerHTML = '<div class="lb-empty">Aucun joueur pour l\'instant.</div>';
+    return;
+  }
+
+  const rankClass = r => r === 1 ? 'gold' : r === 2 ? 'silver' : r === 3 ? 'bronze' : '';
+  const rankLabel = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
+
+  const rows = top10.map(p => `
+    <div class="lb-row${p.isMe ? ' me' : ''}">
+      <span class="lb-rank ${rankClass(p.rank)}">${rankLabel(p.rank)}</span>
+      <span class="lb-name">${escHtml(p.username)}</span>
+      <span class="lb-balance">${p.balance.toLocaleString('fr-FR')} 🥞</span>
+    </div>
+  `).join('');
+
+  const meRow = me ? `
+    <div class="lb-row me separator">
+      <span class="lb-rank">#${me.rank}</span>
+      <span class="lb-name">⭐ ${escHtml(me.username)}</span>
+      <span class="lb-balance">${me.balance.toLocaleString('fr-FR')} 🥞</span>
+    </div>
+  ` : '';
+
+  el.innerHTML = rows + meRow;
+}
+
+// Auth tabs
+document.querySelectorAll('.auth-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    S.currentTab = btn.dataset.tab;
+    document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const isLogin = S.currentTab === 'login';
+    $('auth-submit').textContent = isLogin ? 'Se connecter' : "S'inscrire";
+    hide('auth-error');
+  });
+});
+
+$('auth-submit').addEventListener('click', async () => {
+  const username = $('auth-username').value.trim();
+  const password = $('auth-password').value;
+  if (!username || !password) {
+    $('auth-error').textContent = 'Tous les champs sont requis';
+    show('auth-error');
+    return;
+  }
+
+  $('auth-submit').disabled = true;
+  hide('auth-error');
+
+  try {
+    const endpoint = S.currentTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+    const d = await api('POST', endpoint, { username, password });
+    S.user    = d.user;
+    S.balance = d.user.balance;
+    showLobby();
+    toast(`Bienvenue, ${d.user.username} ! 🥞`, 'success');
+  } catch(e) {
+    $('auth-error').textContent = e.error || 'Erreur';
+    show('auth-error');
+  } finally {
+    $('auth-submit').disabled = false;
+  }
+});
+
+// Enter on password
+$('auth-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('auth-submit').click();
+});
+
+$('btn-logout').addEventListener('click', async () => {
+  await api('POST', '/api/auth/logout');
+  S.user = null; S.game = null;
+  clearInterval(S.countdownInterval);
+  showAuth();
+});
+
+// ── Daily bonus ────────────────────────────────────────────────────────────────
+$('btn-daily').addEventListener('click', async () => {
+  $('btn-daily').disabled = true;
+  try {
+    const d = await api('POST', '/api/user/daily-bonus');
+    setBalance(d.balance);
+    S.dailyCooldown = 86400;
+    $('daily-countdown').textContent = `Disponible dans ${formatTime(S.dailyCooldown)}`;
+    toast('🌅 +2 000 Crêpes ! Bonus quotidien réclamé !', 'gold', 3500);
+    startCountdowns();
+    loadLeaderboard();
+  } catch(e) {
+    S.dailyCooldown = e.cooldown || 86400;
+    toast(e.error || 'Erreur', 'error');
+    startCountdowns();
+  }
+});
+
+// ── Spatula mini-game ──────────────────────────────────────────────────────────
+async function playMinigame() {
+  const sp  = $('spatula-emoji');
+  const btn = $('btn-minigame');
+  if (sp.classList.contains('disabled')) {
+    toast(`Recharge : ${formatTime(S.minigameCooldown)}`, 'error');
+    return;
+  }
+  if (S.busy) return;
+  S.busy = true;
+  sp.classList.add('disabled');
+  if (btn) btn.disabled = true;
+
+  try {
+    const d = await api('POST', '/api/user/minigame');
+    setBalance(d.balance);
+    S.minigameCooldown = 120;
+
+    // Floating reward
+    const fl = document.createElement('div');
+    fl.className = 'spatula-reward';
+    fl.textContent = `+${d.reward.toLocaleString('fr-FR')} 🥞`;
+    document.body.appendChild(fl);
+    setTimeout(() => fl.remove(), 700);
+
+    if (d.reward >= 1000) toast(`🎉 JACKPOT ! +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4000);
+    else toast(`🍳 +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'success');
+
+    $('minigame-countdown').textContent = `Recharge: ${formatTime(120)}`;
+    startCountdowns();
+    loadLeaderboard();
+  } catch(e) {
+    S.minigameCooldown = e.cooldown || 120;
+    toast(e.error || 'Erreur', 'error');
+    startCountdowns();
+  } finally {
+    S.busy = false;
+  }
+}
+$('spatula-emoji').addEventListener('click', playMinigame);
+$('btn-minigame').addEventListener('click', playMinigame);
+
+// ── Chips / bet ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const inp = $('bet-input');
+    const add = chip.dataset.add;
+    if (add === 'clear') { inp.value = ''; return; }
+    const cur = parseInt(inp.value) || 0;
+    inp.value = cur + parseInt(add);
+  });
+});
+
+// ── Deal ───────────────────────────────────────────────────────────────────────
+$('btn-deal').addEventListener('click', async () => {
+  const bet = parseInt($('bet-input').value);
+  if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
+
+  $('btn-deal').disabled = true;
+  try {
+    const d = await api('POST', '/api/game/start', { bet });
+    S.game = d.game;
+    setBalance(d.balance);
+    showGame();
+    renderGame();
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    $('btn-deal').disabled = false;
+  }
+});
+
+// ── Game rendering ─────────────────────────────────────────────────────────────
+const SUIT_COLORS = { '♥': true, '♦': true, '♠': false, '♣': false };
+
+function buildCard(card, delay = 0) {
+  if (!card || card.hidden) {
+    const el = document.createElement('div');
+    el.className = 'card face-down';
+    el.id = 'hole-card';
+    el.style.animationDelay = delay + 'ms';
+    return el;
+  }
+  const el = document.createElement('div');
+  const isRed = SUIT_COLORS[card.suit];
+  el.className = `card face-up${isRed ? ' red' : ''}`;
+  el.style.animationDelay = delay + 'ms';
+  el.innerHTML = `
+    <span class="card-rank">${card.rank}</span>
+    <span class="card-suit">${card.suit}</span>
+    <span class="card-rank-br">${card.rank}</span>
+  `;
+  return el;
+}
+
+function scoreLabel(hand, phase, isDealer) {
+  const val = calcHandValue(hand);
+  const bj  = hand.length === 2 && val === 21;
+  if (isDealer && phase === 'player_turn') {
+    return { text: hand[0] ? cardVal(hand[0]) + '' : '', cls: '' };
+  }
+  if (bj) return { text: 'BLACKJACK 🃏', cls: 'bj' };
+  if (val > 21) return { text: `${val} — Bust`, cls: 'bust' };
+  return { text: String(val), cls: '' };
+}
+
+function cardVal(card) {
+  if (!card || card.hidden) return 0;
+  if (card.rank === 'A') return 11;
+  return Math.min(card.value || parseInt(card.rank) || 10, 10);
+}
+
+function calcHandValue(hand) {
+  let total = 0, aces = 0;
+  for (const c of hand) {
+    if (!c || c.hidden) continue;
+    if (c.rank === 'A') { aces++; total += 11; }
+    else total += Math.min(c.value || parseInt(c.rank) || 10, 10);
+  }
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+
+function resultLabel(r) {
+  const map = {
+    win: '✨ Gagné !',
+    blackjack: '🃏 BLACKJACK !',
+    push: '🤝 Égalité',
+    bust: '💥 Bust',
+    lose: '❌ Perdu',
+    dealer_blackjack: '🃏 Blackjack Croupier',
+  };
+  return map[r] || r;
+}
+
+function resultClass(r) {
+  if (r === 'win' || r === 'blackjack') return 'win';
+  if (r === 'push') return 'push';
+  if (r === 'blackjack') return 'blackjack';
+  return 'lose';
+}
+
+function renderGame() {
+  const gs = S.game;
+  if (!gs) return;
+
+  const dealerCards = $('dealer-cards');
+  const dealerScore = $('dealer-score');
+  const playerHands = $('player-hands');
+  const middleZone  = $('middle-zone');
+  const actionBar   = $('action-bar');
+
+  dealerCards.innerHTML = '';
+  playerHands.innerHTML = '';
+  actionBar.innerHTML   = '';
+
+  // Dealer cards
+  gs.dealerHand.forEach((c, i) => {
+    dealerCards.appendChild(buildCard(c, i * 80));
+  });
+
+  // Dealer score
+  const dScore = scoreLabel(gs.dealerHand, gs.phase, true);
+  dealerScore.textContent = gs.phase === 'complete'
+    ? scoreLabel(gs.dealerHand, 'complete', false).text
+    : dScore.text;
+  dealerScore.className = `hand-score ${gs.phase === 'complete' ? scoreLabel(gs.dealerHand,'complete',false).cls : ''}`;
+
+  // Middle zone
+  middleZone.innerHTML = '';
+  const betDisplay = document.createElement('div');
+  betDisplay.className = 'bet-chips-display';
+  const totalBet = gs.bets ? gs.bets.reduce((a,b)=>a+b,0) : 0;
+  betDisplay.innerHTML = `<span>Mise :</span> <span>${totalBet.toLocaleString('fr-FR')} 🥞</span>`;
+  middleZone.appendChild(betDisplay);
+
+  // Results
+  if (gs.phase === 'complete' && gs.result) {
+    gs.result.handResults.forEach((hr, i) => {
+      const banner = document.createElement('div');
+      banner.className = `result-banner ${resultClass(hr.result)}`;
+      let text = resultLabel(hr.result);
+      if (gs.hands.length > 1) text = `Main ${i+1}: ${text}`;
+      if (hr.win > 0) text += ` (+${hr.win.toLocaleString('fr-FR')} 🥞)`;
+      banner.textContent = text;
+      middleZone.appendChild(banner);
+    });
+  }
+
+  // Player hands
+  gs.hands.forEach((hand, hi) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = `hand-wrapper${hi === gs.activeHandIndex && gs.phase === 'player_turn' ? ' active' : ''}`;
+
+    const cardsRow = document.createElement('div');
+    cardsRow.className = 'cards-row';
+    hand.forEach((c, ci) => cardsRow.appendChild(buildCard(c, (hi * 4 + ci) * 60 + 160)));
+    wrapper.appendChild(cardsRow);
+
+    const sc = scoreLabel(hand, gs.phase, false);
+    const scoreEl = document.createElement('div');
+    scoreEl.className = `hand-score ${sc.cls}`;
+    scoreEl.textContent = sc.text;
+    wrapper.appendChild(scoreEl);
+
+    playerHands.appendChild(wrapper);
+  });
+
+  // Action buttons
+  if (gs.phase === 'player_turn') {
+    const idx   = gs.activeHandIndex;
+    const hand  = gs.hands[idx];
+    const val   = calcHandValue(hand);
+    const canDD = hand.length === 2;
+    const canSp = hand.length === 2 && hand[0].rank === hand[1].rank && gs.hands.length < 4;
+
+    const actions = [
+      { id:'hit',    label:'Tirer',   cls:'hit',    action:'/api/game/hit'    },
+      { id:'stand',  label:'Rester',  cls:'stand',  action:'/api/game/stand'  },
+      { id:'double', label:'Doubler', cls:'double', action:'/api/game/double', disabled:!canDD },
+      { id:'split',  label:'Diviser', cls:'',       action:'/api/game/split',  disabled:!canSp },
+    ];
+    actions.forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = `btn-action ${a.cls}`;
+      btn.textContent = a.label;
+      btn.disabled = a.disabled || false;
+      btn.addEventListener('click', () => doAction(a.action));
+      actionBar.appendChild(btn);
+    });
+  }
+
+  if (gs.phase === 'complete') {
+    // Flip hole card with animation
+    const hole = $('hole-card');
+    if (hole && gs.dealerHand[1] && !gs.dealerHand[1].hidden) {
+      hole.classList.add('flipping');
+      setTimeout(() => {
+        hole.classList.remove('face-down');
+        const c = gs.dealerHand[1];
+        const isRed = SUIT_COLORS[c.suit];
+        hole.className = `card face-up${isRed ? ' red' : ''}`;
+        hole.innerHTML = `
+          <span class="card-rank">${c.rank}</span>
+          <span class="card-suit">${c.suit}</span>
+          <span class="card-rank-br">${c.rank}</span>
+        `;
+      }, 250);
+    }
+
+    // Rejouer — input pré-rempli + bouton
+    const lastBet = gs.bets ? gs.bets.reduce((a,b)=>a+b,0) / gs.bets.length : 100;
+    const replayWrap = document.createElement('div');
+    replayWrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:4px;';
+    replayWrap.innerHTML = `
+      <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
+        style="width:100px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;
+               color:var(--gold2);font-size:16px;font-weight:bold;padding:10px 10px;text-align:center;
+               outline:none;font-family:Georgia,serif;" />
+      <span style="color:var(--gold2);font-size:16px">🥞</span>
+      <button class="btn-new-game" id="btn-replay">Rejouer</button>
+    `;
+    actionBar.appendChild(replayWrap);
+
+    replayWrap.querySelector('#btn-replay').addEventListener('click', async () => {
+      const bet = parseInt(replayWrap.querySelector('#replay-bet').value);
+      if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
+      replayWrap.querySelector('#btn-replay').disabled = true;
+      try {
+        await api('POST', '/api/game/clear');
+        const d = await api('POST', '/api/game/start', { bet });
+        S.game = d.game;
+        setBalance(d.balance);
+        renderGame();
+      } catch(e) {
+        toast(e.error || 'Erreur', 'error');
+        replayWrap.querySelector('#btn-replay').disabled = false;
+      }
+    });
+
+    // Retour accueil
+    const homeLink = document.createElement('button');
+    homeLink.textContent = '← Accueil';
+    homeLink.className = 'btn-action';
+    homeLink.style.cssText = 'flex:0 0 auto;min-width:90px;';
+    homeLink.addEventListener('click', goToLobby);
+    actionBar.appendChild(homeLink);
+  }
+}
+
+// ── Game actions ───────────────────────────────────────────────────────────────
+async function doAction(endpoint) {
+  if (S.busy) return;
+  S.busy = true;
+
+  // Disable all action buttons
+  document.querySelectorAll('.btn-action').forEach(b => b.disabled = true);
+
+  try {
+    const d = await api('POST', endpoint);
+    S.game = d.game;
+    if (d.balance !== undefined) setBalance(d.balance);
+    renderGame();
+    if (d.game && d.game.phase === 'complete') loadLeaderboard();
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+    // Re-enable buttons on error
+    document.querySelectorAll('.btn-action').forEach(b => b.disabled = false);
+  } finally {
+    S.busy = false;
+  }
+}
+
+async function goToLobby() {
+  await api('POST', '/api/game/clear').catch(()=>{});
+  S.game = null;
+  showLobby();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const d = await api('GET', '/api/user/me');
+    S.user = { id: d.user.id, username: d.user.username };
+    setBalance(d.user.balance);
+    S.dailyCooldown    = d.user.dailyCooldown;
+    S.minigameCooldown = d.user.minigameCooldown;
+
+    // Check for active game
+    const gd = await api('GET', '/api/game/state');
+    if (gd.game && gd.game.phase !== 'complete') {
+      S.game = gd.game;
+      if (gd.balance !== undefined) setBalance(gd.balance);
+      showGame();
+      renderGame();
+    } else {
+      showLobby();
+    }
+  } catch(e) {
+    showAuth();
+  }
+}
+
+init();
+
+// ── Background floating suit symbols ─────────────────────────────────────────
+(function() {
+  const bg = document.getElementById('casino-bg');
+  const defs = [
+    { s:'♠', c:'rgba(201,168,76,.055)' }, { s:'♥', c:'rgba(180,40,40,.055)' },
+    { s:'♦', c:'rgba(180,40,40,.045)' }, { s:'♣', c:'rgba(201,168,76,.045)' },
+    { s:'♠', c:'rgba(201,168,76,.04)'  }, { s:'♥', c:'rgba(180,40,40,.04)'  },
+    { s:'♦', c:'rgba(201,168,76,.035)' }, { s:'♣', c:'rgba(180,40,40,.03)'  },
+    { s:'♠', c:'rgba(201,168,76,.025)' }, { s:'♥', c:'rgba(180,40,40,.025)' },
+    { s:'♦', c:'rgba(180,40,40,.02)'   }, { s:'♣', c:'rgba(201,168,76,.02)' },
+  ];
+  defs.forEach((d, i) => {
+    const el  = document.createElement('span');
+    el.className = 'suit';
+    el.textContent = d.s;
+    const x   = 4 + (i / defs.length) * 92;
+    const sz  = 14 + Math.random() * 22;
+    const dur = 14 + Math.random() * 16;
+    const del = -(i * (dur / defs.length));
+    const rot = (Math.random() > .5 ? '' : '-') + (90 + Math.floor(Math.random() * 180)) + 'deg';
+    el.style.cssText = `--x:${x}%; --size:${sz}px; --color:${d.c}; --dur:${dur}s; --delay:${del}s; --rot:${rot}`;
+    bg.appendChild(el);
+  });
+})();
+</script>
+</body>
+</html>
