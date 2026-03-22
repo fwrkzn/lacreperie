@@ -88,12 +88,15 @@ app.use(session({
   },
 }));
 
+const globalLimiter = rateLimit({ windowMs: 60 * 1000, max: 200,
+  message: { error: 'Trop de requêtes.' } });
 const authLimiter  = rateLimit({ windowMs: 15 * 60 * 1000, max: 30,
   message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
 const gameLimiter  = rateLimit({ windowMs: 2000, max: 15,
   message: { error: 'Trop de requêtes rapides.' } });
 const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 60,
   message: { error: 'Trop de requêtes admin.' } });
+app.use(globalLimiter);
 
 async function requireAuth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: 'Non authentifié' });
@@ -318,30 +321,42 @@ app.get('/api/user/me', requireAuth, (req, res) => {
 });
 
 app.post('/api/user/daily-bonus', requireAuth, async (req, res) => {
-  const u   = req.user;
   const now = Math.floor(Date.now() / 1000);
-  if (now - u.last_daily_claim < 86400)
-    return res.status(429).json({ error: 'Bonus déjà réclamé', cooldown: (u.last_daily_claim + 86400) - now });
+  // Atomic: update only succeeds if cooldown has passed — prevents double-claim race condition
+  const { data } = await supabase.from('users')
+    .update({ last_daily_claim: now })
+    .eq('id', req.user.id)
+    .lt('last_daily_claim', now - 86400)
+    .select('last_daily_claim').maybeSingle();
 
-  await updateUser(u.id, { last_daily_claim: now });
-  const newBal = await addBalance(u.id, 2000);
+  if (!data) {
+    const cooldown = (req.user.last_daily_claim + 86400) - now;
+    return res.status(429).json({ error: 'Bonus déjà réclamé', cooldown: Math.max(0, cooldown) });
+  }
+  const newBal = await addBalance(req.user.id, 2000);
   res.json({ success: true, bonus: 2000, balance: newBal });
 });
 
 app.post('/api/user/minigame', requireAuth, async (req, res) => {
-  const u   = req.user;
   const now = Math.floor(Date.now() / 1000);
-  if (now - u.last_minigame_claim < 120)
-    return res.status(429).json({ error: 'Spatule en recharge', cooldown: (u.last_minigame_claim + 120) - now });
+  // Atomic: update only succeeds if cooldown has passed — prevents double-claim race condition
+  const { data } = await supabase.from('users')
+    .update({ last_minigame_claim: now })
+    .eq('id', req.user.id)
+    .lt('last_minigame_claim', now - 120)
+    .select('last_minigame_claim').maybeSingle();
 
+  if (!data) {
+    const cooldown = (req.user.last_minigame_claim + 120) - now;
+    return res.status(429).json({ error: 'Spatule en recharge', cooldown: Math.max(0, cooldown) });
+  }
   const roll = Math.random();
   let reward;
   if      (roll < 0.70) reward = 30   + Math.floor(Math.random() * 71);
   else if (roll < 0.95) reward = 101  + Math.floor(Math.random() * 900);
   else                  reward = 1001 + Math.floor(Math.random() * 4000);
 
-  await updateUser(u.id, { last_minigame_claim: now });
-  const newBal = await addBalance(u.id, reward);
+  const newBal = await addBalance(req.user.id, reward);
   res.json({ success: true, reward, balance: newBal });
 });
 
@@ -633,6 +648,11 @@ app.delete('/api/admin/users/:id', requireAdmin, adminLimiter, async (req, res) 
   console.log(`[ADMIN] ${req.user.username} → suppression de ${target.username}`);
   res.json({ success: true });
 });
+
+// ── Session cleanup — purge expired sessions every hour ───────────────────────
+setInterval(async () => {
+  await supabase.from('session').delete().lt('expire', new Date().toISOString());
+}, 60 * 60 * 1000);
 
 // ── Global error handler ──────────────────────────────────────────────────────
 app.use((err, req, res, _next) => {
