@@ -421,10 +421,10 @@ function renderTable(players) {
       <td class="td-date">${p.last_daily_claim ? formatDate(new Date(p.last_daily_claim * 1000).toISOString()) : '—'}</td>
       <td>
         <div class="actions">
-          <button class="btn-act gold"  onclick="openBalance('${esc(p.id)}','${esc(p.username)}',${p.balance})">💰 Solde</button>
-          <button class="btn-act blue"  onclick="openPassword('${esc(p.id)}','${esc(p.username)}')">🔑 MDP</button>
-          <button class="btn-act green" onclick="openReset('${esc(p.id)}','${esc(p.username)}')">↺ Reset</button>
-          <button class="btn-act red"   onclick="openDelete('${esc(p.id)}','${esc(p.username)}')">🗑</button>
+          <button class="btn-act gold"  data-action="balance"  data-id="${esc(p.id)}" data-username="${esc(p.username)}" data-balance="${p.balance}">💰 Solde</button>
+          <button class="btn-act blue"  data-action="password" data-id="${esc(p.id)}" data-username="${esc(p.username)}">🔑 MDP</button>
+          <button class="btn-act green" data-action="reset"    data-id="${esc(p.id)}" data-username="${esc(p.username)}">↺ Reset</button>
+          <button class="btn-act red"   data-action="delete"   data-id="${esc(p.id)}" data-username="${esc(p.username)}">🗑</button>
         </div>
       </td>
     </tr>
@@ -439,6 +439,16 @@ function formatDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' });
 }
+
+$('players-tbody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const { action, id, username, balance } = btn.dataset;
+  if (action === 'balance')  openBalance(id, username, parseInt(balance));
+  if (action === 'password') openPassword(id, username);
+  if (action === 'reset')    openReset(id, username);
+  if (action === 'delete')   openDelete(id, username);
+});
 
 $('btn-search').addEventListener('click', () => loadPlayers($('search-input').value.trim()));
 $('btn-refresh').addEventListener('click', () => { $('search-input').value = ''; loadPlayers(); loadStats(); });
