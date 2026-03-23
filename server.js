@@ -86,7 +86,10 @@ class SupabaseStore extends session.Store {
     this._mem.delete(sid);
     try { await supabase.from('session').delete().eq('sid', sid); cb(null); } catch(e) { cb(e); }
   }
-  async touch(sid, sess, cb) { return this.set(sid, sess, cb); }
+  async touch(sid, sess, cb) {
+    this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
+    cb(null);
+  }
 }
 
 app.use(session({
@@ -344,7 +347,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // ── User Routes ───────────────────────────────────────────────────────────────
-app.get('/api/user/me', requireAuth, (req, res) => {
+function respondMe(req, res) {
   const u   = req.user;
   const now = Math.floor(Date.now() / 1000);
   res.json({
@@ -354,7 +357,9 @@ app.get('/api/user/me', requireAuth, (req, res) => {
       minigameCooldown: Math.max(0, (u.last_minigame_claim + 120)   - now),
     }
   });
-});
+}
+app.get('/api/auth/me',  requireAuth, respondMe);
+app.get('/api/user/me',  requireAuth, respondMe);
 
 app.post('/api/user/daily-bonus', requireAuth, async (req, res) => {
   const now = Math.floor(Date.now() / 1000);
