@@ -76,7 +76,7 @@ class SupabaseStore extends session.Store {
   }
   async set(sid, sess, cb) {
     try {
-      const expire = sess.cookie?.expires || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const expire = sess.cookie?.expires || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
       await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
       this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
       cb(null);
@@ -88,6 +88,8 @@ class SupabaseStore extends session.Store {
   }
   async touch(sid, sess, cb) {
     this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
+    const expire = sess.cookie?.expires || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    supabase.from('session').update({ expire: new Date(expire).toISOString() }).eq('sid', sid).then(() => {}, () => {});
     cb(null);
   }
 }
@@ -97,11 +99,12 @@ app.use(session({
   secret: getOrCreateSecret(),
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 365 * 24 * 60 * 60 * 1000,
   },
 }));
 
@@ -402,15 +405,32 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
 });
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
+const _lbc = { data: null, exp: 0 };
 app.get('/api/leaderboard', requireAuth, async (req, res) => {
+  const now = Date.now();
+  if (_lbc.data && _lbc.exp > now) {
+    const sorted = _lbc.data;
+    const top10 = sorted.slice(0, 10).map((u, i) => ({
+      rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
+    }));
+    const myRank = sorted.findIndex(u => u.id === req.user.id) + 1;
+    const me = myRank > 0 && myRank > 10
+      ? { rank: myRank, username: req.user.username, balance: req.user.balance, isMe: true }
+      : null;
+    return res.json({ top10, me });
+  }
+
   const { data: sorted } = await supabase
     .from('users')
     .select('id, username, balance')
     .eq('is_admin', false)
     .order('balance', { ascending: false })
-    .limit(200);
+    .limit(50);
 
   if (!sorted) return res.json({ top10: [], me: null });
+
+  _lbc.data = sorted;
+  _lbc.exp = now + 10_000;
 
   const top10  = sorted.slice(0, 10).map((u, i) => ({
     rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,

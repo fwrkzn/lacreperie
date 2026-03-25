@@ -1254,15 +1254,28 @@ function formatTime(s) {
 function startCountdowns() {
   clearInterval(S.countdownInterval);
   S.countdownInterval = setInterval(() => {
+    let dailyChanged = false, minigameChanged = false;
     if (S.dailyCooldown > 0) {
       S.dailyCooldown--;
-      $('daily-countdown').textContent = formatTime(S.dailyCooldown) ? `Disponible dans ${formatTime(S.dailyCooldown)}` : '';
+      dailyChanged = true;
+    } else if (S.dailyCooldown === 0) {
+      dailyChanged = true;
+      S.dailyCooldown = -1;
+    }
+    if (dailyChanged) {
+      const fmt = S.dailyCooldown > 0 ? formatTime(S.dailyCooldown) : '';
+      $('daily-countdown').textContent = fmt ? `Disponible dans ${fmt}` : '';
       $('btn-daily').disabled = S.dailyCooldown > 0;
     }
     if (S.minigameCooldown > 0) {
       S.minigameCooldown--;
-      const sp  = $('spatula-emoji');
-      const btn = $('btn-minigame');
+      minigameChanged = true;
+    } else if (S.minigameCooldown === 0) {
+      minigameChanged = true;
+      S.minigameCooldown = -1;
+    }
+    if (minigameChanged) {
+      const sp = $('spatula-emoji'), btn = $('btn-minigame');
       if (S.minigameCooldown <= 0) {
         sp.classList.remove('disabled');
         if (btn) btn.disabled = false;
@@ -1764,14 +1777,15 @@ async function goToLobby() {
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
   try {
-    const d = await api('GET', '/api/user/me');
+    const [d, gd] = await Promise.all([
+      api('GET', '/api/user/me'),
+      api('GET', '/api/game/state'),
+    ]);
     S.user = { id: d.user.id, username: d.user.username };
     setBalance(d.user.balance);
     S.dailyCooldown    = d.user.dailyCooldown;
     S.minigameCooldown = d.user.minigameCooldown;
 
-    // Check for active game
-    const gd = await api('GET', '/api/game/state');
     if (gd.game && gd.game.phase !== 'complete') {
       S.game = gd.game;
       if (gd.balance !== undefined) setBalance(gd.balance);
