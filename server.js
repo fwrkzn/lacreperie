@@ -145,7 +145,7 @@ function _ucDel(id)       { _uc.delete(id); }
 async function getUserByUsername(username) {
   const { data } = await supabase
     .from('users')
-    .select('id, username, balance, password_hash, is_admin')
+    .select('id, username, balance, non_transferable, password_hash, is_admin')
     .ilike('username', username)
     .maybeSingle();
   return data;
@@ -155,7 +155,7 @@ async function getUserById(id, { fresh = false } = {}) {
   if (!fresh) { const c = _ucGet(id); if (c) return c; }
   const { data } = await supabase
     .from('users')
-    .select('id, username, balance, last_daily_claim, last_minigame_claim, is_admin')
+    .select('id, username, balance, non_transferable, last_daily_claim, last_minigame_claim, is_admin')
     .eq('id', id)
     .maybeSingle();
   if (data) _ucSet(id, data);
@@ -179,8 +179,8 @@ async function updateUser(id, patch) {
 }
 
 // Opérations atomiques — évitent la race condition
-async function deductBalance(userId, amount) {
-  const { data, error } = await supabase.rpc('deduct_balance', { p_user_id: userId, p_amount: amount });
+async function deductBalance(userId, amount, { burnBonus = false } = {}) {
+  const { data, error } = await supabase.rpc('deduct_balance', { p_user_id: userId, p_amount: amount, p_burn_bonus: burnBonus });
   if (error) throw { error: 'Solde insuffisant' };
   _ucDel(userId); // invalidate cache — balance changed
   return data;
@@ -322,7 +322,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ error: 'Erreur serveur' });
       req.session.userId = user.id;
-      res.json({ success: true, user: { id: user.id, username: user.username, balance: user.balance } });
+      res.json({ success: true, user: { id: user.id, username: user.username, balance: user.balance, nonTransferable: user.non_transferable || 0 } });
     });
   } catch(e) {
     console.error(e); res.status(500).json({ error: 'Erreur serveur' });
@@ -341,7 +341,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   req.session.regenerate((err) => {
     if (err) return res.status(500).json({ error: 'Erreur serveur' });
     req.session.userId = user.id;
-    res.json({ success: true, user: { id: user.id, username: user.username, balance: user.balance } });
+    res.json({ success: true, user: { id: user.id, username: user.username, balance: user.balance, nonTransferable: user.non_transferable || 0 } });
   });
 });
 
@@ -356,6 +356,7 @@ function respondMe(req, res) {
   res.json({
     user: {
       id: u.id, username: u.username, balance: u.balance,
+      nonTransferable: u.non_transferable || 0,
       dailyCooldown:    Math.max(0, (u.last_daily_claim    + 86400) - now),
       minigameCooldown: Math.max(0, (u.last_minigame_claim + 120)   - now),
     }
@@ -443,6 +444,60 @@ app.get('/api/leaderboard', requireAuth, async (req, res) => {
   res.json({ top10, me });
 });
 
+// ── User Search (for gift autocomplete) ──────────────────────────────────────
+app.get('/api/user/search', requireAuth, async (req, res) => {
+  const q = (req.query.q || '').trim().toLowerCase();
+  if (!q || q.length < 1) return res.json({ users: [] });
+
+  const { data } = await supabase
+    .from('users')
+    .select('username')
+    .ilike('username', `${q}%`)
+    .neq('id', req.user.id)
+    .limit(6);
+
+  res.json({ users: (data || []).map(u => u.username) });
+});
+
+// ── Transfer / Gift ──────────────────────────────────────────────────────────
+const transferLimiter = rateLimit({ windowMs: 60 * 1000, max: 10,
+  message: { error: 'Trop de transferts. Réessayez dans une minute.' } });
+
+app.post('/api/user/transfer', requireAuth, transferLimiter, async (req, res) => {
+  const { to, amount } = req.body || {};
+  const amt = parseInt(amount);
+
+  if (!to || typeof to !== 'string' || to.trim().length === 0)
+    return res.status(400).json({ error: 'Pseudo du destinataire requis' });
+  if (isNaN(amt) || amt < 1)
+    return res.status(400).json({ error: 'Montant minimum : 1 🥞' });
+  if (amt > 50000)
+    return res.status(400).json({ error: 'Montant maximum : 50 000 🥞' });
+
+  const sender = req.user;
+  if (to.trim().toLowerCase() === sender.username.toLowerCase())
+    return res.status(400).json({ error: 'Vous ne pouvez pas vous envoyer des crêpes' });
+
+  const recipient = await getUserByUsername(to.trim());
+  if (!recipient)
+    return res.status(404).json({ error: 'Joueur introuvable' });
+
+  const transferable = Math.max(0, sender.balance - (sender.non_transferable || 0));
+  if (amt > transferable)
+    return res.status(400).json({ error: transferable === 0
+      ? 'Vous ne pouvez pas transférer votre bonus de bienvenue'
+      : `Montant transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (le bonus de bienvenue n'est pas transférable)` });
+
+  try {
+    const newBal = await deductBalance(sender.id, amt);
+    await addBalance(recipient.id, amt);
+    _lbc.exp = 0; // invalidate leaderboard cache
+    res.json({ success: true, balance: newBal });
+  } catch(e) {
+    res.status(400).json({ error: e.error || 'Erreur lors du transfert' });
+  }
+});
+
 // ── Game Routes ───────────────────────────────────────────────────────────────
 app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   const bet = parseInt(req.body?.bet);
@@ -453,7 +508,7 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   if (u.balance < bet) return res.status(400).json({ error: 'Solde insuffisant' });
 
   let bal;
-  try { bal = await deductBalance(u.id, bet); } catch { return res.status(400).json({ error: 'Solde insuffisant' }); }
+  try { bal = await deductBalance(u.id, bet, { burnBonus: true }); } catch { return res.status(400).json({ error: 'Solde insuffisant' }); }
 
   const prev = await getGame(u.id);
   const shoe = prev ? (prev.shoe ?? createShoe()) : createShoe();
@@ -515,7 +570,7 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   const extra = gs.bets[idx];
   if (u.balance < extra) return res.status(400).json({ error: 'Solde insuffisant pour doubler' });
 
-  try { await deductBalance(u.id, extra); } catch { return res.status(400).json({ error: 'Solde insuffisant pour doubler' }); }
+  try { await deductBalance(u.id, extra, { burnBonus: true }); } catch { return res.status(400).json({ error: 'Solde insuffisant pour doubler' }); }
   gs.bets[idx] *= 2;
   gs.hands[idx].push(drawCard(gs.shoe));
 
@@ -539,7 +594,7 @@ app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
   const splitBet = gs.bets[idx];
   if (u.balance < splitBet) return res.status(400).json({ error: 'Solde insuffisant pour diviser' });
 
-  try { await deductBalance(u.id, splitBet); } catch { return res.status(400).json({ error: 'Solde insuffisant pour diviser' }); }
+  try { await deductBalance(u.id, splitBet, { burnBonus: true }); } catch { return res.status(400).json({ error: 'Solde insuffisant pour diviser' }); }
   const [c1, c2] = hand;
   gs.hands[idx] = [c1, drawCard(gs.shoe)];
   gs.hands.splice(idx + 1, 0, [c2, drawCard(gs.shoe)]);

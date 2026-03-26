@@ -697,9 +697,55 @@ body{
   margin: 0 auto;
 }
 
+/* ── Loading screen ────────────────────────────────────────────────────── */
+#loading-screen{
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px;
+  transition: opacity .4s ease, visibility .4s ease;
+}
+#loading-screen.fade-out{
+  opacity: 0; visibility: hidden;
+}
+#loading-screen .loader-logo{
+  font-size: 56px;
+  animation: pop 1s ease infinite;
+}
+#loading-screen h2{
+  color: var(--gold);
+  letter-spacing: 4px;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+#loading-screen .loader-bar{
+  width: 160px; height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#loading-screen .loader-bar-fill{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  border-radius: 3px;
+  animation: loaderFill .8s ease forwards;
+}
+@keyframes loaderFill { to { width: 100% } }
+
+/* ── Screen transitions ───────────────────────────────────────────────── */
+.screen{
+  display: flex; flex-direction: column; flex:1;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.screen.screen-visible{
+  opacity: 1;
+}
+
 /* Utility */
 .hidden{ display:none!important }
-.screen{ display:flex; flex-direction:column; flex:1 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media(max-width:480px){
@@ -980,9 +1026,89 @@ body{
   font-size: 13px;
   font-family: sans-serif;
 }
+
+/* ── Gift / Transfer section ──────────────────────────────────────────── */
+.gift-section{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  animation: fadeIn .5s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gift-section h3{
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-family: sans-serif;
+  text-align: center;
+}
+.gift-row{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.gift-row input{
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+  font-family: sans-serif;
+}
+.gift-row input:focus{ border-color: var(--gold) }
+.gift-row input::placeholder{ color: var(--muted) }
+.gift-row .gift-username-wrap{ position: relative; width: 150px }
+.gift-row .gift-username{ width: 100% }
+.gift-suggestions{
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 0 0 8px 8px; max-height: 180px; overflow-y: auto;
+  display: none;
+}
+.gift-suggestions.open{ display: block }
+.gift-suggestions div{
+  padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text);
+  font-family: sans-serif;
+}
+.gift-suggestions div:hover, .gift-suggestions div.active{
+  background: var(--gold); color: #1a1a2e;
+}
+.gift-row .gift-amount{ width: 100px; text-align: center; font-weight: bold; color: var(--gold2); font-family: Georgia, serif }
+.btn-gift{
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0b0b0e;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.btn-gift:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+.btn-gift:disabled{ opacity:.5; cursor:not-allowed; transform:none }
 </style>
 </head>
 <body>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loader-logo">🥞</div>
+  <h2>Casino des Crêpes</h2>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
 
 <!-- Header (always visible when logged in) -->
 <div id="header" class="hidden">
@@ -1097,10 +1223,25 @@ body{
       <div class="chip clear" data-add="clear">✕</div>
     </div>
     <div class="bet-input-row">
-      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise"/>
+      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" aria-label="Montant de la mise" autocomplete="off"/>
       <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
     <button class="btn-deal" id="btn-deal">Distribuer</button>
+  </div>
+
+  <h2>Envoyer des Crêpes 🎁</h2>
+  <div class="gift-section">
+    <h3>Offrir des crêpes à un ami</h3>
+    <div class="gift-row">
+      <div class="gift-username-wrap">
+        <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" aria-label="Pseudo du destinataire" />
+        <div class="gift-suggestions" id="gift-suggestions"></div>
+      </div>
+      <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" aria-label="Montant à envoyer" />
+      <span style="color:var(--gold2);font-size:16px">🥞</span>
+      <button class="btn-gift" id="btn-gift">Envoyer</button>
+    </div>
+    <p id="gift-transferable" style="text-align:center;font-size:12px;color:var(--muted);margin:0"></p>
   </div>
 
   <h2>Classement 🏆</h2>
@@ -1238,6 +1379,17 @@ function setBalance(val) {
     else el.classList.remove('changed');
   }
   requestAnimationFrame(frame);
+  updateTransferableHint();
+}
+
+function updateTransferableHint() {
+  const el = $('gift-transferable');
+  if (!el) return;
+  const nt = S.user?.nonTransferable || 0;
+  const transferable = Math.max(0, (S.balance || 0) - nt);
+  el.textContent = nt > 0
+    ? `Transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (bonus de bienvenue non transférable)`
+    : '';
 }
 
 // ── Countdown timer ───────────────────────────────────────────────────────────
@@ -1288,28 +1440,44 @@ function startCountdowns() {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
+function transitionTo(screenId) {
+  const screens = ['screen-auth', 'screen-lobby', 'screen-game'];
+  screens.forEach(id => {
+    const el = $(id);
+    if (id === screenId) {
+      el.classList.remove('hidden');
+      // Trigger reflow then add visible class for fade-in
+      void el.offsetWidth;
+      el.classList.add('screen-visible');
+    } else {
+      el.classList.remove('screen-visible');
+      // Wait for fade-out before hiding
+      setTimeout(() => {
+        if (!el.classList.contains('screen-visible')) el.classList.add('hidden');
+      }, 300);
+    }
+  });
+}
+
 function showAuth() {
   hide('header');
-  hide('screen-lobby');
-  hide('screen-game');
-  show('screen-auth');
+  transitionTo('screen-auth');
   clearInterval(S.countdownInterval);
+  stopLeaderboardRefresh();
 }
 
 function showLobby() {
   show('header');
-  hide('screen-auth');
-  hide('screen-game');
-  show('screen-lobby');
+  transitionTo('screen-lobby');
   $('lobby-username').textContent = S.user.username;
   loadLobbyData();
+  startLeaderboardRefresh();
 }
 
 function showGame() {
   show('header');
-  hide('screen-auth');
-  hide('screen-lobby');
-  show('screen-game');
+  transitionTo('screen-game');
+  stopLeaderboardRefresh();
 }
 
 async function loadLobbyData() {
@@ -1345,6 +1513,16 @@ async function loadLeaderboard() {
     const d = await api('GET', '/api/leaderboard');
     renderLeaderboard(d.top10, d.me);
   } catch(e) { /* silent */ }
+}
+
+// ── Leaderboard auto-refresh (every 10s) ──────────────────────────────────────
+let _lbInterval = null;
+function startLeaderboardRefresh() {
+  stopLeaderboardRefresh();
+  _lbInterval = setInterval(loadLeaderboard, 10000);
+}
+function stopLeaderboardRefresh() {
+  if (_lbInterval) { clearInterval(_lbInterval); _lbInterval = null; }
 }
 
 function escHtml(str) {
@@ -1415,6 +1593,7 @@ $('auth-submit').addEventListener('click', async () => {
     const d = await api('POST', endpoint, { username, password });
     S.user    = d.user;
     S.balance = d.user.balance;
+    S.user.nonTransferable = d.user.nonTransferable || 0;
     showLobby();
     toast(`Bienvenue, ${d.user.username} ! 🥞`, 'success');
   } catch(e) {
@@ -1710,9 +1889,11 @@ function renderGame() {
     const replayWrap = document.createElement('div');
     replayWrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:4px;';
     replayWrap.innerHTML = `
+      <label for="replay-bet" style="color:var(--muted);font-size:11px;font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;">Nouvelle mise :</label>
       <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
-        style="width:100px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;
-               color:var(--gold2);font-size:16px;font-weight:bold;padding:10px 10px;text-align:center;
+        aria-label="Nouvelle mise" autocomplete="off"
+        style="width:140px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;
+               color:var(--gold2);font-size:18px;font-weight:bold;padding:10px 14px;text-align:center;
                outline:none;font-family:Georgia,serif;" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
@@ -1774,17 +1955,90 @@ async function goToLobby() {
   showLobby();
 }
 
+// ── Gift Username Autocomplete ──────────────────────────────────────────────
+{
+  const inp = $('gift-username'), box = $('gift-suggestions');
+  let _timer = null, _idx = -1;
+
+  function closeSugg() { box.classList.remove('open'); box.innerHTML = ''; _idx = -1; }
+
+  inp.addEventListener('input', () => {
+    clearTimeout(_timer);
+    const q = inp.value.trim();
+    if (q.length < 1) { closeSugg(); return; }
+    _timer = setTimeout(async () => {
+      try {
+        const d = await api('GET', '/api/user/search?q=' + encodeURIComponent(q));
+        if (!d.users || !d.users.length) { closeSugg(); return; }
+        _idx = -1;
+        box.innerHTML = d.users.map(u => `<div data-u="${escHtml(u)}">${escHtml(u)}</div>`).join('');
+        box.classList.add('open');
+      } catch { closeSugg(); }
+    }, 250);
+  });
+
+  box.addEventListener('click', e => {
+    const el = e.target.closest('[data-u]');
+    if (el) { inp.value = el.dataset.u; closeSugg(); $('gift-amount').focus(); }
+  });
+
+  inp.addEventListener('keydown', e => {
+    const items = box.querySelectorAll('[data-u]');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); _idx = Math.min(_idx + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _idx = Math.max(_idx - 1, 0); }
+    else if (e.key === 'Enter' && _idx >= 0) { e.preventDefault(); inp.value = items[_idx].dataset.u; closeSugg(); $('gift-amount').focus(); return; }
+    else if (e.key === 'Escape') { closeSugg(); return; }
+    else return;
+    items.forEach((it, i) => it.classList.toggle('active', i === _idx));
+  });
+
+  document.addEventListener('click', e => { if (!e.target.closest('.gift-username-wrap')) closeSugg(); });
+}
+
+// ── Gift / Transfer ──────────────────────────────────────────────────────────
+$('btn-gift').addEventListener('click', async () => {
+  const target = $('gift-username').value.trim();
+  const amount = parseInt($('gift-amount').value);
+  if (!target) { toast('Entrez un pseudo', 'error'); return; }
+  if (!amount || amount < 1) { toast('Montant minimum : 1 🥞', 'error'); return; }
+  if (target.toLowerCase() === S.user.username.toLowerCase()) {
+    toast('Vous ne pouvez pas vous envoyer des crêpes !', 'error'); return;
+  }
+
+  $('btn-gift').disabled = true;
+  try {
+    const d = await api('POST', '/api/user/transfer', { to: target, amount });
+    setBalance(d.balance);
+    toast(`🎁 ${amount.toLocaleString('fr-FR')} crêpes envoyées à ${escHtml(target)} !`, 'gold', 3500);
+    $('gift-username').value = '';
+    $('gift-amount').value = '';
+    loadLeaderboard();
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    $('btn-gift').disabled = false;
+  }
+});
+
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
+  const loadingStart = Date.now();
   try {
     const [d, gd] = await Promise.all([
       api('GET', '/api/user/me'),
       api('GET', '/api/game/state'),
     ]);
-    S.user = { id: d.user.id, username: d.user.username };
+    S.user = { id: d.user.id, username: d.user.username, nonTransferable: d.user.nonTransferable || 0 };
     setBalance(d.user.balance);
     S.dailyCooldown    = d.user.dailyCooldown;
     S.minigameCooldown = d.user.minigameCooldown;
+
+    // Wait for minimum loading time
+    const elapsed = Date.now() - loadingStart;
+    if (elapsed < 800) await new Promise(r => setTimeout(r, 800 - elapsed));
+
+    dismissLoading();
 
     if (gd.game && gd.game.phase !== 'complete') {
       S.game = gd.game;
@@ -1795,7 +2049,18 @@ async function init() {
       showLobby();
     }
   } catch(e) {
+    const elapsed = Date.now() - loadingStart;
+    if (elapsed < 800) await new Promise(r => setTimeout(r, 800 - elapsed));
+    dismissLoading();
     showAuth();
+  }
+}
+
+function dismissLoading() {
+  const ls = $('loading-screen');
+  if (ls) {
+    ls.classList.add('fade-out');
+    setTimeout(() => ls.remove(), 400);
   }
 }
 
