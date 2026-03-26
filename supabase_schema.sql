@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   username            TEXT NOT NULL,
   password_hash       TEXT NOT NULL,
   balance             INTEGER NOT NULL DEFAULT 3000,
+  non_transferable    INTEGER NOT NULL DEFAULT 3000,
   last_daily_claim    BIGINT NOT NULL DEFAULT 0,
   last_minigame_claim BIGINT NOT NULL DEFAULT 0,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -24,15 +25,24 @@ CREATE TABLE IF NOT EXISTS active_games (
 -- ── Fonctions atomiques (évitent la race condition sur le solde) ───────────────
 
 -- Déduit un montant du solde, échoue si insuffisant
-CREATE OR REPLACE FUNCTION deduct_balance(p_user_id UUID, p_amount INTEGER)
+-- p_burn_bonus = true → réduit aussi non_transferable (pour les mises de jeu)
+CREATE OR REPLACE FUNCTION deduct_balance(p_user_id UUID, p_amount INTEGER, p_burn_bonus BOOLEAN DEFAULT FALSE)
 RETURNS INTEGER AS $$
 DECLARE
   v_new_balance INTEGER;
 BEGIN
-  UPDATE users
-    SET balance = balance - p_amount
-    WHERE id = p_user_id AND balance >= p_amount
-    RETURNING balance INTO v_new_balance;
+  IF p_burn_bonus THEN
+    UPDATE users
+      SET balance = balance - p_amount,
+          non_transferable = GREATEST(0, non_transferable - p_amount)
+      WHERE id = p_user_id AND balance >= p_amount
+      RETURNING balance INTO v_new_balance;
+  ELSE
+    UPDATE users
+      SET balance = balance - p_amount
+      WHERE id = p_user_id AND balance >= p_amount
+      RETURNING balance INTO v_new_balance;
+  END IF;
 
   IF v_new_balance IS NULL THEN
     RAISE EXCEPTION 'Solde insuffisant';
