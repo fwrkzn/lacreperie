@@ -56,6 +56,8 @@ body{
 @keyframes chipBounce{ 0%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.1)} 100%{transform:translateY(0) scale(1)} }
 @keyframes glow      { 0%,100%{box-shadow:0 0 12px rgba(201,168,76,.3)} 50%{box-shadow:0 0 28px rgba(201,168,76,.7)} }
 @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes lobbyFloat{ 0%,100%{transform:translate3d(0,0,0) rotate(0deg)} 50%{transform:translate3d(0,-18px,0) rotate(6deg)} }
+@keyframes lobbyPulse{ 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.34;transform:scale(1.08)} }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 #header{
@@ -229,12 +231,52 @@ body{
   max-width: 600px;
   width: 100%;
   margin: 0 auto;
+  position: relative;
+  isolation: isolate;
 }
 .lobby-content{
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
+  z-index: 1;
 }
+.lobby-greeting{ position: relative; z-index: 1; }
+.lobby-ambience{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.lobby-ambience span{
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+  filter: blur(0.4px);
+}
+.lobby-ambience .orb{
+  background: radial-gradient(circle at 30% 30%, rgba(245,223,160,.22), rgba(201,168,76,.04) 58%, transparent 72%);
+  animation: lobbyPulse 9s ease-in-out infinite;
+}
+.lobby-ambience .ring{
+  border: 1px solid rgba(201,168,76,.12);
+  box-shadow: inset 0 0 24px rgba(201,168,76,.04);
+  animation: lobbyFloat 14s ease-in-out infinite;
+}
+.lobby-ambience .spark{
+  font-size: 22px;
+  color: rgba(232,201,125,.12);
+  animation: lobbyFloat 10s ease-in-out infinite;
+}
+.lobby-ambience span:nth-child(1){ width:240px;height:240px;top:8%;left:-40px;animation-delay:-2s; }
+.lobby-ambience span:nth-child(2){ width:180px;height:180px;top:22%;right:2%;animation-delay:-5s; }
+.lobby-ambience span:nth-child(3){ width:320px;height:320px;bottom:-100px;left:18%;animation-delay:-1s; }
+.lobby-ambience span:nth-child(4){ width:180px;height:180px;top:18%;left:24%;animation-delay:-6s; }
+.lobby-ambience span:nth-child(5){ width:220px;height:220px;bottom:10%;right:12%;animation-delay:-8s; }
+.lobby-ambience span:nth-child(6){ top:12%;right:18%;animation-delay:-3s; }
+.lobby-ambience span:nth-child(7){ bottom:20%;left:10%;animation-delay:-7s; }
+.lobby-ambience span:nth-child(8){ top:42%;right:30%;animation-delay:-4s; }
 #screen-lobby h2{
   color: var(--gold);
   letter-spacing: 3px;
@@ -410,6 +452,14 @@ body{
 .chip.c100 { --chip-bg: rgba(201,168,76,.12);  --chip-border: var(--gold); --chip-color: var(--gold2) }
 .chip.c500 { --chip-bg: rgba(224,68,68,.12);   --chip-border: var(--red); --chip-color: #f06060 }
 .chip.c1k  { --chip-bg: rgba(140,100,220,.15); --chip-border: #9b72d4; --chip-color: #c0a0f0 }
+.chip.callin{
+  width: 68px;
+  --chip-bg: rgba(224,68,68,.18);
+  --chip-border: #f06a6a;
+  --chip-color: #ffd6d6;
+  font-size: 10px;
+  letter-spacing: .8px;
+}
 .chip.clear{ --chip-bg: rgba(255,255,255,.04); --chip-border: var(--border); --chip-color: var(--muted); font-size:18px }
 .btn-deal{
   padding: 14px 40px;
@@ -428,6 +478,32 @@ body{
 }
 .btn-deal:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-deal:disabled{ opacity:.4; cursor:not-allowed; transform:none }
+.play-actions{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-allin{
+  padding: 14px 24px;
+  width: fit-content;
+  align-self: center;
+  white-space: nowrap;
+  background: linear-gradient(135deg, rgba(224,68,68,.92) 0%, rgba(130,22,22,.98) 100%);
+  border: 1px solid #f06a6a;
+  border-radius: 8px;
+  color: #fff4f4;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+  box-shadow: 0 4px 18px rgba(130,22,22,.35);
+}
+.btn-allin:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+.btn-allin:disabled{ opacity:.4; cursor:not-allowed; transform:none }
 
 /* ── Game Screen ──────────────────────────────────────────────────────────── */
 #screen-game{
@@ -1140,6 +1216,131 @@ body{
 }
 .btn-gift:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-gift:disabled{ opacity:.5; cursor:not-allowed; transform:none }
+.btn-secondary{
+  padding: 12px 18px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--gold2);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.btn-secondary:hover{ border-color: var(--gold); color: var(--gold3); transform: translateY(-1px) }
+
+/* ── Full leaderboard screen ─────────────────────────────────────────────── */
+#screen-leaderboard{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+.leaderboard-topbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.leaderboard-topbar h2{
+  color: var(--gold2);
+  font-size: 24px;
+  letter-spacing: 2px;
+}
+.leaderboard-topbar p{
+  color: var(--muted);
+  font-size: 13px;
+  font-family: sans-serif;
+  margin-top: 4px;
+}
+.leaderboard-shell{
+  background: linear-gradient(180deg, rgba(20,20,24,.94), rgba(11,11,14,.96));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 28px 80px rgba(0,0,0,.35);
+}
+.leaderboard-full-head,
+.leaderboard-full-row{
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 180px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+}
+.leaderboard-full-head{
+  background: rgba(255,255,255,.02);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.leaderboard-full-list{
+  display: flex;
+  flex-direction: column;
+}
+.leaderboard-full-row{
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-family: sans-serif;
+  transition: background .15s ease;
+}
+.leaderboard-full-row:last-child{ border-bottom:none }
+.leaderboard-full-row:hover{ background: rgba(255,255,255,.025) }
+.leaderboard-full-row.me{
+  background: linear-gradient(90deg, rgba(201,168,76,.12), rgba(201,168,76,.04));
+}
+.leaderboard-full-rank{
+  color: var(--gold2);
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 16px;
+}
+.leaderboard-full-name{
+  color: var(--text);
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leaderboard-full-row.me .leaderboard-full-name{ color: var(--gold3); font-weight: bold; }
+.leaderboard-full-balance{
+  color: var(--muted);
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 15px;
+  text-align: right;
+}
+.leaderboard-full-row.me .leaderboard-full-balance{ color: var(--gold2); }
+.leaderboard-full-empty{
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-family: sans-serif;
+}
+@media(max-width:760px){
+  .leaderboard-topbar{
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .leaderboard-full-head,
+  .leaderboard-full-row{
+    grid-template-columns: 58px minmax(0, 1fr) 110px;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .leaderboard-full-balance{ font-size: 13px; }
+}
 </style>
 </head>
 <body>
@@ -1185,11 +1386,11 @@ body{
     <div id="auth-error" class="auth-error hidden"></div>
     <div class="field">
       <label>Nom d'utilisateur</label>
-      <input id="auth-username" type="text" placeholder="votre_pseudo" autocomplete="username"/>
+      <input id="auth-username" type="text" placeholder="votre_pseudo" autocomplete="username" readonly data-unlock-edit/>
     </div>
     <div class="field">
       <label>Mot de passe</label>
-      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" readonly data-unlock-edit/>
     </div>
     <button class="btn-primary" id="auth-submit">Se connecter</button>
   </div>
@@ -1197,9 +1398,19 @@ body{
 
 <!-- LOBBY ─────────────────────────────────────────────────────────────────── -->
 <div id="screen-lobby" class="screen hidden">
+  <div class="lobby-ambience" aria-hidden="true">
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="ring"></span>
+    <span class="ring"></span>
+    <span class="ring"></span>
+    <span class="spark">✦</span>
+    <span class="spark">✧</span>
+    <span class="spark">✦</span>
+  </div>
 
   <div class="lobby-greeting">
-    <h2>Bonsoir, <span id="lobby-username">Joueur</span> 👋</h2>
+    <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username">Joueur</span> 👋</h2>
     <p>Bienvenue au Casino des Crêpes</p>
   </div>
 
@@ -1285,13 +1496,14 @@ body{
       <div class="chip c100" data-add="100">100</div>
       <div class="chip c500" data-add="500">500</div>
       <div class="chip c1k"  data-add="1000">1K</div>
+      <div class="chip callin" data-add="allin">ALL-IN</div>
       <div class="chip clear" data-add="clear">✕</div>
     </div>
     <div class="bet-input-row">
       <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" aria-label="Montant de la mise" autocomplete="off"/>
       <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
-    <button class="btn-deal" id="btn-deal">Distribuer</button>
+    <button class="btn-deal" id="btn-deal">Jouer</button>
   </div>
 
   <h2>Envoyer des Crêpes 🎁</h2>
@@ -1315,10 +1527,32 @@ body{
     <div class="leaderboard" id="leaderboard">
       <div class="lb-empty">Chargement…</div>
     </div>
+    <button class="btn-secondary" id="btn-open-leaderboard">Classement complet</button>
   </div>
 
   </div><!-- /.lobby-content -->
 
+</div>
+
+<!-- FULL LEADERBOARD ─────────────────────────────────────────────────────── -->
+<div id="screen-leaderboard" class="screen hidden">
+  <div class="leaderboard-topbar">
+    <div>
+      <h2>Classement Complet</h2>
+      <p>Les meilleurs joueurs du Casino des Crêpes.</p>
+    </div>
+    <button class="btn-secondary" id="btn-back-lobby">← Retour accueil</button>
+  </div>
+  <div class="leaderboard-shell">
+    <div class="leaderboard-full-head">
+      <span>Rang</span>
+      <span>Joueur</span>
+      <span style="text-align:right">Solde</span>
+    </div>
+    <div class="leaderboard-full-list" id="leaderboard-full-list">
+      <div class="leaderboard-full-empty">Chargement…</div>
+    </div>
+  </div>
 </div>
 
 <!-- GAME ──────────────────────────────────────────────────────────────────── -->
@@ -1405,6 +1639,7 @@ async function api(method, path, body) {
 let balanceAnimFrame;
 function setBalance(val) {
   S.balance = val;
+  syncBetInputLimit();
   const el = $('header-balance');
   const prev = parseInt(el.textContent.replace(/\s/g,'')) || 0;
   if (prev === val) return;
@@ -1434,6 +1669,20 @@ function updateTransferableHint() {
   el.textContent = nt > 0
     ? `Transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (cadeaux et bonus non transférables)`
     : '';
+}
+
+function getBetCap() {
+  return Math.max(0, Math.min(S.balance || 0, 50000));
+}
+
+function syncBetInputLimit() {
+  const inp = $('bet-input');
+  if (!inp) return;
+  const cap = getBetCap();
+  inp.max = cap || 0;
+  if (!inp.value) return;
+  const current = Math.max(0, parseInt(inp.value) || 0);
+  inp.value = cap ? Math.min(current, cap) : '';
 }
 
 // ── Countdown timer ───────────────────────────────────────────────────────────
@@ -1511,23 +1760,37 @@ function startCountdowns() {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
-function transitionTo(screenId) {
-  const screens = ['screen-auth', 'screen-lobby', 'screen-game'];
-  screens.forEach(id => {
-    const el = $(id);
-    if (id === screenId) {
-      el.classList.remove('hidden');
-      // Trigger reflow then add visible class for fade-in
-      void el.offsetWidth;
-      el.classList.add('screen-visible');
-    } else {
-      el.classList.remove('screen-visible');
-      // Wait for fade-out before hiding
-      setTimeout(() => {
-        if (!el.classList.contains('screen-visible')) el.classList.add('hidden');
-      }, 300);
-    }
-  });
+let screenTransitionTimer = null;
+function transitionTo(screenId, { smooth = false } = {}) {
+  const screens = ['screen-auth', 'screen-lobby', 'screen-leaderboard', 'screen-game'];
+  const current = screens
+    .map(id => $(id))
+    .find(el => !el.classList.contains('hidden') && el.classList.contains('screen-visible'));
+
+  const enterTarget = () => {
+    screens.forEach(id => {
+      const el = $(id);
+      if (id === screenId) {
+        el.classList.remove('hidden');
+        void el.offsetWidth;
+        el.classList.add('screen-visible');
+      } else {
+        el.classList.remove('screen-visible');
+        setTimeout(() => {
+          if (!el.classList.contains('screen-visible')) el.classList.add('hidden');
+        }, 300);
+      }
+    });
+  };
+
+  clearTimeout(screenTransitionTimer);
+  if (smooth && current && current.id !== screenId) {
+    current.classList.remove('screen-visible');
+    screenTransitionTimer = setTimeout(enterTarget, 140);
+    return;
+  }
+
+  enterTarget();
 }
 
 function blurActiveField() {
@@ -1537,9 +1800,19 @@ function blurActiveField() {
   }
 }
 
+function getGreetingForLocalTime() {
+  const hour = new Date().getHours();
+  return (hour >= 4 && hour < 17) ? 'Bonjour' : 'Bonsoir';
+}
+
+function unlockEditableField(el) {
+  if (!el || !el.hasAttribute('data-unlock-edit')) return;
+  el.removeAttribute('readonly');
+}
+
 function showAuth() {
   hide('header');
-  transitionTo('screen-auth');
+  transitionTo('screen-auth', { smooth: true });
   clearInterval(S.countdownInterval);
   stopLeaderboardRefresh();
   requestAnimationFrame(() => blurActiveField());
@@ -1548,15 +1821,23 @@ function showAuth() {
 
 function showLobby() {
   show('header');
-  transitionTo('screen-lobby');
+  transitionTo('screen-lobby', { smooth: true });
+  $('lobby-greeting-text').textContent = getGreetingForLocalTime();
   $('lobby-username').textContent = S.user.username;
   loadLobbyData();
   startLeaderboardRefresh();
 }
 
+function showLeaderboardScreen() {
+  show('header');
+  transitionTo('screen-leaderboard', { smooth: true });
+  loadFullLeaderboard();
+  startLeaderboardRefresh();
+}
+
 function showGame() {
   show('header');
-  transitionTo('screen-game');
+  transitionTo('screen-game', { smooth: true });
   stopLeaderboardRefresh();
 }
 
@@ -1575,14 +1856,31 @@ async function loadLeaderboard() {
   try {
     const d = await api('GET', '/api/leaderboard');
     renderLeaderboard(d.top10, d.me);
-  } catch(e) { /* silent */ }
+  } catch(e) {
+    const el = $('leaderboard');
+    if (el) {
+      el.innerHTML = `<div class="lb-empty">${escHtml(e.error || 'Impossible de charger le classement.')}</div>`;
+    }
+  }
+}
+
+async function loadFullLeaderboard() {
+  try {
+    const d = await api('GET', '/api/leaderboard?full=1');
+    renderFullLeaderboard(d.players || []);
+  } catch(e) {
+    $('leaderboard-full-list').innerHTML = '<div class="leaderboard-full-empty">Impossible de charger le classement complet.</div>';
+  }
 }
 
 // ── Leaderboard auto-refresh (every 10s) ──────────────────────────────────────
 let _lbInterval = null;
 function startLeaderboardRefresh() {
   stopLeaderboardRefresh();
-  _lbInterval = setInterval(loadLeaderboard, 10000);
+  _lbInterval = setInterval(() => {
+    loadLeaderboard();
+    if (!$('screen-leaderboard').classList.contains('hidden')) loadFullLeaderboard();
+  }, 10000);
 }
 function stopLeaderboardRefresh() {
   if (_lbInterval) { clearInterval(_lbInterval); _lbInterval = null; }
@@ -1627,6 +1925,23 @@ function renderLeaderboard(top10, me) {
   el.innerHTML = rows + meRow;
 }
 
+function renderFullLeaderboard(players) {
+  const el = $('leaderboard-full-list');
+  if (!el) return;
+  if (!players || players.length === 0) {
+    el.innerHTML = '<div class="leaderboard-full-empty">Aucun joueur pour l’instant.</div>';
+    return;
+  }
+
+  el.innerHTML = players.map(p => `
+    <div class="leaderboard-full-row${p.isMe ? ' me' : ''}">
+      <span class="leaderboard-full-rank">${p.rank <= 3 ? ['🥇','🥈','🥉'][p.rank - 1] : `#${p.rank}`}</span>
+      <span class="leaderboard-full-name">${p.isMe ? '⭐ ' : ''}${escHtml(p.username)}</span>
+      <span class="leaderboard-full-balance">${p.balance.toLocaleString('fr-FR')} 🥞</span>
+    </div>
+  `).join('');
+}
+
 // Auth tabs
 document.querySelectorAll('.auth-tab').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1637,6 +1952,12 @@ document.querySelectorAll('.auth-tab').forEach(btn => {
     $('auth-submit').textContent = isLogin ? 'Se connecter' : "S'inscrire";
     hide('auth-error');
   });
+});
+
+document.querySelectorAll('[data-unlock-edit]').forEach(input => {
+  input.addEventListener('pointerdown', () => unlockEditableField(input), { passive: true });
+  input.addEventListener('touchstart', () => unlockEditableField(input), { passive: true });
+  input.addEventListener('focus', () => unlockEditableField(input));
 });
 
 $('auth-submit').addEventListener('click', async () => {
@@ -1678,6 +1999,9 @@ $('btn-logout').addEventListener('click', async () => {
   clearInterval(S.countdownInterval);
   showAuth();
 });
+
+$('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
+$('btn-back-lobby').addEventListener('click', showLobby);
 
 // ── Daily bonus ────────────────────────────────────────────────────────────────
 $('btn-daily').addEventListener('click', async () => {
@@ -1742,15 +2066,27 @@ document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
     const inp = $('bet-input');
     const add = chip.dataset.add;
+    const cap = getBetCap();
     if (add === 'clear') { inp.value = ''; return; }
+    if (!cap) { inp.value = ''; return; }
+    if (add === 'allin') { inp.value = cap; return; }
     const cur = parseInt(inp.value) || 0;
-    inp.value = cur + parseInt(add);
+    if (cur >= cap) return;
+    inp.value = Math.min(cur + parseInt(add), cap);
   });
 });
 
 // ── Deal ───────────────────────────────────────────────────────────────────────
-$('btn-deal').addEventListener('click', async () => {
-  const bet = parseInt($('bet-input').value);
+function getAllInBet() {
+  return getBetCap();
+}
+
+async function startGameFromInput(bet) {
+  const cap = getBetCap();
+  if (bet > cap) {
+    $('bet-input').value = cap || '';
+    bet = cap;
+  }
   if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
 
   $('btn-deal').disabled = true;
@@ -1765,6 +2101,22 @@ $('btn-deal').addEventListener('click', async () => {
   } finally {
     $('btn-deal').disabled = false;
   }
+}
+
+$('btn-deal').addEventListener('click', async () => {
+  const bet = parseInt($('bet-input').value);
+  await startGameFromInput(bet);
+});
+
+$('bet-input').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if ($('btn-deal').disabled) return;
+  $('btn-deal').click();
+});
+
+$('bet-input').addEventListener('input', () => {
+  syncBetInputLimit();
 });
 
 // ── Game rendering ─────────────────────────────────────────────────────────────
@@ -1958,13 +2310,18 @@ function renderGame() {
                outline:none;font-family:Georgia,serif;" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
+      <button class="btn-allin" id="btn-replay-allin">All-in</button>
     `;
     actionBar.appendChild(replayWrap);
 
-    replayWrap.querySelector('#btn-replay').addEventListener('click', async () => {
-      const bet = parseInt(replayWrap.querySelector('#replay-bet').value);
+    const replayBetInput = replayWrap.querySelector('#replay-bet');
+    const replayBtn = replayWrap.querySelector('#btn-replay');
+    const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
+
+    async function replayWithBet(bet) {
       if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
-      replayWrap.querySelector('#btn-replay').disabled = true;
+      replayBtn.disabled = true;
+      replayAllInBtn.disabled = true;
       try {
         await api('POST', '/api/game/clear');
         const d = await api('POST', '/api/game/start', { bet });
@@ -1973,8 +2330,27 @@ function renderGame() {
         renderGame();
       } catch(e) {
         toast(e.error || 'Erreur', 'error');
-        replayWrap.querySelector('#btn-replay').disabled = false;
+        replayBtn.disabled = false;
+        replayAllInBtn.disabled = false;
       }
+    }
+
+    replayBtn.addEventListener('click', async () => {
+      const bet = parseInt(replayBetInput.value);
+      await replayWithBet(bet);
+    });
+
+    replayAllInBtn.addEventListener('click', async () => {
+      const bet = getAllInBet();
+      replayBetInput.value = bet || '';
+      await replayWithBet(bet);
+    });
+
+    replayBetInput.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (replayBtn.disabled) return;
+      replayBtn.click();
     });
 
     // Retour accueil
