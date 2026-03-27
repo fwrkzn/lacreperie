@@ -773,17 +773,22 @@ body{
 @media(max-width:640px){
   .action-bar{
     max-width: 100%;
-    gap: 10px;
+    gap: 6px;
   }
   .action-bar .btn-action,
   .action-bar .btn-new-game,
   .action-bar .btn-allin{
-    flex: 0 1 100%;
-    width: min(260px, 100%);
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 100%;
+    padding: 9px 14px;
+    font-size: 12px;
+    letter-spacing: 1px;
   }
   .replay-wrap{
     flex-direction: column;
     align-items: stretch;
+    gap: 4px;
   }
   .replay-wrap label{
     text-align: center;
@@ -791,6 +796,15 @@ body{
   .replay-wrap input{
     width: min(260px, 100%);
     align-self: center;
+  }
+  .replay-wrap > span{
+    line-height: 1;
+    margin: -1px 0 0;
+  }
+  .replay-wrap > .btn-new-game,
+  .replay-wrap > .btn-allin{
+    align-self: center;
+    margin-top: 0;
   }
 }
 
@@ -889,12 +903,57 @@ body{
   .chip{ width:42px; height:42px; font-size:10px }
   .lobby-greeting h2{ font-size:22px }
   .btn-action{ font-size:12px; padding:10px 6px; min-width:60px }
+  .game-table{ padding: 10px 10px 12px }
+  .dealer-zone,
+  .player-zone,
+  .middle-zone{ gap: 5px }
+  .dealer-label{ font-size: 10px; letter-spacing: 2px }
+  .hand-score{ font-size: 14px; min-height: 20px }
+  .cards-row{ gap: 4px; min-height: calc(var(--card-h) + 2px) }
+  .hands-container{ gap: 10px }
+  .hand-wrapper{ gap: 4px; padding: 5px }
+  .result-banner{
+    padding: 5px 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin: 2px 0;
+  }
+  .bet-chips-display{
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+  .replay-wrap input{
+    width: min(220px, 100%);
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+  .btn-new-game,
+  .btn-allin{
+    padding: 8px 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
   .card-suit{ font-size:20px }
   .card-rank,.card-rank-br{ font-size:12px }
 }
 @media(max-width:360px){
   :root{ --card-w: 50px; --card-h: 74px }
   .bonus-row{ grid-template-columns: 1fr }
+  .game-table{ padding: 8px 8px 10px }
+  .hands-container{ gap: 8px }
+  .hand-wrapper{ padding: 4px }
+  .result-banner{ font-size: 10px; padding: 4px 10px }
+  .replay-wrap input{
+    width: min(190px, 100%);
+    font-size: 15px;
+    padding: 7px 10px;
+  }
+  .btn-new-game,
+  .btn-allin{
+    padding: 7px 10px;
+    font-size: 10px;
+  }
 }
 
 /* ── Background floating suits ───────────────────────────────────────────── */
