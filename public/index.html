@@ -1378,6 +1378,15 @@ body{
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.online-dot{
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #2ecc71;
+  margin-right: 5px;
+  vertical-align: middle;
+  box-shadow: 0 0 4px rgba(46,204,113,.5);
+}
 .lb-row.me .lb-name{ color: var(--gold2); font-weight: bold }
 .lb-balance{
   font-size: 13px;
@@ -2077,6 +2086,7 @@ function showAuth() {
   transitionTo('screen-auth', { smooth: true });
   clearInterval(S.countdownInterval);
   stopLeaderboardRefresh();
+  stopHeartbeat();
   requestAnimationFrame(() => blurActiveField());
   setTimeout(blurActiveField, 50);
 }
@@ -2088,6 +2098,7 @@ function showLobby() {
   $('lobby-username').textContent = S.user.username;
   loadLobbyData();
   startLeaderboardRefresh();
+  startHeartbeat();
 }
 
 function showLeaderboardScreen() {
@@ -2142,6 +2153,17 @@ async function loadFullLeaderboard() {
   }
 }
 
+// ── Heartbeat (online presence) ───────────────────────────────────────────────
+let _hbInterval = null;
+function startHeartbeat() {
+  stopHeartbeat();
+  api('POST', '/api/heartbeat').catch(() => {});
+  _hbInterval = setInterval(() => api('POST', '/api/heartbeat').catch(() => {}), 30000);
+}
+function stopHeartbeat() {
+  if (_hbInterval) { clearInterval(_hbInterval); _hbInterval = null; }
+}
+
 // ── Leaderboard auto-refresh (every 10s) ──────────────────────────────────────
 let _lbInterval = null;
 function startLeaderboardRefresh() {
@@ -2175,10 +2197,12 @@ function renderLeaderboard(top10, me) {
   const rankClass = r => r === 1 ? 'gold' : r === 2 ? 'silver' : r === 3 ? 'bronze' : '';
   const rankLabel = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
 
+  const dot = p => p.online ? '<span class="online-dot"></span>' : '';
+
   const rows = top10.map(p => `
     <div class="lb-row${p.isMe ? ' me' : ''}">
       <span class="lb-rank ${rankClass(p.rank)}">${rankLabel(p.rank)}</span>
-      <span class="lb-name">${escHtml(p.username)}</span>
+      <span class="lb-name">${dot(p)}${escHtml(p.username)}</span>
       <span class="lb-balance">${p.balance.toLocaleString('fr-FR')} 🥞</span>
     </div>
   `).join('');
@@ -2186,7 +2210,7 @@ function renderLeaderboard(top10, me) {
   const meRow = me ? `
     <div class="lb-row me separator">
       <span class="lb-rank">#${me.rank}</span>
-      <span class="lb-name">⭐ ${escHtml(me.username)}</span>
+      <span class="lb-name">${dot(me)}⭐ ${escHtml(me.username)}</span>
       <span class="lb-balance">${me.balance.toLocaleString('fr-FR')} 🥞</span>
     </div>
   ` : '';
@@ -2205,7 +2229,7 @@ function renderFullLeaderboard(players) {
   el.innerHTML = players.map(p => `
     <div class="leaderboard-full-row${p.isMe ? ' me' : ''}">
       <span class="leaderboard-full-rank">${p.rank <= 3 ? ['🥇','🥈','🥉'][p.rank - 1] : `#${p.rank}`}</span>
-      <span class="leaderboard-full-name">${p.isMe ? '⭐ ' : ''}${escHtml(p.username)}</span>
+      <span class="leaderboard-full-name">${p.online ? '<span class="online-dot"></span>' : ''}${p.isMe ? '⭐ ' : ''}${escHtml(p.username)}</span>
       <span class="leaderboard-full-balance">${p.balance.toLocaleString('fr-FR')} 🥞</span>
     </div>
   `).join('');
@@ -2395,6 +2419,14 @@ $('bet-input').addEventListener('input', () => {
 // ── Game rendering ─────────────────────────────────────────────────────────────
 const SUIT_COLORS = { '♥': true, '♦': true, '♠': false, '♣': false };
 
+const _cardSound = new Audio('/assets/sounds/card_pick_sound.mp3');
+function playCardSound() {
+  const s = _cardSound.cloneNode();
+  s.volume = 0.5;
+  s.playbackRate = 2;
+  s.play().catch(() => {});
+}
+
 function buildCard(card, delay = 0) {
   if (!card || card.hidden) {
     const el = document.createElement('div');
@@ -2473,6 +2505,7 @@ function renderGameLoading() {
 function renderGame() {
   const gs = S.game;
   if (!gs) return;
+  playCardSound();
 
   const dealerCards = $('dealer-cards');
   const dealerScore = $('dealer-score');
