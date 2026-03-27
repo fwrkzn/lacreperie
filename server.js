@@ -183,6 +183,7 @@ async function deductBalance(userId, amount, { burnBonus = false } = {}) {
   const { data, error } = await supabase.rpc('deduct_balance', { p_user_id: userId, p_amount: amount, p_burn_bonus: burnBonus });
   if (error) throw { error: 'Solde insuffisant' };
   _ucDel(userId); // invalidate cache — balance changed
+  _lbc.exp = 0;
   return data;
 }
 
@@ -195,6 +196,7 @@ async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
   });
   if (error) throw error;
   _ucDel(userId); // invalidate cache — balance changed
+  _lbc.exp = 0;
   return data;
 }
 
@@ -488,33 +490,35 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const _lbc = { data: null, exp: 0 };
-app.get('/api/leaderboard', requireAuth, async (req, res) => {
+async function getLeaderboardData() {
   const now = Date.now();
-  if (_lbc.data && _lbc.exp > now) {
-    const sorted = _lbc.data;
-    const top10 = sorted.slice(0, 10).map((u, i) => ({
-      rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
-    }));
-    const myRank = sorted.findIndex(u => u.id === req.user.id) + 1;
-    const me = myRank > 0 && myRank > 10
-      ? { rank: myRank, username: req.user.username, balance: req.user.balance, isMe: true }
-      : null;
-    return res.json({ top10, me });
-  }
+  if (_lbc.data && _lbc.exp > now) return _lbc.data;
 
   const { data: sorted } = await supabase
     .from('users')
     .select('id, username, balance')
     .eq('is_admin', false)
     .order('balance', { ascending: false })
-    .limit(50);
+    .limit(200);
 
-  if (!sorted) return res.json({ top10: [], me: null });
-
-  _lbc.data = sorted;
+  _lbc.data = sorted || [];
   _lbc.exp = now + 10_000;
+  return _lbc.data;
+}
 
-  const top10  = sorted.slice(0, 10).map((u, i) => ({
+app.get('/api/leaderboard', requireAuth, async (req, res) => {
+  const sorted = await getLeaderboardData();
+  const wantsFull = req.query.full === '1';
+  if (!sorted.length) return res.json({ top10: [], me: null });
+
+  if (wantsFull) {
+    const players = sorted.map((u, i) => ({
+      rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
+    }));
+    return res.json({ players });
+  }
+
+  const top10 = sorted.slice(0, 10).map((u, i) => ({
     rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
   }));
   const myRank = sorted.findIndex(u => u.id === req.user.id) + 1;
