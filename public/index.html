@@ -230,6 +230,11 @@ body{
   width: 100%;
   margin: 0 auto;
 }
+.lobby-content{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 #screen-lobby h2{
   color: var(--gold);
   letter-spacing: 3px;
@@ -852,28 +857,53 @@ body{
   max-width: 600px;
   width: 100%;
 }
+.lobby-right{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
 .lobby-side {
   display: none;
 }
 @media (min-width: 1080px) {
   #screen-lobby {
-    flex-direction: row;
     max-width: none;
     width: 100%;
     padding: 24px 28px;
+  }
+  .lobby-content{
+    display: grid;
+    grid-template-columns: 280px minmax(0, 600px) 280px;
+    grid-template-areas: "side main right";
     gap: 20px;
     align-items: flex-start;
     justify-content: center;
   }
-  .lobby-main { flex-shrink: 0; }
+  .lobby-greeting{
+    width: 100%;
+    max-width: none;
+  }
+  .lobby-main {
+    grid-area: main;
+    flex-shrink: 0;
+    max-width: 600px;
+  }
   .lobby-side {
     display: flex;
+    grid-area: side;
     flex-direction: column;
     gap: 14px;
-    width: 220px;
+    width: 280px;
     flex-shrink: 0;
     padding-top: 6px;
     animation: fadeIn .7s ease;
+  }
+  .lobby-right{
+    grid-area: right;
+    width: 280px;
+    flex-shrink: 0;
+    padding-top: 6px;
   }
 }
 
@@ -1083,6 +1113,17 @@ body{
   background: var(--gold); color: #1a1a2e;
 }
 .gift-row .gift-amount{ width: 100px; text-align: center; font-weight: bold; color: var(--gold2); font-family: Georgia, serif }
+.gift-section .gift-transferable{
+  min-height: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 0;
+  line-height: 1.3;
+}
+.gift-section .gift-transferable:empty{
+  display: none;
+}
 .btn-gift{
   padding: 10px 18px;
   background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
@@ -1157,6 +1198,13 @@ body{
 <!-- LOBBY ─────────────────────────────────────────────────────────────────── -->
 <div id="screen-lobby" class="screen hidden">
 
+  <div class="lobby-greeting">
+    <h2>Bonsoir, <span id="lobby-username">Joueur</span> 👋</h2>
+    <p>Bienvenue au Casino des Crêpes</p>
+  </div>
+
+  <div class="lobby-content">
+
   <!-- Left panel (desktop only) -->
   <div class="lobby-side lobby-side-left">
     <div class="panel-block">
@@ -1179,15 +1227,32 @@ body{
         <span>♣</span>
       </div>
     </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>💡</span><h3>Stratégie de Base</h3></div>
+      <div class="panel-body">
+        <div class="tip-item"><span class="ti">◆</span><span>Toujours séparer les <strong>As</strong> et les <strong>8</strong></span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Doubler sur <strong>11</strong> vs croupier &lt; 11</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>S'arrêter sur <strong>17+</strong>, toujours</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Tirer sur <strong>16</strong> vs As du croupier</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Ne jamais séparer les <strong>10</strong></span></div>
+      </div>
+    </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
+      <div class="panel-body">
+        <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
+        <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
+          Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
+          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
+        </p>
+      </div>
+    </div>
   </div>
 
   <!-- Main content -->
   <div class="lobby-main">
-  <div class="lobby-greeting">
-    <h2>Bonsoir, <span id="lobby-username">Joueur</span> 👋</h2>
-    <p>Bienvenue au Casino des Crêpes</p>
-  </div>
-
   <h2>Récompenses Quotidiennes</h2>
   <div class="bonus-row">
     <!-- Daily -->
@@ -1241,48 +1306,24 @@ body{
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-gift" id="btn-gift">Envoyer</button>
     </div>
-    <p id="gift-transferable" style="text-align:center;font-size:12px;color:var(--muted);margin:0"></p>
+    <p class="gift-transferable" id="gift-transferable"></p>
   </div>
-
-  <h2>Classement 🏆</h2>
-  <div class="leaderboard" id="leaderboard">
-    <div class="lb-empty">Chargement…</div>
-  </div>
-
   </div><!-- /.lobby-main -->
 
-  <!-- Right panel (desktop only) -->
-  <div class="lobby-side lobby-side-right">
-    <div class="panel-block">
-      <div class="panel-head"><span>💡</span><h3>Stratégie de Base</h3></div>
-      <div class="panel-body">
-        <div class="tip-item"><span class="ti">◆</span><span>Toujours séparer les <strong>As</strong> et les <strong>8</strong></span></div>
-        <div class="tip-item"><span class="ti">◆</span><span>Doubler sur <strong>11</strong> vs croupier &lt; 11</span></div>
-        <div class="tip-item"><span class="ti">◆</span><span>S'arrêter sur <strong>17+</strong>, toujours</span></div>
-        <div class="tip-item"><span class="ti">◆</span><span>Tirer sur <strong>16</strong> vs As du croupier</span></div>
-        <div class="tip-item"><span class="ti">◆</span><span>Ne jamais séparer les <strong>10</strong></span></div>
-      </div>
+  <div class="lobby-right">
+    <h2>Classement 🏆</h2>
+    <div class="leaderboard" id="leaderboard">
+      <div class="lb-empty">Chargement…</div>
     </div>
-    <div class="panel-block">
-      <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
-      <div class="panel-body">
-        <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
-        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
-        <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
-        <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
-          Bonus disponible toutes les <strong style="color:var(--text)">24h</strong>.<br>
-          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
-        </p>
-      </div>
-    </div>
-  </div><!-- /.lobby-side-right -->
+  </div>
+
+  </div><!-- /.lobby-content -->
 
 </div>
 
 <!-- GAME ──────────────────────────────────────────────────────────────────── -->
 <div id="screen-game" class="screen hidden">
   <div class="game-table">
-
     <!-- Dealer -->
     <div class="dealer-zone">
       <div class="dealer-label">Croupier</div>
@@ -1319,6 +1360,9 @@ const S = {
   balance: 0,
   dailyCooldown: 0,
   minigameCooldown: 0,
+  serverTimeOffsetMs: 0,
+  dailyAvailableAtMs: 0,
+  minigameAvailableAtMs: 0,
   currentTab: 'login',
   countdownInterval: null,
   busy: false,
@@ -1388,7 +1432,7 @@ function updateTransferableHint() {
   const nt = S.user?.nonTransferable || 0;
   const transferable = Math.max(0, (S.balance || 0) - nt);
   el.textContent = nt > 0
-    ? `Transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (bonus de bienvenue non transférable)`
+    ? `Transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (cadeaux et bonus non transférables)`
     : '';
 }
 
@@ -1403,39 +1447,66 @@ function formatTime(s) {
   return `${sec}s`;
 }
 
+function syncServerClock(serverNow) {
+  if (!Number.isFinite(serverNow)) return;
+  S.serverTimeOffsetMs = (serverNow * 1000) - Date.now();
+}
+
+function getServerNowMs() {
+  return Date.now() + S.serverTimeOffsetMs;
+}
+
+function getRemainingCooldownSeconds(availableAtMs) {
+  if (!availableAtMs) return 0;
+  return Math.max(0, Math.ceil((availableAtMs - getServerNowMs()) / 1000));
+}
+
+function applyCooldownState({ serverNow, dailyCooldown, minigameCooldown, dailyAvailableAt, minigameAvailableAt } = {}) {
+  syncServerClock(serverNow);
+  const baseServerNow = Number.isFinite(serverNow)
+    ? serverNow
+    : Math.floor(getServerNowMs() / 1000);
+
+  if (Number.isFinite(dailyAvailableAt)) {
+    S.dailyAvailableAtMs = dailyAvailableAt * 1000;
+  } else if (Number.isFinite(dailyCooldown)) {
+    S.dailyAvailableAtMs = (baseServerNow + dailyCooldown) * 1000;
+  }
+
+  if (Number.isFinite(minigameAvailableAt)) {
+    S.minigameAvailableAtMs = minigameAvailableAt * 1000;
+  } else if (Number.isFinite(minigameCooldown)) {
+    S.minigameAvailableAtMs = (baseServerNow + minigameCooldown) * 1000;
+  }
+}
+
+function renderCooldowns() {
+  S.dailyCooldown = getRemainingCooldownSeconds(S.dailyAvailableAtMs);
+  S.minigameCooldown = getRemainingCooldownSeconds(S.minigameAvailableAtMs);
+
+  $('btn-daily').disabled = S.dailyCooldown > 0;
+  $('daily-countdown').textContent = S.dailyCooldown > 0
+    ? `Disponible dans ${formatTime(S.dailyCooldown)}`
+    : '';
+
+  const sp = $('spatula-emoji');
+  const btn = $('btn-minigame');
+  if (S.minigameCooldown > 0) {
+    sp.classList.add('disabled');
+    if (btn) btn.disabled = true;
+    $('minigame-countdown').textContent = `Recharge: ${formatTime(S.minigameCooldown)}`;
+  } else {
+    sp.classList.remove('disabled');
+    if (btn) btn.disabled = false;
+    $('minigame-countdown').textContent = 'Prêt !';
+  }
+}
+
 function startCountdowns() {
   clearInterval(S.countdownInterval);
+  renderCooldowns();
   S.countdownInterval = setInterval(() => {
-    let dailyChanged = false, minigameChanged = false;
-    if (S.dailyCooldown > 0) {
-      S.dailyCooldown--;
-      dailyChanged = true;
-    } else if (S.dailyCooldown === 0) {
-      dailyChanged = true;
-      S.dailyCooldown = -1;
-    }
-    if (dailyChanged) {
-      const fmt = S.dailyCooldown > 0 ? formatTime(S.dailyCooldown) : '';
-      $('daily-countdown').textContent = fmt ? `Disponible dans ${fmt}` : '';
-      $('btn-daily').disabled = S.dailyCooldown > 0;
-    }
-    if (S.minigameCooldown > 0) {
-      S.minigameCooldown--;
-      minigameChanged = true;
-    } else if (S.minigameCooldown === 0) {
-      minigameChanged = true;
-      S.minigameCooldown = -1;
-    }
-    if (minigameChanged) {
-      const sp = $('spatula-emoji'), btn = $('btn-minigame');
-      if (S.minigameCooldown <= 0) {
-        sp.classList.remove('disabled');
-        if (btn) btn.disabled = false;
-        $('minigame-countdown').textContent = 'Prêt !';
-      } else {
-        $('minigame-countdown').textContent = `Recharge: ${formatTime(S.minigameCooldown)}`;
-      }
-    }
+    renderCooldowns();
   }, 1000);
 }
 
@@ -1459,11 +1530,20 @@ function transitionTo(screenId) {
   });
 }
 
+function blurActiveField() {
+  const el = document.activeElement;
+  if (el && typeof el.blur === 'function' && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) {
+    el.blur();
+  }
+}
+
 function showAuth() {
   hide('header');
   transitionTo('screen-auth');
   clearInterval(S.countdownInterval);
   stopLeaderboardRefresh();
+  requestAnimationFrame(() => blurActiveField());
+  setTimeout(blurActiveField, 50);
 }
 
 function showLobby() {
@@ -1484,24 +1564,7 @@ async function loadLobbyData() {
   try {
     const d = await api('GET', '/api/user/me');
     setBalance(d.user.balance);
-    S.dailyCooldown    = d.user.dailyCooldown;
-    S.minigameCooldown = d.user.minigameCooldown;
-
-    $('btn-daily').disabled = S.dailyCooldown > 0;
-    $('daily-countdown').textContent = S.dailyCooldown > 0
-      ? `Disponible dans ${formatTime(S.dailyCooldown)}` : '';
-
-    const sp  = $('spatula-emoji');
-    const btn = $('btn-minigame');
-    if (S.minigameCooldown > 0) {
-      sp.classList.add('disabled');
-      if (btn) btn.disabled = true;
-      $('minigame-countdown').textContent = `Recharge: ${formatTime(S.minigameCooldown)}`;
-    } else {
-      sp.classList.remove('disabled');
-      if (btn) btn.disabled = false;
-      $('minigame-countdown').textContent = 'Prêt !';
-    }
+    applyCooldownState({ serverNow: d.serverNow, ...d.user });
     startCountdowns();
   } catch(e) { /* silent */ }
 
@@ -1622,13 +1685,12 @@ $('btn-daily').addEventListener('click', async () => {
   try {
     const d = await api('POST', '/api/user/daily-bonus');
     setBalance(d.balance);
-    S.dailyCooldown = 86400;
-    $('daily-countdown').textContent = `Disponible dans ${formatTime(S.dailyCooldown)}`;
+    applyCooldownState({ serverNow: d.serverNow, dailyCooldown: d.cooldown, dailyAvailableAt: d.availableAt });
     toast('🌅 +2 000 Crêpes ! Bonus quotidien réclamé !', 'gold', 3500);
     startCountdowns();
     loadLeaderboard();
   } catch(e) {
-    S.dailyCooldown = e.cooldown || 86400;
+    applyCooldownState({ serverNow: e.serverNow, dailyCooldown: e.cooldown, dailyAvailableAt: e.availableAt });
     toast(e.error || 'Erreur', 'error');
     startCountdowns();
   }
@@ -1650,7 +1712,7 @@ async function playMinigame() {
   try {
     const d = await api('POST', '/api/user/minigame');
     setBalance(d.balance);
-    S.minigameCooldown = 120;
+    applyCooldownState({ serverNow: d.serverNow, minigameCooldown: d.cooldown, minigameAvailableAt: d.availableAt });
 
     // Floating reward
     const fl = document.createElement('div');
@@ -1662,11 +1724,10 @@ async function playMinigame() {
     if (d.reward >= 1000) toast(`🎉 JACKPOT ! +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4000);
     else toast(`🍳 +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'success');
 
-    $('minigame-countdown').textContent = `Recharge: ${formatTime(120)}`;
     startCountdowns();
     loadLeaderboard();
   } catch(e) {
-    S.minigameCooldown = e.cooldown || 120;
+    applyCooldownState({ serverNow: e.serverNow, minigameCooldown: e.cooldown, minigameAvailableAt: e.availableAt });
     toast(e.error || 'Erreur', 'error');
     startCountdowns();
   } finally {
@@ -2031,8 +2092,7 @@ async function init() {
     ]);
     S.user = { id: d.user.id, username: d.user.username, nonTransferable: d.user.nonTransferable || 0 };
     setBalance(d.user.balance);
-    S.dailyCooldown    = d.user.dailyCooldown;
-    S.minigameCooldown = d.user.minigameCooldown;
+    applyCooldownState({ serverNow: d.serverNow, ...d.user });
 
     // Wait for minimum loading time
     const elapsed = Date.now() - loadingStart;
@@ -2069,26 +2129,26 @@ init();
 // ── Background floating suit symbols ─────────────────────────────────────────
 (function() {
   const bg = document.getElementById('casino-bg');
-  const defs = [
-    { s:'♠', c:'rgba(201,168,76,.055)' }, { s:'♥', c:'rgba(180,40,40,.055)' },
-    { s:'♦', c:'rgba(180,40,40,.045)' }, { s:'♣', c:'rgba(201,168,76,.045)' },
-    { s:'♠', c:'rgba(201,168,76,.04)'  }, { s:'♥', c:'rgba(180,40,40,.04)'  },
-    { s:'♦', c:'rgba(201,168,76,.035)' }, { s:'♣', c:'rgba(180,40,40,.03)'  },
-    { s:'♠', c:'rgba(201,168,76,.025)' }, { s:'♥', c:'rgba(180,40,40,.025)' },
-    { s:'♦', c:'rgba(180,40,40,.02)'   }, { s:'♣', c:'rgba(201,168,76,.02)' },
-  ];
-  defs.forEach((d, i) => {
-    const el  = document.createElement('span');
+  const suits = ['♠','♥','♦','♣'];
+  const goldC = 'rgba(201,168,76,';
+  const redC  = 'rgba(180,40,40,';
+  const count = 80;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
     el.className = 'suit';
-    el.textContent = d.s;
-    const x   = 4 + (i / defs.length) * 92;
-    const sz  = 14 + Math.random() * 22;
-    const dur = 14 + Math.random() * 16;
-    const del = -(i * (dur / defs.length));
-    const rot = (Math.random() > .5 ? '' : '-') + (90 + Math.floor(Math.random() * 180)) + 'deg';
-    el.style.cssText = `--x:${x}%; --size:${sz}px; --color:${d.c}; --dur:${dur}s; --delay:${del}s; --rot:${rot}`;
+    const suitIdx = i % 4;
+    el.textContent = suits[suitIdx];
+    const isRed = suitIdx === 1 || suitIdx === 2;
+    const base = isRed ? redC : goldC;
+    const opacity = 0.02 + Math.random() * 0.05;
+    const x   = 2 + Math.random() * 96;
+    const sz  = 12 + Math.random() * 28;
+    const dur = 12 + Math.random() * 20;
+    const del = -(Math.random() * dur);
+    const rot = (Math.random() > .5 ? '' : '-') + (60 + Math.floor(Math.random() * 240)) + 'deg';
+    el.style.cssText = `--x:${x}%; --size:${sz}px; --color:${base}${opacity}); --dur:${dur}s; --delay:${del}s; --rot:${rot}`;
     bg.appendChild(el);
-  });
+  }
 })();
 </script>
 </body>

@@ -186,9 +186,13 @@ async function deductBalance(userId, amount, { burnBonus = false } = {}) {
   return data;
 }
 
-async function addBalance(userId, amount) {
+async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
   if (amount <= 0) return null;
-  const { data, error } = await supabase.rpc('add_balance', { p_user_id: userId, p_amount: amount });
+  const { data, error } = await supabase.rpc('add_balance', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_non_transferable: nonTransferable,
+  });
   if (error) throw error;
   _ucDel(userId); // invalidate cache — balance changed
   return data;
@@ -266,6 +270,54 @@ function handValue(hand) {
 
 function isBlackjack(hand) { return hand.length === 2 && handValue(hand) === 21; }
 function isBust(hand)      { return handValue(hand) > 21; }
+
+function getNowSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function getStartOfServerDaySeconds(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return Math.floor(d.getTime() / 1000);
+}
+
+function getNextServerDaySeconds(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(24, 0, 0, 0);
+  return Math.floor(d.getTime() / 1000);
+}
+
+function isSameServerDay(tsA, tsB) {
+  if (!tsA || !tsB) return false;
+  const a = new Date(tsA * 1000);
+  const b = new Date(tsB * 1000);
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function getDailyCooldownSeconds(lastClaim, now = getNowSeconds()) {
+  if (!lastClaim || !isSameServerDay(lastClaim, now)) return 0;
+  return Math.max(0, getNextServerDaySeconds(new Date(now * 1000)) - now);
+}
+
+function getMinigameCooldownSeconds(lastClaim, now = getNowSeconds()) {
+  if (!lastClaim) return 0;
+  return Math.max(0, (lastClaim + 120) - now);
+}
+
+function buildCooldowns(u, now = getNowSeconds()) {
+  const dailyCooldown = getDailyCooldownSeconds(u.last_daily_claim, now);
+  const minigameCooldown = getMinigameCooldownSeconds(u.last_minigame_claim, now);
+  return {
+    dailyCooldown,
+    minigameCooldown,
+    dailyAvailableAt: now + dailyCooldown,
+    minigameAvailableAt: now + minigameCooldown,
+  };
+}
 
 function resolveGame(gs) {
   const dealerVal = handValue(gs.dealerHand);
@@ -352,13 +404,14 @@ app.post('/api/auth/logout', (req, res) => {
 // ── User Routes ───────────────────────────────────────────────────────────────
 function respondMe(req, res) {
   const u   = req.user;
-  const now = Math.floor(Date.now() / 1000);
+  const now = getNowSeconds();
+  const cooldowns = buildCooldowns(u, now);
   res.json({
+    serverNow: now,
     user: {
       id: u.id, username: u.username, balance: u.balance,
       nonTransferable: u.non_transferable || 0,
-      dailyCooldown:    Math.max(0, (u.last_daily_claim    + 86400) - now),
-      minigameCooldown: Math.max(0, (u.last_minigame_claim + 120)   - now),
+      ...cooldowns,
     }
   });
 }
@@ -366,24 +419,39 @@ app.get('/api/auth/me',  requireAuth, respondMe);
 app.get('/api/user/me',  requireAuth, respondMe);
 
 app.post('/api/user/daily-bonus', requireAuth, async (req, res) => {
-  const now = Math.floor(Date.now() / 1000);
-  // Atomic: update only succeeds if cooldown has passed — prevents double-claim race condition
+  const now = getNowSeconds();
+  const startOfToday = getStartOfServerDaySeconds(new Date(now * 1000));
+
+  // Atomic: update only succeeds if the last claim is before today's server date.
   const { data } = await supabase.from('users')
     .update({ last_daily_claim: now })
     .eq('id', req.user.id)
-    .lt('last_daily_claim', now - 86400)
+    .or(`last_daily_claim.is.null,last_daily_claim.lt.${startOfToday}`)
     .select('last_daily_claim').maybeSingle();
 
   if (!data) {
-    const cooldown = (req.user.last_daily_claim + 86400) - now;
-    return res.status(429).json({ error: 'Bonus déjà réclamé', cooldown: Math.max(0, cooldown) });
+    const cooldown = getDailyCooldownSeconds(req.user.last_daily_claim, now);
+    return res.status(429).json({
+      error: 'Bonus déjà réclamé aujourd’hui',
+      serverNow: now,
+      cooldown,
+      availableAt: now + cooldown,
+    });
   }
-  const newBal = await addBalance(req.user.id, 2000);
-  res.json({ success: true, bonus: 2000, balance: newBal });
+  const newBal = await addBalance(req.user.id, 2000, { nonTransferable: 2000 });
+  const cooldown = getDailyCooldownSeconds(now, now);
+  res.json({
+    success: true,
+    bonus: 2000,
+    balance: newBal,
+    serverNow: now,
+    cooldown,
+    availableAt: now + cooldown,
+  });
 });
 
 app.post('/api/user/minigame', requireAuth, async (req, res) => {
-  const now = Math.floor(Date.now() / 1000);
+  const now = getNowSeconds();
   // Atomic: update only succeeds if cooldown has passed — prevents double-claim race condition
   const { data } = await supabase.from('users')
     .update({ last_minigame_claim: now })
@@ -392,8 +460,13 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
     .select('last_minigame_claim').maybeSingle();
 
   if (!data) {
-    const cooldown = (req.user.last_minigame_claim + 120) - now;
-    return res.status(429).json({ error: 'Spatule en recharge', cooldown: Math.max(0, cooldown) });
+    const cooldown = getMinigameCooldownSeconds(req.user.last_minigame_claim, now);
+    return res.status(429).json({
+      error: 'Spatule en recharge',
+      serverNow: now,
+      cooldown,
+      availableAt: now + cooldown,
+    });
   }
   const roll = Math.random();
   let reward;
@@ -401,8 +474,16 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
   else if (roll < 0.95) reward = 101  + Math.floor(Math.random() * 900);
   else                  reward = 1001 + Math.floor(Math.random() * 4000);
 
-  const newBal = await addBalance(req.user.id, reward);
-  res.json({ success: true, reward, balance: newBal });
+  const newBal = await addBalance(req.user.id, reward, { nonTransferable: reward });
+  const cooldown = getMinigameCooldownSeconds(now, now);
+  res.json({
+    success: true,
+    reward,
+    balance: newBal,
+    serverNow: now,
+    cooldown,
+    availableAt: now + cooldown,
+  });
 });
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
@@ -485,8 +566,8 @@ app.post('/api/user/transfer', requireAuth, transferLimiter, async (req, res) =>
   const transferable = Math.max(0, sender.balance - (sender.non_transferable || 0));
   if (amt > transferable)
     return res.status(400).json({ error: transferable === 0
-      ? 'Vous ne pouvez pas transférer votre bonus de bienvenue'
-      : `Montant transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (le bonus de bienvenue n'est pas transférable)` });
+      ? 'Vous ne pouvez pas transférer vos bonus non transférables'
+      : `Montant transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (les bonus non transférables sont exclus)` });
 
   try {
     const newBal = await deductBalance(sender.id, amt);
@@ -750,7 +831,7 @@ app.post('/api/admin/users/:id/reset', requireAdmin, adminLimiter, async (req, r
   const target = await getUserById(id);
   if (!target || target.is_admin) return res.status(404).json({ error: 'Joueur introuvable' });
 
-  await supabase.from('users').update({ balance: 3000 }).eq('id', id);
+  await supabase.from('users').update({ balance: 3000, non_transferable: 3000 }).eq('id', id);
   await supabase.from('active_games').delete().eq('user_id', id);
 
   console.log(`[ADMIN] ${req.user.username} → reset compte de ${target.username}`);
