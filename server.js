@@ -44,6 +44,7 @@ app.use(helmet({
       imgSrc:     ["'self'", "data:"],
       connectSrc: ["'self'"],
       fontSrc:    ["'self'"],
+      mediaSrc:   ["'self'"],
       objectSrc:  ["'none'"],
       frameSrc:   ["'none'"],
     },
@@ -51,6 +52,7 @@ app.use(helmet({
 }));
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.set('trust proxy', 1);
 // ── Custom Supabase session store with in-memory cache ────────────────────────
 class SupabaseStore extends session.Store {
@@ -198,6 +200,20 @@ async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
   _ucDel(userId); // invalidate cache — balance changed
   _lbc.exp = 0;
   return data;
+}
+
+// ── Online presence (in-memory heartbeat map) ────────────────────────────────
+const _online = new Map(); // userId → timestamp
+const ONLINE_TIMEOUT = 60_000; // 60s without heartbeat → offline
+
+app.post('/api/heartbeat', requireAuth, (req, res) => {
+  _online.set(req.user.id, Date.now());
+  res.json({ ok: true });
+});
+
+function isOnline(userId) {
+  const ts = _online.get(userId);
+  return ts && (Date.now() - ts) < ONLINE_TIMEOUT;
 }
 
 // ── Game state cache (avoids re-reading 10KB shoe JSON from Supabase each action)
@@ -526,17 +542,17 @@ app.get('/api/leaderboard', requireAuth, async (req, res) => {
 
   if (wantsFull) {
     const players = sorted.map((u, i) => ({
-      rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
+      rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id, online: isOnline(u.id),
     }));
     return res.json({ players });
   }
 
   const top10 = sorted.slice(0, 10).map((u, i) => ({
-    rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id,
+    rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id, online: isOnline(u.id),
   }));
   const myRank = sorted.findIndex(u => u.id === req.user.id) + 1;
   const me = myRank > 0 && myRank > 10
-    ? { rank: myRank, username: req.user.username, balance: req.user.balance, isMe: true }
+    ? { rank: myRank, username: req.user.username, balance: req.user.balance, isMe: true, online: true }
     : null;
 
   res.json({ top10, me });
