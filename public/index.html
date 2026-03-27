@@ -703,6 +703,12 @@ body{
   width: 100%;
   margin-top: 4px;
 }
+.replay-secondary{
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 10px 0;
+}
 .replay-wrap label{
   color: var(--muted);
   font-size: 11px;
@@ -871,7 +877,7 @@ body{
   }
   .game-table{
     justify-content: space-between;
-    padding: 12px 12px 42px;
+    padding: 12px 12px 84px;
     gap: 10px;
   }
   .dealer-zone,
@@ -900,8 +906,11 @@ body{
   .replay-wrap{
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
+    gap: 10px;
     margin-top: 2px;
+  }
+  .replay-secondary{
+    margin: 14px 0;
   }
   .replay-wrap label{
     text-align: center;
@@ -1015,10 +1024,25 @@ body{
   #header-logo span{ display:none }
   .chip{ width:42px; height:42px; font-size:10px }
   .lobby-greeting h2{ font-size:22px }
+  .bonus-card{
+    padding: 12px;
+    gap: 6px;
+  }
+  .bonus-card .icon{ font-size: 24px }
+  .bonus-card h3{
+    font-size: 10px;
+    letter-spacing: 1.2px;
+  }
+  .bonus-card .reward{ font-size: 17px }
+  .btn-bonus{
+    padding: 8px;
+    font-size: 10px;
+  }
+  .countdown{ font-size: 9px }
   .btn-action{ font-size:12px; padding:10px 6px; min-width:60px }
   .game-table{
     justify-content: space-between;
-    padding: 12px 10px 42px;
+    padding: 12px 10px 84px;
     gap: 8px;
   }
   .dealer-zone,
@@ -1070,7 +1094,7 @@ body{
 @media(max-width:360px){
   :root{ --card-w: 50px; --card-h: 74px }
   .bonus-row{ grid-template-columns: 1fr }
-  .game-table{ padding: 10px 8px 36px }
+  .game-table{ padding: 10px 8px 72px }
   .hands-container{ gap: 8px }
   .hand-wrapper{ padding: 4px }
   .result-banner{ font-size: 10px; padding: 4px 10px }
@@ -2568,13 +2592,17 @@ function renderGame() {
         aria-label="Nouvelle mise" autocomplete="off" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
-      <button class="btn-allin" id="btn-replay-allin">All-in</button>
     `;
     actionBar.appendChild(replayWrap);
 
+    const replaySecondary = document.createElement('div');
+    replaySecondary.className = 'replay-secondary';
+    replaySecondary.innerHTML = `<button class="btn-allin" id="btn-replay-allin">All-in</button>`;
+    actionBar.appendChild(replaySecondary);
+
     const replayBetInput = replayWrap.querySelector('#replay-bet');
     const replayBtn = replayWrap.querySelector('#btn-replay');
-    const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
+    const replayAllInBtn = replaySecondary.querySelector('#btn-replay-allin');
     let homeLink;
 
     async function replayWithBet(bet) {
@@ -2604,7 +2632,7 @@ function renderGame() {
     replayAllInBtn.addEventListener('click', async () => {
       const bet = getAllInBet();
       replayBetInput.value = bet || '';
-      await replayWithBet(bet);
+      replayBetInput.focus();
     });
 
     replayBetInput.addEventListener('keydown', e => {
