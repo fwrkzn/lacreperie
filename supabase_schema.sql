@@ -53,13 +53,19 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Ajoute un montant au solde
-CREATE OR REPLACE FUNCTION add_balance(p_user_id UUID, p_amount INTEGER)
+-- p_non_transferable > 0 → ajoute aussi ce montant au compteur non transférable
+CREATE OR REPLACE FUNCTION add_balance(
+  p_user_id UUID,
+  p_amount INTEGER,
+  p_non_transferable INTEGER DEFAULT 0
+)
 RETURNS INTEGER AS $$
 DECLARE
   v_new_balance INTEGER;
 BEGIN
   UPDATE users
-    SET balance = balance + p_amount
+    SET balance = balance + p_amount,
+        non_transferable = non_transferable + GREATEST(0, p_non_transferable)
     WHERE id = p_user_id
     RETURNING balance INTO v_new_balance;
 
