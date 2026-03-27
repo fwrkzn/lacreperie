@@ -770,10 +770,122 @@ body{
   animation: fadeIn .4s ease;
 }
 .btn-new-game:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+.btn-new-game:disabled{ opacity:.4; cursor:not-allowed; filter:none; transform:none }
+@media(max-width:900px){
+  #header{
+    padding: 10px 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #header-logo{
+    font-size: 18px;
+    letter-spacing: 1.5px;
+  }
+  #header-right{
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  #balance-display{
+    min-width: 0;
+    flex: 1;
+  }
+  #btn-logout{
+    flex-shrink: 0;
+  }
+  #screen-lobby{
+    max-width: none;
+    padding: 16px;
+    gap: 14px;
+  }
+  .lobby-content{
+    gap: 14px;
+  }
+  .lobby-main,
+  .lobby-right{
+    max-width: none;
+  }
+  .play-section,
+  .gift-section{
+    padding: 18px;
+  }
+  #screen-leaderboard{
+    padding: 16px;
+  }
+}
+@media(max-width:760px){
+  #screen-lobby{
+    padding: 14px;
+  }
+  .lobby-greeting{
+    padding: 10px 0 2px;
+  }
+  .lobby-greeting h2{
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  .lobby-greeting p{
+    font-size: 13px;
+  }
+  .bonus-row{
+    grid-template-columns: 1fr;
+  }
+  .play-section h3{
+    text-align: center;
+    line-height: 1.45;
+  }
+  .bet-input-row{
+    max-width: none;
+  }
+  .gift-row{
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .gift-row .gift-username-wrap,
+  .gift-row .gift-amount,
+  .gift-row .btn-gift{
+    width: min(100%, 320px);
+  }
+  .gift-row .gift-amount{
+    text-align: center;
+  }
+  .gift-row > span{
+    display: none;
+  }
+  .btn-gift,
+  .btn-secondary{
+    width: min(100%, 320px);
+    align-self: center;
+  }
+  .leaderboard-topbar{
+    align-items: stretch;
+  }
+  .leaderboard-topbar .btn-secondary{
+    width: 100%;
+  }
+}
 @media(max-width:640px){
+  #screen-game{
+    overflow: visible;
+  }
+  .game-table{
+    justify-content: space-between;
+    padding: 12px 12px 42px;
+    gap: 10px;
+  }
+  .dealer-zone,
+  .player-zone{
+    max-width: none;
+  }
+  .hands-container{
+    gap: 14px;
+    flex-wrap: wrap;
+  }
   .action-bar{
     max-width: 100%;
     gap: 6px;
+    padding-bottom: 0;
   }
   .action-bar .btn-action,
   .action-bar .btn-new-game,
@@ -788,7 +900,8 @@ body{
   .replay-wrap{
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: 6px;
+    margin-top: 2px;
   }
   .replay-wrap label{
     text-align: center;
@@ -897,21 +1010,25 @@ body{
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media(max-width:480px){
-  :root{ --card-w: 58px; --card-h: 84px }
+  :root{ --card-w: 62px; --card-h: 92px }
   .auth-card{ padding: 28px 20px }
   #header-logo span{ display:none }
   .chip{ width:42px; height:42px; font-size:10px }
   .lobby-greeting h2{ font-size:22px }
   .btn-action{ font-size:12px; padding:10px 6px; min-width:60px }
-  .game-table{ padding: 10px 10px 12px }
+  .game-table{
+    justify-content: space-between;
+    padding: 12px 10px 42px;
+    gap: 8px;
+  }
   .dealer-zone,
   .player-zone,
-  .middle-zone{ gap: 5px }
-  .dealer-label{ font-size: 10px; letter-spacing: 2px }
-  .hand-score{ font-size: 14px; min-height: 20px }
-  .cards-row{ gap: 4px; min-height: calc(var(--card-h) + 2px) }
-  .hands-container{ gap: 10px }
-  .hand-wrapper{ gap: 4px; padding: 5px }
+  .middle-zone{ gap: 6px }
+  .dealer-label{ font-size: 11px; letter-spacing: 2px }
+  .hand-score{ font-size: 15px; min-height: 22px }
+  .cards-row{ gap: 6px; min-height: calc(var(--card-h) + 4px) }
+  .hands-container{ gap: 13px }
+  .hand-wrapper{ gap: 5px; padding: 6px }
   .result-banner{
     padding: 5px 12px;
     font-size: 11px;
@@ -920,27 +1037,40 @@ body{
   }
   .bet-chips-display{
     gap: 6px;
-    padding: 4px 12px;
-    font-size: 12px;
+    padding: 6px 14px;
+    font-size: 13px;
   }
   .replay-wrap input{
-    width: min(220px, 100%);
+    width: min(230px, 100%);
     font-size: 16px;
     padding: 8px 12px;
   }
   .btn-new-game,
   .btn-allin{
-    padding: 8px 12px;
+    padding: 8px 13px;
     font-size: 11px;
     letter-spacing: 1px;
   }
-  .card-suit{ font-size:20px }
-  .card-rank,.card-rank-br{ font-size:12px }
+  .leaderboard-full-head,
+  .leaderboard-full-row{
+    grid-template-columns: 52px minmax(0, 1fr) 92px;
+    gap: 8px;
+    padding: 11px 12px;
+  }
+  .leaderboard-full-rank,
+  .leaderboard-full-balance{
+    font-size: 12px;
+  }
+  .leaderboard-full-name{
+    font-size: 13px;
+  }
+  .card-suit{ font-size:22px }
+  .card-rank,.card-rank-br{ font-size:13px }
 }
 @media(max-width:360px){
   :root{ --card-w: 50px; --card-h: 74px }
   .bonus-row{ grid-template-columns: 1fr }
-  .game-table{ padding: 8px 8px 10px }
+  .game-table{ padding: 10px 8px 36px }
   .hands-container{ gap: 8px }
   .hand-wrapper{ padding: 4px }
   .result-banner{ font-size: 10px; padding: 4px 10px }
@@ -1752,6 +1882,7 @@ let balanceAnimFrame;
 function setBalance(val) {
   S.balance = val;
   syncBetInputLimit();
+  updateTransferableHint();
   const el = $('header-balance');
   const prev = parseInt(el.textContent.replace(/\s/g,'')) || 0;
   if (prev === val) return;
@@ -1770,7 +1901,6 @@ function setBalance(val) {
     else el.classList.remove('changed');
   }
   requestAnimationFrame(frame);
-  updateTransferableHint();
 }
 
 function updateTransferableHint() {
@@ -1956,6 +2086,13 @@ function showGame() {
 async function loadLobbyData() {
   try {
     const d = await api('GET', '/api/user/me');
+    if (S.user) {
+      S.user.id = d.user.id;
+      S.user.username = d.user.username;
+      S.user.nonTransferable = d.user.nonTransferable || 0;
+    } else {
+      S.user = { id: d.user.id, username: d.user.username, nonTransferable: d.user.nonTransferable || 0 };
+    }
     setBalance(d.user.balance);
     applyCooldownState({ serverNow: d.serverNow, ...d.user });
     startCountdowns();
@@ -2438,11 +2575,13 @@ function renderGame() {
     const replayBetInput = replayWrap.querySelector('#replay-bet');
     const replayBtn = replayWrap.querySelector('#btn-replay');
     const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
+    let homeLink;
 
     async function replayWithBet(bet) {
       if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
       replayBtn.disabled = true;
       replayAllInBtn.disabled = true;
+      if (homeLink) homeLink.disabled = true;
       try {
         await api('POST', '/api/game/clear');
         const d = await api('POST', '/api/game/start', { bet });
@@ -2453,6 +2592,7 @@ function renderGame() {
         toast(e.error || 'Erreur', 'error');
         replayBtn.disabled = false;
         replayAllInBtn.disabled = false;
+        if (homeLink) homeLink.disabled = false;
       }
     }
 
@@ -2475,7 +2615,7 @@ function renderGame() {
     });
 
     // Retour accueil
-    const homeLink = document.createElement('button');
+    homeLink = document.createElement('button');
     homeLink.textContent = '← Accueil';
     homeLink.className = 'btn-action';
     homeLink.addEventListener('click', goToLobby);
