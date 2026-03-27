@@ -494,14 +494,27 @@ async function getLeaderboardData() {
   const now = Date.now();
   if (_lbc.data && _lbc.exp > now) return _lbc.data;
 
-  const { data: sorted } = await supabase
-    .from('users')
-    .select('id, username, balance')
-    .eq('is_admin', false)
-    .order('balance', { ascending: false })
-    .limit(200);
+  const pageSize = 1000;
+  let from = 0;
+  let sorted = [];
 
-  _lbc.data = sorted || [];
+  while (true) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, username, balance')
+      .eq('is_admin', false)
+      .order('balance', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+
+    sorted = sorted.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  _lbc.data = sorted;
   _lbc.exp = now + 10_000;
   return _lbc.data;
 }
