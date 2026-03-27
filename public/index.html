@@ -694,6 +694,36 @@ body{
   max-width: 400px;
   padding: 4px 0;
 }
+.replay-wrap{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 4px;
+}
+.replay-wrap label{
+  color: var(--muted);
+  font-size: 11px;
+  font-family: sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.replay-wrap input{
+  width: 140px;
+  max-width: 100%;
+  background: rgba(0,0,0,.4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--gold2);
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px 14px;
+  text-align: center;
+  outline: none;
+  font-family: Georgia, serif;
+}
 .btn-action{
   flex: 1;
   min-width: 70px;
@@ -740,6 +770,29 @@ body{
   animation: fadeIn .4s ease;
 }
 .btn-new-game:hover{ filter: brightness(1.1); transform: translateY(-1px) }
+@media(max-width:640px){
+  .action-bar{
+    max-width: 100%;
+    gap: 10px;
+  }
+  .action-bar .btn-action,
+  .action-bar .btn-new-game,
+  .action-bar .btn-allin{
+    flex: 0 1 100%;
+    width: min(260px, 100%);
+  }
+  .replay-wrap{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .replay-wrap label{
+    text-align: center;
+  }
+  .replay-wrap input{
+    width: min(260px, 100%);
+    align-self: center;
+  }
+}
 
 /* Toast notification */
 #toast{
@@ -1234,7 +1287,7 @@ body{
 
 /* ── Full leaderboard screen ─────────────────────────────────────────────── */
 #screen-leaderboard{
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1242,8 +1295,8 @@ body{
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
-  overflow-y: auto;
-  min-height: 0;
+  overflow: visible;
+  min-height: max-content;
 }
 .leaderboard-topbar{
   display: flex;
@@ -1266,7 +1319,7 @@ body{
   background: linear-gradient(180deg, rgba(20,20,24,.94), rgba(11,11,14,.96));
   border: 1px solid var(--border);
   border-radius: 18px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 28px 80px rgba(0,0,0,.35);
 }
 .leaderboard-full-head,
@@ -1994,10 +2047,10 @@ $('auth-password').addEventListener('keydown', e => {
 });
 
 $('btn-logout').addEventListener('click', async () => {
-  await api('POST', '/api/auth/logout');
   S.user = null; S.game = null;
   clearInterval(S.countdownInterval);
   showAuth();
+  await api('POST', '/api/auth/logout').catch(() => {});
 });
 
 $('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
@@ -2090,13 +2143,17 @@ async function startGameFromInput(bet) {
   if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
 
   $('btn-deal').disabled = true;
+  S.game = { phase: 'loading', dealerHand: [], hands: [], bets: [bet] };
+  showGame();
+  renderGameLoading();
   try {
     const d = await api('POST', '/api/game/start', { bet });
     S.game = d.game;
     setBalance(d.balance);
-    showGame();
     renderGame();
   } catch(e) {
+    S.game = null;
+    showLobby();
     toast(e.error || 'Erreur', 'error');
   } finally {
     $('btn-deal').disabled = false;
@@ -2187,6 +2244,14 @@ function resultClass(r) {
   if (r === 'push') return 'push';
   if (r === 'blackjack') return 'blackjack';
   return 'lose';
+}
+
+function renderGameLoading() {
+  $('dealer-cards').innerHTML = '';
+  $('dealer-score').textContent = '';
+  $('player-hands').innerHTML = '';
+  $('action-bar').innerHTML = '';
+  $('middle-zone').innerHTML = '<div class="spinner"></div><div class="lb-empty">Chargement de la partie…</div>';
 }
 
 function renderGame() {
@@ -2300,14 +2365,11 @@ function renderGame() {
     // Rejouer — input pré-rempli + bouton
     const lastBet = gs.bets ? gs.bets.reduce((a,b)=>a+b,0) / gs.bets.length : 100;
     const replayWrap = document.createElement('div');
-    replayWrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:4px;';
+    replayWrap.className = 'replay-wrap';
     replayWrap.innerHTML = `
-      <label for="replay-bet" style="color:var(--muted);font-size:11px;font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;">Nouvelle mise :</label>
+      <label for="replay-bet">Nouvelle mise :</label>
       <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
-        aria-label="Nouvelle mise" autocomplete="off"
-        style="width:140px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;
-               color:var(--gold2);font-size:18px;font-weight:bold;padding:10px 14px;text-align:center;
-               outline:none;font-family:Georgia,serif;" />
+        aria-label="Nouvelle mise" autocomplete="off" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
       <button class="btn-allin" id="btn-replay-allin">All-in</button>
@@ -2357,7 +2419,6 @@ function renderGame() {
     const homeLink = document.createElement('button');
     homeLink.textContent = '← Accueil';
     homeLink.className = 'btn-action';
-    homeLink.style.cssText = 'flex:0 0 auto;min-width:90px;';
     homeLink.addEventListener('click', goToLobby);
     actionBar.appendChild(homeLink);
   }
@@ -2387,9 +2448,9 @@ async function doAction(endpoint) {
 }
 
 async function goToLobby() {
-  await api('POST', '/api/game/clear').catch(()=>{});
   S.game = null;
   showLobby();
+  await api('POST', '/api/game/clear').catch(()=>{});
 }
 
 // ── Gift Username Autocomplete ──────────────────────────────────────────────
