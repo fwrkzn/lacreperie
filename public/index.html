@@ -703,11 +703,10 @@ body{
   width: 100%;
   margin-top: 4px;
 }
-.replay-secondary{
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin: 10px 0;
+.replay-chip{
+  width: 68px;
+  height: 48px;
+  flex-shrink: 0;
 }
 .replay-wrap label{
   color: var(--muted);
@@ -834,7 +833,7 @@ body{
     font-size: 13px;
   }
   .bonus-row{
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .play-section h3{
     text-align: center;
@@ -893,9 +892,7 @@ body{
     gap: 6px;
     padding-bottom: 0;
   }
-  .action-bar .btn-action,
-  .action-bar .btn-new-game,
-  .action-bar .btn-allin{
+  .action-bar .btn-action{
     flex: 0 1 auto;
     width: auto;
     max-width: 100%;
@@ -903,29 +900,34 @@ body{
     font-size: 12px;
     letter-spacing: 1px;
   }
+  .action-bar .btn-new-game,
+  .action-bar .btn-allin{
+    width: auto;
+    max-width: 100%;
+    flex-shrink: 0;
+  }
   .replay-wrap{
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     margin-top: 2px;
   }
-  .replay-secondary{
-    margin: 14px 0;
-  }
   .replay-wrap label{
+    width: 100%;
     text-align: center;
   }
   .replay-wrap input{
-    width: min(260px, 100%);
-    align-self: center;
+    width: min(180px, calc(100% - 96px));
+    align-self: auto;
   }
   .replay-wrap > span{
     line-height: 1;
     margin: -1px 0 0;
   }
   .replay-wrap > .btn-new-game,
-  .replay-wrap > .btn-allin{
-    align-self: center;
+  .replay-wrap > .replay-chip{
+    align-self: auto;
     margin-top: 0;
   }
 }
@@ -1068,12 +1070,6 @@ body{
     width: min(230px, 100%);
     font-size: 16px;
     padding: 8px 12px;
-  }
-  .btn-new-game,
-  .btn-allin{
-    padding: 8px 13px;
-    font-size: 11px;
-    letter-spacing: 1px;
   }
   .leaderboard-full-head,
   .leaderboard-full-row{
@@ -2592,17 +2588,13 @@ function renderGame() {
         aria-label="Nouvelle mise" autocomplete="off" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
+      <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>
     `;
     actionBar.appendChild(replayWrap);
 
-    const replaySecondary = document.createElement('div');
-    replaySecondary.className = 'replay-secondary';
-    replaySecondary.innerHTML = `<button class="btn-allin" id="btn-replay-allin">All-in</button>`;
-    actionBar.appendChild(replaySecondary);
-
     const replayBetInput = replayWrap.querySelector('#replay-bet');
     const replayBtn = replayWrap.querySelector('#btn-replay');
-    const replayAllInBtn = replaySecondary.querySelector('#btn-replay-allin');
+    const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
     let homeLink;
 
     async function replayWithBet(bet) {
