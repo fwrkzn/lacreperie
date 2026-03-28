@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="/favicon.png"/>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="Casino Crêpes"/>
 <meta name="theme-color" content="#0b0b0e"/>
 <style>
@@ -955,6 +955,14 @@ body{
     border-radius: 27px;
     backdrop-filter: blur(18px);
     box-shadow: 0 18px 40px rgba(0,0,0,.28);
+  }
+  @media (display-mode: standalone) {
+    body{
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .lobby-bottom-nav{
+      bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    }
   }
   .play-section h3{
     text-align: center;
