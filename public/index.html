@@ -326,6 +326,25 @@ body{
   border-color: rgba(255,255,255,.08);
 }
 .lobby-greeting{ position: relative; z-index: 1; }
+.mute-btn{
+  position: absolute;
+  top: 20px;
+  right: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+  transition: background .2s, color .2s;
+}
+.mute-btn:hover{ background: rgba(255,255,255,.1); }
+.mute-btn.muted{ color: var(--red); }
 #screen-lobby h2{
   color: var(--gold);
   letter-spacing: 3px;
@@ -2230,6 +2249,7 @@ body{
 <div id="screen-lobby" class="screen hidden">
 
   <div class="lobby-greeting">
+    <button id="btn-mute" class="mute-btn" title="Couper le son">🔊</button>
     <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username">Joueur</span> 👋</h2>
     <p>Bienvenue au Casino des Crêpes</p>
   </div>
@@ -2979,6 +2999,7 @@ function showLobby() {
   transitionTo('screen-lobby', { smooth: true });
   $('lobby-greeting-text').textContent = getGreetingForLocalTime();
   $('lobby-username').textContent = S.user.username;
+  _initMuteBtn();
   setLobbyTab(S.lobbyTab || 'play');
   renderCooldowns();
   startLiveUpdates();
@@ -3953,7 +3974,26 @@ const _cardSound = new Audio('/assets/sounds/card_pick_sound.mp3');
 const _successSound = new Audio('/assets/sounds/success_sound.mp3');
 const _catLaughSound = new Audio('/assets/sounds/cat-laughing-at-you.mp3');
 
+let _soundMuted = localStorage.getItem('muted') === '1';
+
+function _initMuteBtn() {
+  const btn = $('btn-mute');
+  if (!btn) return;
+  function update() {
+    btn.textContent = _soundMuted ? '🔇' : '🔊';
+    btn.classList.toggle('muted', _soundMuted);
+    btn.title = _soundMuted ? 'Activer le son' : 'Couper le son';
+  }
+  update();
+  btn.onclick = () => {
+    _soundMuted = !_soundMuted;
+    localStorage.setItem('muted', _soundMuted ? '1' : '0');
+    update();
+  };
+}
+
 function _playSound(src, vol = 0.5, rate = 1) {
+  if (_soundMuted) return;
   const s = src.cloneNode();
   s.volume = vol;
   s.playbackRate = rate;
