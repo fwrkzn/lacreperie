@@ -104,11 +104,13 @@ body{
   background: none;
   border: 1px solid var(--border);
   color: var(--muted);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 6px 12px;
   cursor: pointer;
   font-size: 12px;
   transition: all .2s;
+  font-family: sans-serif;
+  letter-spacing: .5px;
 }
 #btn-logout:hover{ border-color: var(--gold); color: var(--gold) }
 
@@ -146,7 +148,7 @@ body{
 .auth-tabs{
   display: flex;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -183,10 +185,10 @@ body{
   width: 100%;
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text);
-  padding: 12px 14px;
-  font-size: 15px;
+  padding: 11px 14px;
+  font-size: 14px;
   outline: none;
   transition: border-color .2s;
   font-family: sans-serif;
@@ -195,14 +197,14 @@ body{
 .field input::placeholder{ color: var(--muted) }
 .btn-primary{
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
   color: #0b0b0e;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -240,6 +242,83 @@ body{
   gap: 16px;
   position: relative;
   z-index: 1;
+}
+.lobby-side{
+  display: none;
+}
+.lobby-main{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  width: 100%;
+}
+.lobby-right{
+  display: none;
+}
+.lobby-mobile-only{
+  display: grid;
+}
+.lobby-tab-panels{
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 18px;
+}
+.lobby-tab-panel{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn .25s ease;
+}
+.lobby-tab-panel#tab-play{
+  grid-column: 1;
+}
+.lobby-tab-panel#tab-social{
+  grid-column: 2;
+}
+.lobby-tab-panel#tab-leaderboard{
+  grid-column: 2;
+}
+.lobby-tab-panel#tab-prizes{
+  grid-column: 1;
+}
+.lobby-card-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.lobby-bottom-nav{
+  display: none;
+}
+.lobby-nav-btn{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 58px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: sans-serif;
+  font-size: 11px;
+  letter-spacing: .4px;
+  transition: all .18s ease;
+}
+.lobby-nav-btn span:first-child{
+  font-size: 18px;
+  line-height: 1;
+}
+.lobby-nav-btn.active{
+  background: linear-gradient(180deg, rgba(201,168,76,.18), rgba(201,168,76,.06));
+  border-color: rgba(201,168,76,.22);
+  color: var(--gold3);
+}
+.lobby-nav-btn:hover{
+  color: var(--text);
+  border-color: rgba(255,255,255,.08);
 }
 .lobby-greeting{ position: relative; z-index: 1; }
 .lobby-ambience{
@@ -337,13 +416,13 @@ body{
 }
 .btn-bonus{
   width: 100%;
-  padding: 10px;
+  padding: 11px;
   border: 1px solid var(--gold);
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
   color: var(--gold);
   font-size: 12px;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   font-family: sans-serif;
@@ -420,14 +499,14 @@ body{
   flex:1;
   background: rgba(0,0,0,.3);
   border: 1px solid #1d6040;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--gold2);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  padding: 10px 14px;
+  padding: 11px 14px;
   text-align: center;
   outline: none;
-  font-family: Georgia, serif;
+  font-family: sans-serif;
 }
 .bet-input:focus{ border-color: var(--gold) }
 .chip-btns{ display: flex; gap: 6px; flex-wrap: wrap; justify-content: center }
@@ -462,14 +541,14 @@ body{
 }
 .chip.clear{ --chip-bg: rgba(255,255,255,.04); --chip-border: var(--border); --chip-color: var(--muted); font-size:18px }
 .btn-deal{
-  padding: 14px 40px;
+  padding: 12px 36px;
   background: linear-gradient(135deg, #1d7a45 0%, #145530 100%);
   border: 1px solid #2a9458;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -485,17 +564,17 @@ body{
   flex-wrap: wrap;
 }
 .btn-allin{
-  padding: 14px 24px;
+  padding: 12px 24px;
   width: fit-content;
   align-self: center;
   white-space: nowrap;
   background: linear-gradient(135deg, rgba(224,68,68,.92) 0%, rgba(130,22,22,.98) 100%);
   border: 1px solid #f06a6a;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #fff4f4;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -634,11 +713,12 @@ body{
 .result-banner.push      { background: rgba(255,255,255,.1); border:1px solid #aaa; color:#aaa }
 .result-banner.blackjack { background: rgba(255,224,100,.2); border:1px solid #ffe066; color:#ffe066 }
 .result-banner.bust      { background: rgba(224,68,68,.2);   border:1px solid var(--red); color:var(--red) }
+.result-banner.pvp-banner{ animation:none }
 
 .taunt-box {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
   background: rgb(30,30,30); border: 2px solid var(--red);
-  border-radius: 16px; padding: 32px 40px; z-index: 9999;
+  border-radius: 14px; padding: 32px 40px; z-index: 9999;
   text-align: center; color: #fff; font-size: 1.3rem; font-weight: 600;
   box-shadow: 0 0 40px rgba(224,68,68,.4);
   animation: tauntPop .4s ease;
@@ -646,8 +726,9 @@ body{
 .taunt-box .taunt-emoji { font-size: 3rem; margin-bottom: 12px; }
 .taunt-box .taunt-text { margin-bottom: 16px; color: var(--red); }
 .taunt-box button {
-  background: var(--red); color: #fff; border: none; border-radius: 8px;
-  padding: 8px 24px; font-size: 1rem; cursor: pointer;
+  background: var(--red); color: #fff; border: none; border-radius: 10px;
+  padding: 11px 24px; font-size: 13px; font-weight: bold; letter-spacing: 1.5px;
+  text-transform: uppercase; font-family: sans-serif; cursor: pointer;
 }
 .taunt-box button:hover { filter: brightness(1.2); }
 .taunt-overlay {
@@ -743,28 +824,28 @@ body{
   max-width: 100%;
   background: rgba(0,0,0,.4);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--gold2);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
-  padding: 10px 14px;
+  padding: 11px 14px;
   text-align: center;
   outline: none;
-  font-family: Georgia, serif;
+  font-family: sans-serif;
 }
 .btn-action{
   flex: 1;
   min-width: 70px;
-  padding: 12px 8px;
-  border-radius: 8px;
+  padding: 11px 8px;
+  border-radius: 10px;
   background: rgba(255,255,255,.06);
   border: 1px solid var(--border);
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   transition: all .2s;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   font-family: sans-serif;
   text-transform: uppercase;
 }
@@ -782,14 +863,14 @@ body{
 .btn-action.double{ border-color: var(--gold); color: var(--gold2) }
 .btn-action.double:hover:not(:disabled){ background: rgba(201,168,76,.15) }
 .btn-new-game{
-  padding: 12px 32px;
+  padding: 12px 28px;
   background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #0b0b0e;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -799,6 +880,7 @@ body{
 }
 .btn-new-game:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-new-game:disabled{ opacity:.4; cursor:not-allowed; filter:none; transform:none }
+.pvp-rematch-hint{ font-size:12px; color:var(--gold); opacity:.8; margin-top:2px; animation:fadeIn .4s ease }
 @media(max-width:900px){
   #header{
     padding: 10px 14px;
@@ -829,8 +911,7 @@ body{
   .lobby-content{
     gap: 14px;
   }
-  .lobby-main,
-  .lobby-right{
+  .lobby-main{
     max-width: none;
   }
   .play-section,
@@ -842,6 +923,20 @@ body{
   }
 }
 @media(max-width:760px){
+  .lobby-tab-panels{
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 96px;
+  }
+  .lobby-tab-panel#tab-play,
+  .lobby-tab-panel#tab-social,
+  .lobby-tab-panel#tab-leaderboard,
+  .lobby-tab-panel#tab-prizes{
+    grid-column: auto;
+  }
+  #screen-lobby h2{
+    text-align: center;
+  }
   #screen-lobby{
     padding: 14px;
   }
@@ -858,6 +953,23 @@ body{
   .bonus-row{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .lobby-card-grid{
+    grid-template-columns: 1fr;
+  }
+  .lobby-bottom-nav{
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    background: rgba(11,11,14,.88);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 40px rgba(0,0,0,.28);
+  }
   .play-section h3{
     text-align: center;
     line-height: 1.45;
@@ -866,25 +978,77 @@ body{
     max-width: none;
   }
   .gift-row{
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
   }
-  .gift-row .gift-username-wrap,
-  .gift-row .gift-amount,
-  .gift-row .btn-gift{
-    width: min(100%, 320px);
+  .gift-row .gift-username-wrap{
+    flex: 1 1 0;
+    width: auto !important;
+    min-width: 0;
   }
   .gift-row .gift-amount{
+    flex: 1 1 0;
+    width: auto !important;
     text-align: center;
+    min-width: 0;
+  }
+  .gift-row .btn-gift{
+    flex: 0 0 100%;
+    width: 100%;
   }
   .gift-row > span{
     display: none;
   }
+  .gift-row .gift-username{
+    width: 100% !important;
+  }
   .btn-gift,
   .btn-secondary{
-    width: min(100%, 320px);
-    align-self: center;
+    width: 100%;
+    align-self: stretch;
+  }
+  .friends-add-row{
+    flex-direction: column;
+  }
+  .friends-add-row .gift-username-wrap{
+    flex: 0 0 auto;
+    width: 100% !important;
+  }
+  .friends-add-row .btn-gift{
+    flex: 0 0 auto;
+    width: 100% !important;
+  }
+  .friend-row,
+  .pvp-invite-row{
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 14px;
+  }
+  .friend-actions,
+  .pvp-invite-actions{
+    justify-content: stretch;
+    width: 100%;
+  }
+  .btn-friend,
+  .btn-pvp-mini{
+    flex: 1;
+  }
+  .friends-panel{
+    gap: 16px;
+    padding: 18px;
+  }
+  .social-section{
+    gap: 16px;
+    padding: 18px;
+  }
+  .social-head{
+    margin-bottom: 2px;
+  }
+  .friends-list,
+  .pvp-invite-list{
+    gap: 10px;
   }
   .leaderboard-topbar{
     align-items: stretch;
@@ -919,9 +1083,9 @@ body{
     flex: 0 1 auto;
     width: auto;
     max-width: 100%;
-    padding: 9px 14px;
+    padding: 10px 14px;
     font-size: 12px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
   }
   .action-bar .btn-new-game,
   .action-bar .btn-allin{
@@ -956,31 +1120,44 @@ body{
 }
 
 /* Toast notification */
-#toast{
+#toast-container{
   position: fixed;
   bottom: 30px;
   left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: 90vw;
+}
+.toast-item{
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 20px;
   font-size: 14px;
   font-family: sans-serif;
   color: var(--text);
-  opacity: 0;
-  transition: all .3s;
-  pointer-events: none;
   white-space: nowrap;
-  z-index: 1000;
-  max-width: 90vw;
   text-align: center;
   box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  animation: toastIn .3s ease forwards;
+  transition: opacity .4s, transform .4s;
 }
-#toast.show{ opacity:1; transform: translateX(-50%) translateY(0) }
-#toast.success{ border-color: #3fb56e; color: #3fb56e }
-#toast.error  { border-color: var(--red); color: var(--red) }
-#toast.gold   { border-color: var(--gold); color: var(--gold2) }
+.toast-item.success{ border-color: #3fb56e; color: #3fb56e }
+.toast-item.error  { border-color: var(--red); color: var(--red) }
+.toast-item.gold   { border-color: var(--gold); color: var(--gold2) }
+.toast-item.out{
+  opacity: 0;
+  transform: translateY(-12px);
+}
+@keyframes toastIn{
+  from{ opacity:0; transform: translateY(16px) }
+  to  { opacity:1; transform: translateY(0) }
+}
 
 /* Loading spinner */
 .spinner{
@@ -1060,11 +1237,11 @@ body{
   }
   .bonus-card .reward{ font-size: 17px }
   .btn-bonus{
-    padding: 8px;
-    font-size: 10px;
+    padding: 9px;
+    font-size: 11px;
   }
   .countdown{ font-size: 9px }
-  .btn-action{ font-size:12px; padding:10px 6px; min-width:60px }
+  .btn-action{ font-size:11px; padding:10px 6px; min-width:60px }
   .game-table{
     justify-content: space-between;
     padding: 12px 10px 84px;
@@ -1091,8 +1268,8 @@ body{
   }
   .replay-wrap input{
     width: min(230px, 100%);
-    font-size: 16px;
-    padding: 8px 12px;
+    font-size: 14px;
+    padding: 10px 12px;
   }
   .leaderboard-full-head,
   .leaderboard-full-row{
@@ -1113,19 +1290,27 @@ body{
 @media(max-width:360px){
   :root{ --card-w: 50px; --card-h: 74px }
   .bonus-row{ grid-template-columns: 1fr }
+  .lobby-bottom-nav{
+    gap: 6px;
+    padding: 8px;
+  }
+  .lobby-nav-btn{
+    min-height: 54px;
+    font-size: 10px;
+  }
   .game-table{ padding: 10px 8px 72px }
   .hands-container{ gap: 8px }
   .hand-wrapper{ padding: 4px }
   .result-banner{ font-size: 10px; padding: 4px 10px }
   .replay-wrap input{
     width: min(190px, 100%);
-    font-size: 15px;
-    padding: 7px 10px;
+    font-size: 13px;
+    padding: 9px 10px;
   }
   .btn-new-game,
   .btn-allin{
-    padding: 7px 10px;
-    font-size: 10px;
+    padding: 9px 12px;
+    font-size: 11px;
   }
 }
 
@@ -1211,22 +1396,6 @@ body{
 .auth-card-corners-br::after  { right: 14px; transform: rotate(0deg); }
 
 /* ── Lobby 3-col desktop layout ───────────────────────────────────────────── */
-.lobby-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 600px;
-  width: 100%;
-}
-.lobby-right{
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-.lobby-side {
-  display: none;
-}
 @media (min-width: 1080px) {
   #screen-lobby {
     max-width: none;
@@ -1235,7 +1404,7 @@ body{
   }
   .lobby-content{
     display: grid;
-    grid-template-columns: 280px minmax(0, 600px) 280px;
+    grid-template-columns: 260px minmax(0, 600px) 260px;
     grid-template-areas: "side main right";
     gap: 20px;
     align-items: flex-start;
@@ -1255,17 +1424,95 @@ body{
     grid-area: side;
     flex-direction: column;
     gap: 14px;
-    width: 280px;
+    width: 100%;
     flex-shrink: 0;
     padding-top: 6px;
     animation: fadeIn .7s ease;
   }
   .lobby-right{
+    display: flex;
     grid-area: right;
-    width: 280px;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
     flex-shrink: 0;
     padding-top: 6px;
+    animation: fadeIn .7s ease;
   }
+  .lobby-mobile-only{
+    display: none !important;
+  }
+  .lobby-bottom-nav{
+    display: none !important;
+  }
+  .lobby-tab-panels{
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .lobby-tab-panel{
+    grid-column: auto;
+  }
+  .lobby-tab-panel.hidden{
+    display: flex !important;
+  }
+  #tab-leaderboard{
+    display: none !important;
+  }
+  #tab-prizes{
+    order: -1;
+  }
+}
+@media (min-width: 1400px) {
+  .lobby-content{
+    grid-template-columns: 300px minmax(0, 640px) 300px;
+  }
+}
+
+/* ── Mini sidebar items ──────────────────────────────────────────────────── */
+.lb-row.mini{
+  padding: 5px 0;
+  font-size: 11px;
+  gap: 6px;
+}
+.lb-row.mini .lb-balance{
+  font-size: 10px;
+}
+.btn-mini-full{
+  margin-top: 10px;
+  width: 100%;
+  font-size: 10px;
+  padding: 6px 10px;
+}
+.online-mini-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-family: sans-serif;
+  font-size: 12px;
+  color: var(--text);
+}
+.gift-received-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-family: sans-serif;
+  font-size: 11px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.gift-received-row:last-child{ border-bottom: none; }
+.gift-received-row .gift-from{
+  color: var(--gold2);
+  font-weight: 600;
+}
+.gift-received-row .gift-amt{
+  margin-left: auto;
+  color: var(--gold);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* ── Side panel cards ─────────────────────────────────────────────────────── */
@@ -1456,9 +1703,9 @@ body{
 .gift-row input{
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text);
-  padding: 10px 12px;
+  padding: 11px 14px;
   font-size: 14px;
   outline: none;
   transition: border-color .2s;
@@ -1482,8 +1729,8 @@ body{
 .gift-suggestions div:hover, .gift-suggestions div.active{
   background: var(--gold); color: #1a1a2e;
 }
-.gift-row .gift-amount{ width: 100px; text-align: center; font-weight: bold; color: var(--gold2); font-family: Georgia, serif }
-.gift-section .gift-transferable{
+.gift-row .gift-amount{ width: 100px; text-align: center; font-weight: bold; color: var(--gold2); font-family: sans-serif }
+.gift-transferable{
   min-height: 16px;
   text-align: center;
   font-size: 12px;
@@ -1491,18 +1738,18 @@ body{
   margin: 8px 0 0;
   line-height: 1.3;
 }
-.gift-section .gift-transferable:empty{
+.gift-transferable:empty{
   display: none;
 }
 .btn-gift{
-  padding: 10px 18px;
+  padding: 11px 18px;
   background: linear-gradient(135deg, var(--gold) 0%, #a87e30 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #0b0b0e;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -1510,15 +1757,238 @@ body{
 }
 .btn-gift:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-gift:disabled{ opacity:.5; cursor:not-allowed; transform:none }
+.friends-panel,
+.pvp-invites{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.friends-panel{
+  background: linear-gradient(180deg, rgba(20,20,24,.96), rgba(11,11,14,.98));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 22px 60px rgba(0,0,0,.22);
+}
+.social-section{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+}
+.social-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.social-head h3{
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--gold2);
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.social-badge{
+  min-width: 22px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(201,168,76,.14);
+  border: 1px solid rgba(201,168,76,.25);
+  color: var(--gold2);
+  font-size: 11px;
+  text-align: center;
+  font-family: sans-serif;
+}
+.social-divider{
+  border-top: 1px solid var(--border);
+  margin: 6px 0 4px;
+}
+.social-sub-head{
+  margin-bottom: 2px;
+}
+.social-sub-head h4{
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-family: sans-serif;
+  font-weight: 600;
+}
+.friends-add-row{
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+.friends-add-row .btn-gift{
+  min-width: 110px;
+}
+.friends-list,
+.pvp-invite-list{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.friend-row,
+.pvp-invite-row{
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  background: linear-gradient(180deg, rgba(28,28,34,.92), rgba(20,20,24,.96));
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: 14px;
+  font-family: sans-serif;
+}
+.friend-meta,
+.pvp-invite-meta{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.friend-name,
+.pvp-invite-name{
+  font-weight: bold;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.friend-sub,
+.pvp-invite-sub{
+  font-size: 12px;
+  color: var(--muted);
+}
+.friend-sub strong,
+.pvp-invite-sub strong{
+  color: var(--gold2);
+  font-weight: 600;
+}
+.friend-actions,
+.pvp-invite-actions{
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-friend,
+.btn-pvp-mini{
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.btn-friend:hover,
+.btn-pvp-mini:hover{
+  border-color: var(--gold);
+  color: var(--gold2);
+}
+.btn-friend.challenge,
+.btn-pvp-mini.accept{
+  border-color: rgba(63,181,110,.35);
+  color: #97ddb1;
+}
+.btn-friend.challenge:hover,
+.btn-pvp-mini.accept:hover{
+  border-color: #3fb56e;
+  color: #c6f1d4;
+}
+.btn-friend.remove,
+.btn-pvp-mini.decline,
+.btn-pvp-mini.cancel{
+  color: #f2bbbb;
+  border-color: rgba(224,68,68,.4);
+}
+.btn-friend.remove:hover,
+.btn-pvp-mini.decline:hover,
+.btn-pvp-mini.cancel:hover{
+  border-color: var(--red);
+  color: #ffdada;
+}
+.pvp-invites h3{
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--gold2);
+  text-transform: uppercase;
+  font-family: sans-serif;
+}
+.pvp-compose-target{
+  color: var(--muted);
+  font-size: 13px;
+  font-family: sans-serif;
+  min-height: 18px;
+}
+.pvp-chip-btns{
+  justify-content: flex-start;
+}
+.social-note{
+  color: var(--muted);
+  font-size: 12px;
+  font-family: sans-serif;
+  line-height: 1.45;
+}
+.pvp-status-line{
+  min-height: 20px;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: sans-serif;
+  text-align: center;
+}
+.pvp-status-line.alert{
+  color: var(--gold2);
+}
+.pvp-table{
+  gap: 16px;
+}
+.pvp-single-hand{
+  min-width: min(100%, 480px);
+}
+#modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 1001;
+}
+#challenge-modal{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 440px);
+  background: linear-gradient(180deg, rgba(20,20,24,.98), rgba(11,11,14,.98));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 28px 80px rgba(0,0,0,.45);
+  padding: 22px;
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+#challenge-modal h3{
+  color: var(--gold2);
+  font-size: 18px;
+  letter-spacing: 1px;
+}
 .btn-secondary{
-  padding: 12px 18px;
+  padding: 11px 18px;
   background: rgba(255,255,255,.03);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--gold2);
   font-size: 12px;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   transition: all .2s;
   text-transform: uppercase;
@@ -1559,7 +2029,7 @@ body{
 .leaderboard-shell{
   background: linear-gradient(180deg, rgba(20,20,24,.94), rgba(11,11,14,.96));
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: visible;
   box-shadow: 0 28px 80px rgba(0,0,0,.35);
 }
@@ -1710,26 +2180,18 @@ body{
 
   <div class="lobby-content">
 
-  <!-- Left panel (desktop only) -->
-  <div class="lobby-side lobby-side-left">
+  <!-- ── Left sidebar (desktop/tablet only) ── -->
+  <div class="lobby-side">
     <div class="panel-block">
       <div class="panel-head"><span>📋</span><h3>Règles du Jeu</h3></div>
       <div class="panel-body">
         <div class="rule-item"><span class="ri">♠</span><span>6 jeux de 52 cartes</span></div>
         <div class="rule-item"><span class="ri">♣</span><span>Blackjack paie <strong style="color:var(--gold2)">3:2</strong></span></div>
-        <div class="rule-item"><span class="ri">♦</span><span>Croupier tire jusqu'à <strong style="color:var(--gold2)">17</strong></span></div>
+        <div class="rule-item"><span class="ri">♦</span><span>Croupier tire jusqu’à <strong style="color:var(--gold2)">17</strong></span></div>
         <div class="rule-item"><span class="ri">♥</span><span>Égalité → mise remboursée</span></div>
-        <div class="rule-item"><span class="ri">♠</span><span>Division jusqu'à <strong style="color:var(--gold2)">4 mains</strong></span></div>
+        <div class="rule-item"><span class="ri">♠</span><span>Division jusqu’à <strong style="color:var(--gold2)">4 mains</strong></span></div>
         <div class="rule-item"><span class="ri">♣</span><span>Double sur 2 cartes seulement</span></div>
         <div class="rule-item"><span class="ri">♦</span><span>Mise <strong style="color:var(--gold2)">10</strong> – <strong style="color:var(--gold2)">50 000</strong> 🥞</span></div>
-      </div>
-    </div>
-    <div class="panel-block">
-      <div class="suit-deco-grid">
-        <span>♠</span>
-        <span style="color:#c0252a">♥</span>
-        <span style="color:#c0252a">♦</span>
-        <span>♣</span>
       </div>
     </div>
     <div class="panel-block">
@@ -1737,7 +2199,7 @@ body{
       <div class="panel-body">
         <div class="tip-item"><span class="ti">◆</span><span>Toujours séparer les <strong>As</strong> et les <strong>8</strong></span></div>
         <div class="tip-item"><span class="ti">◆</span><span>Doubler sur <strong>11</strong> vs croupier &lt; 11</span></div>
-        <div class="tip-item"><span class="ti">◆</span><span>S'arrêter sur <strong>17+</strong>, toujours</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>S’arrêter sur <strong>17+</strong>, toujours</span></div>
         <div class="tip-item"><span class="ti">◆</span><span>Tirer sur <strong>16</strong> vs As du croupier</span></div>
         <div class="tip-item"><span class="ti">◆</span><span>Ne jamais séparer les <strong>10</strong></span></div>
       </div>
@@ -1754,10 +2216,151 @@ body{
         </p>
       </div>
     </div>
+    <div class="panel-block">
+      <div class="suit-deco-grid">
+        <span>♠</span>
+        <span style="color:#c0252a">♥</span>
+        <span style="color:#c0252a">♦</span>
+        <span>♣</span>
+      </div>
+    </div>
   </div>
 
-  <!-- Main content -->
+  <!-- ── Center: main game area ── -->
   <div class="lobby-main">
+  <div class="lobby-tab-panels">
+  <div class="lobby-tab-panel" id="tab-play">
+  <h2>Jouer au Blackjack</h2>
+  <div class="play-section">
+    <h3>6 Jeux · Croupier S’arrête sur 17 · Blackjack 3:2</h3>
+    <div class="chip-btns">
+      <div class="chip c10"  data-add="10">10</div>
+      <div class="chip c50"  data-add="50">50</div>
+      <div class="chip c100" data-add="100">100</div>
+      <div class="chip c500" data-add="500">500</div>
+      <div class="chip c1k"  data-add="1000">1K</div>
+      <div class="chip callin" data-add="allin">ALL-IN</div>
+      <div class="chip clear" data-add="clear">✕</div>
+    </div>
+    <div class="bet-input-row">
+      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" aria-label="Montant de la mise" autocomplete="off"/>
+      <span style="color:var(--gold2);font-size:18px">🥞</span>
+    </div>
+    <button class="btn-deal" id="btn-deal">Jouer</button>
+  </div>
+
+  <!-- mobile-only: rules & strategy cards -->
+  <div class="lobby-card-grid lobby-mobile-only">
+    <div class="panel-block">
+      <div class="panel-head"><span>📋</span><h3>Règles du Jeu</h3></div>
+      <div class="panel-body">
+        <div class="rule-item"><span class="ri">♠</span><span>6 jeux de 52 cartes</span></div>
+        <div class="rule-item"><span class="ri">♣</span><span>Blackjack paie <strong style="color:var(--gold2)">3:2</strong></span></div>
+        <div class="rule-item"><span class="ri">♦</span><span>Croupier tire jusqu’à <strong style="color:var(--gold2)">17</strong></span></div>
+        <div class="rule-item"><span class="ri">♥</span><span>Égalité → mise remboursée</span></div>
+        <div class="rule-item"><span class="ri">♠</span><span>Division jusqu’à <strong style="color:var(--gold2)">4 mains</strong></span></div>
+        <div class="rule-item"><span class="ri">♣</span><span>Double sur 2 cartes seulement</span></div>
+        <div class="rule-item"><span class="ri">♦</span><span>Mise <strong style="color:var(--gold2)">10</strong> – <strong style="color:var(--gold2)">50 000</strong> 🥞</span></div>
+      </div>
+    </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>💡</span><h3>Stratégie de Base</h3></div>
+      <div class="panel-body">
+        <div class="tip-item"><span class="ti">◆</span><span>Toujours séparer les <strong>As</strong> et les <strong>8</strong></span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Doubler sur <strong>11</strong> vs croupier &lt; 11</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>S’arrêter sur <strong>17+</strong>, toujours</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Tirer sur <strong>16</strong> vs As du croupier</span></div>
+        <div class="tip-item"><span class="ti">◆</span><span>Ne jamais séparer les <strong>10</strong></span></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="lobby-tab-panel hidden" id="tab-social">
+  <h2>Social 🤝</h2>
+
+  <div class="friends-panel">
+      <!-- 1v1 Invitations (mobile only — hidden until invites exist) -->
+      <div class="social-section pvp-invites lobby-mobile-only social-invites hidden" id="pvp-mobile-section">
+        <div class="social-head">
+          <h3>Invitations 1v1</h3>
+          <span class="social-badge" id="pvp-invites-badge">0</span>
+        </div>
+        <div class="pvp-invite-list" id="pvp-incoming-list">
+        </div>
+        <div class="pvp-invite-list" id="pvp-outgoing-list">
+        </div>
+      </div>
+
+      <!-- My friends -->
+      <div class="social-section social-friends">
+        <div class="social-head">
+          <h3>Mes amis</h3>
+          <span class="social-badge" id="friends-count-badge">0</span>
+        </div>
+        <div class="friends-list" id="friends-list">
+          <div class="lb-empty">Chargement…</div>
+        </div>
+      </div>
+
+      <!-- Give -->
+      <div class="social-section social-gift">
+        <div class="social-head">
+          <h3>Offrir des crêpes</h3>
+          <span class="social-badge">🥞</span>
+        </div>
+        <div class="gift-row">
+          <div class="gift-username-wrap">
+            <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" aria-label="Pseudo du destinataire" />
+            <div class="gift-suggestions" id="gift-suggestions"></div>
+          </div>
+          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" aria-label="Montant à envoyer" />
+          <span style="color:var(--gold2);font-size:16px">🥞</span>
+          <button class="btn-gift" id="btn-gift">Envoyer</button>
+        </div>
+        <p class="gift-transferable" id="gift-transferable"></p>
+      </div>
+
+      <!-- Add friend + Friend requests (combined) -->
+      <div class="social-section social-add-friend">
+        <div class="social-head">
+          <h3>Ajouter un ami</h3>
+          <span class="social-badge" id="friend-requests-badge">0</span>
+        </div>
+        <div class="gift-row friends-add-row">
+          <div class="gift-username-wrap">
+            <input class="gift-username" id="friend-username" type="text" placeholder="Envoyer une demande" autocomplete="off" aria-label="Envoyer une demande d’ami" />
+            <div class="gift-suggestions" id="friend-suggestions"></div>
+          </div>
+          <button class="btn-gift" id="btn-add-friend">Envoyer</button>
+        </div>
+        <div class="social-divider"></div>
+        <div class="social-sub-head">
+          <h4>Demandes reçues</h4>
+        </div>
+        <div class="pvp-invite-list" id="friend-requests-incoming-list">
+          <div class="lb-empty">Aucune demande reçue.</div>
+        </div>
+        <div class="social-sub-head">
+          <h4>Demandes envoyées</h4>
+        </div>
+        <div class="pvp-invite-list" id="friend-requests-outgoing-list">
+          <div class="lb-empty">Aucune demande envoyée.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lobby-tab-panel hidden" id="tab-leaderboard">
+    <h2>Classement 🏆</h2>
+    <div class="leaderboard" id="leaderboard">
+      <div class="lb-empty">Chargement…</div>
+    </div>
+    <button class="btn-secondary" id="btn-open-leaderboard">Classement complet</button>
+    <button class="btn-secondary lobby-mobile-only" id="btn-lb-back" style="margin-top:4px">← Retour accueil</button>
+  </div>
+
+  <div class="lobby-tab-panel hidden" id="tab-prizes">
   <h2>Récompenses Quotidiennes</h2>
   <div class="bonus-row">
     <!-- Daily -->
@@ -1781,51 +2384,94 @@ body{
     </div>
   </div>
 
-  <h2>Jouer au Blackjack</h2>
-  <div class="play-section">
-    <h3>6 Jeux · Croupier S'arrête sur 17 · Blackjack 3:2</h3>
-    <div class="chip-btns">
-      <div class="chip c10"  data-add="10">10</div>
-      <div class="chip c50"  data-add="50">50</div>
-      <div class="chip c100" data-add="100">100</div>
-      <div class="chip c500" data-add="500">500</div>
-      <div class="chip c1k"  data-add="1000">1K</div>
-      <div class="chip callin" data-add="allin">ALL-IN</div>
-      <div class="chip clear" data-add="clear">✕</div>
-    </div>
-    <div class="bet-input-row">
-      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" aria-label="Montant de la mise" autocomplete="off"/>
-      <span style="color:var(--gold2);font-size:18px">🥞</span>
-    </div>
-    <button class="btn-deal" id="btn-deal">Jouer</button>
-  </div>
-
-  <h2>Envoyer des Crêpes 🎁</h2>
-  <div class="gift-section">
-    <h3>Offrir des crêpes à un ami</h3>
-    <div class="gift-row">
-      <div class="gift-username-wrap">
-        <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" aria-label="Pseudo du destinataire" />
-        <div class="gift-suggestions" id="gift-suggestions"></div>
+  <!-- mobile-only: prize info cards -->
+  <div class="lobby-card-grid lobby-mobile-only">
+    <div class="panel-block">
+      <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
+      <div class="panel-body">
+        <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
+        <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
+          Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
+          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
+        </p>
       </div>
-      <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" aria-label="Montant à envoyer" />
-      <span style="color:var(--gold2);font-size:16px">🥞</span>
-      <button class="btn-gift" id="btn-gift">Envoyer</button>
     </div>
-    <p class="gift-transferable" id="gift-transferable"></p>
+    <div class="panel-block">
+      <div class="suit-deco-grid">
+        <span>♠</span>
+        <span style="color:#c0252a">♥</span>
+        <span style="color:#c0252a">♦</span>
+        <span>♣</span>
+      </div>
+    </div>
+  </div>
+  </div>
   </div>
   </div><!-- /.lobby-main -->
 
+  <!-- ── Right sidebar (desktop/tablet only) ── -->
   <div class="lobby-right">
-    <h2>Classement 🏆</h2>
-    <div class="leaderboard" id="leaderboard">
-      <div class="lb-empty">Chargement…</div>
+    <div class="panel-block">
+      <div class="panel-head"><span>✦</span><h3>En Ligne</h3></div>
+      <div class="panel-body">
+        <div class="online-mini" id="online-mini">
+          <div class="lb-empty">Chargement…</div>
+        </div>
+      </div>
     </div>
-    <button class="btn-secondary" id="btn-open-leaderboard">Classement complet</button>
+    <div class="panel-block">
+      <div class="panel-head"><span>🏆</span><h3>Classement</h3></div>
+      <div class="panel-body">
+        <div class="leaderboard-mini" id="leaderboard-mini">
+          <div class="lb-empty">Chargement…</div>
+        </div>
+        <button class="btn-secondary btn-mini-full" id="btn-open-leaderboard-side">Classement complet</button>
+      </div>
+    </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>⚔️</span><h3>Invitations 1v1</h3><span class="social-badge" id="pvp-invites-badge-side">0</span></div>
+      <div class="panel-body">
+        <div class="pvp-invite-list" id="pvp-incoming-list-side">
+          <div class="lb-empty" style="font-size:11px">Aucune invitation.</div>
+        </div>
+        <div class="pvp-invite-list" id="pvp-outgoing-list-side"></div>
+      </div>
+    </div>
   </div>
 
+  <div class="lobby-bottom-nav">
+    <button class="lobby-nav-btn active" data-lobby-tab="play"><span>🂡</span><span>Jouer</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="social"><span>✦</span><span>Social</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="leaderboard"><span>🏆</span><span>Classement</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="prizes"><span>🎁</span><span>Primes</span></button>
+  </div>
   </div><!-- /.lobby-content -->
 
+</div>
+
+<div id="modal-overlay" class="hidden"></div>
+<div id="challenge-modal" class="hidden">
+  <h3>Défier <span id="challenge-modal-name">un ami</span></h3>
+  <p class="pvp-compose-target">Choisissez la mise du 1v1.</p>
+  <div class="chip-btns pvp-chip-btns">
+    <div class="chip c10 pvp-chip" data-add="10">10</div>
+    <div class="chip c50 pvp-chip" data-add="50">50</div>
+    <div class="chip c100 pvp-chip" data-add="100">100</div>
+    <div class="chip c500 pvp-chip" data-add="500">500</div>
+    <div class="chip c1k pvp-chip" data-add="1000">1K</div>
+    <div class="chip callin pvp-chip" data-add="allin">ALL-IN</div>
+    <div class="chip clear pvp-chip" data-add="clear">✕</div>
+  </div>
+  <div class="bet-input-row">
+    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" aria-label="Montant de la mise 1v1" autocomplete="off"/>
+    <span style="color:var(--gold2);font-size:18px">🥞</span>
+  </div>
+  <div class="friend-actions">
+    <button class="btn-friend" id="btn-close-challenge-modal">Fermer</button>
+    <button class="btn-gift" id="btn-send-pvp">Envoyer l’invitation</button>
+  </div>
 </div>
 
 <!-- FULL LEADERBOARD ─────────────────────────────────────────────────────── -->
@@ -1875,25 +2521,67 @@ body{
   </div>
 </div>
 
+<!-- PVP GAME ──────────────────────────────────────────────────────────────── -->
+<div id="screen-pvp" class="screen hidden">
+  <div class="game-table pvp-table">
+    <div class="dealer-zone">
+      <div class="dealer-label">Adversaire</div>
+      <div class="hand-score" id="pvp-opponent-score"></div>
+      <div class="cards-row" id="pvp-opponent-cards"></div>
+      <div class="pvp-status-line" id="pvp-opponent-status"></div>
+    </div>
+
+    <div class="middle-zone" id="pvp-middle-zone">
+      <div class="bet-chips-display">
+        <span>1v1 :</span><span id="pvp-current-bet">—</span>
+      </div>
+    </div>
+
+    <div class="player-zone">
+      <div class="hands-container pvp-hands-container">
+        <div class="hand-wrapper pvp-single-hand">
+          <div class="cards-row" id="pvp-player-cards"></div>
+          <div class="hand-score" id="pvp-player-score"></div>
+          <div class="pvp-status-line" id="pvp-player-status"></div>
+        </div>
+      </div>
+      <div class="action-bar" id="pvp-action-bar"></div>
+    </div>
+  </div>
+</div>
+
 </div><!-- #app -->
 
 <!-- Toast -->
-<div id="toast"></div>
+<div id="toast-container"></div>
 
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   user: null,
   game: null,
+  pvpGame: null,
   balance: 0,
+  friends: [],
+  friendRequests: { incoming: [], outgoing: [] },
+  pvpInvites: { incoming: [], outgoing: [] },
+  pvpTarget: null,
   dailyCooldown: 0,
   minigameCooldown: 0,
   serverTimeOffsetMs: 0,
   dailyAvailableAtMs: 0,
   minigameAvailableAtMs: 0,
   currentTab: 'login',
+  lobbyTab: 'play',
   countdownInterval: null,
   busy: false,
+  liveSource: null,
+  liveRetryTimer: null,
+  socialRefreshInterval: null,
+  pvpRefreshInterval: null,
+  friendRequestsLoading: false,
+  pvpInvitesLoading: false,
+  pvpStateLoading: false,
 };
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
@@ -1902,13 +2590,16 @@ function show(id)    { $(id).classList.remove('hidden') }
 function hide(id)    { $(id).classList.add('hidden') }
 function toggle(id,v){ v ? show(id) : hide(id) }
 
-let toastTimer;
 function toast(msg, type='info', dur=2800) {
-  const el = $('toast');
+  const container = $('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
   el.textContent = msg;
-  el.className = `show ${type}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = '', dur);
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 400);
+  }, dur);
 }
 
 // ── API ────────────────────────────────────────────────────────────────────────
@@ -1934,6 +2625,7 @@ let balanceAnimFrame;
 function setBalance(val) {
   S.balance = val;
   syncBetInputLimit();
+  syncPvpBetInputLimit();
   updateTransferableHint();
   const el = $('header-balance');
   const prev = parseInt(el.textContent.replace(/\s/g,'')) || 0;
@@ -1977,6 +2669,15 @@ function syncBetInputLimit() {
   if (!inp.value) return;
   const current = Math.max(0, parseInt(inp.value) || 0);
   inp.value = cap ? Math.min(current, cap) : '';
+}
+
+function syncPvpBetInputLimit() {
+  const inp = $('pvp-bet-input');
+  if (!inp) return;
+  const cap = getBetCap();
+  inp.max = cap || 0;
+  const current = Math.max(0, parseInt(inp.value) || 0);
+  inp.value = cap ? Math.min(current || 100, cap) : '';
 }
 
 // ── Countdown timer ───────────────────────────────────────────────────────────
@@ -2053,10 +2754,91 @@ function startCountdowns() {
   }, 1000);
 }
 
+function startLiveUpdates() {
+  if (S.liveSource || !S.user) return;
+  if (!window.EventSource) return;
+
+  const src = new EventSource('/api/events', { withCredentials: true });
+  S.liveSource = src;
+
+  src.addEventListener('friends:update', () => loadFriends());
+  src.addEventListener('friend_requests:update', () => loadFriendRequests());
+  src.addEventListener('invites:update', () => {
+    loadPvpInvites();
+    loadPvpGameState({ keepCurrentScreen: true, silent: true });
+  });
+  src.addEventListener('pvp:update', () => loadPvpGameState({ keepCurrentScreen: true, silent: true }));
+  src.addEventListener('gift:received', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      toast(`${escHtml(d.from)} vous a offert ${d.amount.toLocaleString('fr-FR')} 🥞`, 'gold', 5000);
+      // Refresh balance
+      api('GET', '/api/user/me').then(u => {
+        if (u) {
+          S.balance = u.balance;
+          S.user.nonTransferable = u.nonTransferable || 0;
+          animateBalance(u.balance);
+          updateTransferableHint();
+        }
+      }).catch(() => {});
+    } catch {}
+  });
+  src.onerror = () => {
+    stopLiveUpdates();
+    clearTimeout(S.liveRetryTimer);
+    S.liveRetryTimer = setTimeout(() => {
+      if (S.user) startLiveUpdates();
+    }, 2000);
+  };
+}
+
+function stopLiveUpdates() {
+  if (S.liveSource) {
+    S.liveSource.close();
+    S.liveSource = null;
+  }
+  clearTimeout(S.liveRetryTimer);
+  S.liveRetryTimer = null;
+}
+
+function startSocialRefresh() {
+  stopSocialRefresh();
+  S.socialRefreshInterval = setInterval(() => {
+    if ($('screen-lobby').classList.contains('screen-visible')) {
+      loadFriendRequests();
+      loadFriends();
+      loadPvpInvites();
+    }
+  }, 12000);
+}
+
+function stopSocialRefresh() {
+  if (S.socialRefreshInterval) {
+    clearInterval(S.socialRefreshInterval);
+    S.socialRefreshInterval = null;
+  }
+}
+
+function startPvpRefresh() {
+  stopPvpRefresh();
+  S.pvpRefreshInterval = setInterval(() => {
+    if ($('screen-pvp').classList.contains('screen-visible')) {
+      loadPvpGameState({ keepCurrentScreen: true, silent: true });
+    }
+  }, 4000);
+}
+
+function stopPvpRefresh() {
+  if (S.pvpRefreshInterval) {
+    clearInterval(S.pvpRefreshInterval);
+    S.pvpRefreshInterval = null;
+  }
+}
+
 // ── Auth ───────────────────────────────────────────────────────────────────────
 let screenTransitionTimer = null;
 function transitionTo(screenId, { smooth = false } = {}) {
-  const screens = ['screen-auth', 'screen-lobby', 'screen-leaderboard', 'screen-game'];
+  const screens = ['screen-auth', 'screen-lobby', 'screen-leaderboard', 'screen-game', 'screen-pvp'];
   const current = screens
     .map(id => $(id))
     .find(el => !el.classList.contains('hidden') && el.classList.contains('screen-visible'));
@@ -2099,6 +2881,27 @@ function getGreetingForLocalTime() {
   return (hour >= 4 && hour < 17) ? 'Bonjour' : 'Bonsoir';
 }
 
+function useMobileLobbyTabs() {
+  return window.matchMedia('(max-width: 760px)').matches;
+}
+
+function setLobbyTab(tab) {
+  S.lobbyTab = tab;
+  if (!useMobileLobbyTabs()) {
+    document.querySelectorAll('.lobby-tab-panel').forEach(panel => panel.classList.remove('hidden'));
+    document.querySelectorAll('.lobby-nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lobbyTab === 'play'));
+    return;
+  }
+  document.querySelectorAll('.lobby-tab-panel').forEach(panel => {
+    panel.classList.toggle('hidden', panel.id !== `tab-${tab}`);
+  });
+  document.querySelectorAll('.lobby-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lobbyTab === tab);
+  });
+  // Re-sync reward cooldowns every time the prizes tab appears
+  if (tab === 'prizes') renderCooldowns();
+}
+
 function unlockEditableField(el) {
   if (!el || !el.hasAttribute('data-unlock-edit')) return;
   el.removeAttribute('readonly');
@@ -2110,6 +2913,9 @@ function showAuth() {
   clearInterval(S.countdownInterval);
   stopLeaderboardRefresh();
   stopHeartbeat();
+  stopLiveUpdates();
+  stopSocialRefresh();
+  stopPvpRefresh();
   requestAnimationFrame(() => blurActiveField());
   setTimeout(blurActiveField, 50);
 }
@@ -2119,22 +2925,42 @@ function showLobby() {
   transitionTo('screen-lobby', { smooth: true });
   $('lobby-greeting-text').textContent = getGreetingForLocalTime();
   $('lobby-username').textContent = S.user.username;
+  setLobbyTab(S.lobbyTab || 'play');
+  renderCooldowns();
+  startLiveUpdates();
   loadLobbyData();
   startLeaderboardRefresh();
   startHeartbeat();
+  startSocialRefresh();
+  stopPvpRefresh();
 }
 
 function showLeaderboardScreen() {
   show('header');
   transitionTo('screen-leaderboard', { smooth: true });
+  startLiveUpdates();
   loadFullLeaderboard();
   startLeaderboardRefresh();
+  stopSocialRefresh();
+  stopPvpRefresh();
 }
 
 function showGame() {
   show('header');
   transitionTo('screen-game', { smooth: true });
+  startLiveUpdates();
   stopLeaderboardRefresh();
+  stopSocialRefresh();
+  stopPvpRefresh();
+}
+
+function showPvpGame() {
+  show('header');
+  transitionTo('screen-pvp', { smooth: true });
+  startLiveUpdates();
+  stopLeaderboardRefresh();
+  stopSocialRefresh();
+  startPvpRefresh();
 }
 
 async function loadLobbyData() {
@@ -2153,6 +2979,10 @@ async function loadLobbyData() {
   } catch(e) { /* silent */ }
 
   loadLeaderboard();
+  loadFriendRequests();
+  loadFriends();
+  loadPvpInvites();
+  loadGiftsReceived();
 }
 
 async function loadLeaderboard() {
@@ -2173,6 +3003,85 @@ async function loadFullLeaderboard() {
     renderFullLeaderboard(d.players || []);
   } catch(e) {
     $('leaderboard-full-list').innerHTML = '<div class="leaderboard-full-empty">Impossible de charger le classement complet.</div>';
+  }
+}
+
+async function loadFriends() {
+  try {
+    const d = await api('GET', '/api/friends');
+    S.friends = d.friends || [];
+    if (S.pvpTarget && !S.friends.some(friend => friend.username === S.pvpTarget)) {
+      S.pvpTarget = null;
+    }
+    renderFriends();
+  } catch(e) {
+    $('friends-list').innerHTML = `<div class="lb-empty">${escHtml(e.error || 'Impossible de charger les amis.')}</div>`;
+  }
+}
+
+async function loadFriendRequests() {
+  if (S.friendRequestsLoading) return;
+  S.friendRequestsLoading = true;
+  try {
+    const prevIncomingIds = new Set((S.friendRequests?.incoming || []).map(req => req.id));
+    const d = await api('GET', '/api/friends/requests');
+    S.friendRequests = {
+      incoming: d.incoming || [],
+      outgoing: d.outgoing || [],
+    };
+    renderFriendRequests();
+    const newIncoming = S.friendRequests.incoming.find(req => !prevIncomingIds.has(req.id));
+    if (newIncoming) toast(`Nouvelle demande d’ami de ${newIncoming.username}.`, 'gold', 3500);
+  } catch(e) {
+    $('friend-requests-incoming-list').innerHTML = '<div class="lb-empty">Impossible de charger les demandes.</div>';
+    $('friend-requests-outgoing-list').innerHTML = '';
+  } finally {
+    S.friendRequestsLoading = false;
+  }
+}
+
+async function loadPvpInvites() {
+  if (S.pvpInvitesLoading) return;
+  S.pvpInvitesLoading = true;
+  try {
+    const prevIncomingIds = new Set((S.pvpInvites?.incoming || []).map(invite => invite.id));
+    const d = await api('GET', '/api/pvp/invites');
+    S.pvpInvites = {
+      incoming: d.incoming || [],
+      outgoing: d.outgoing || [],
+    };
+    renderPvpInvites();
+    const newIncoming = S.pvpInvites.incoming.find(invite => !prevIncomingIds.has(invite.id));
+    if (newIncoming) toast(`Invitation 1v1 reçue de ${newIncoming.username}.`, 'gold', 4000);
+  } catch(e) {
+    $('pvp-incoming-list').innerHTML = '<div class="lb-empty">Impossible de charger les invitations.</div>';
+    $('pvp-outgoing-list').innerHTML = '';
+  } finally {
+    S.pvpInvitesLoading = false;
+  }
+}
+
+async function loadPvpGameState({ keepCurrentScreen = false, silent = false } = {}) {
+  if (S.pvpStateLoading) return;
+  S.pvpStateLoading = true;
+  try {
+    const d = await api('GET', '/api/pvp/game/state');
+    S.pvpGame = d.game;
+    if (d.balance !== undefined) setBalance(d.balance);
+    if (d.game) {
+      renderPvpGame();
+      showPvpGame();
+    } else if (!keepCurrentScreen && !$('screen-game').classList.contains('screen-visible')) {
+      showLobby();
+    } else if ($('screen-pvp').classList.contains('screen-visible')) {
+      showLobby();
+    }
+  } catch(e) {
+    if (!silent && $('screen-pvp').classList.contains('screen-visible')) {
+      toast(e.error || 'Impossible de mettre à jour le 1v1.', 'error');
+    }
+  } finally {
+    S.pvpStateLoading = false;
   }
 }
 
@@ -2239,6 +3148,90 @@ function renderLeaderboard(top10, me) {
   ` : '';
 
   el.innerHTML = rows + meRow;
+
+  // Also render mini sidebar leaderboard (top 5)
+  const miniEl = $('leaderboard-mini');
+  if (miniEl && top10) {
+    const mini = top10.slice(0, 5);
+    miniEl.innerHTML = mini.map(p => `
+      <div class="lb-row mini${p.isMe ? ' me' : ''}">
+        <span class="lb-rank ${rankClass(p.rank)}">${rankLabel(p.rank)}</span>
+        <span class="lb-name">${dot(p)}${escHtml(p.username)}</span>
+        <span class="lb-balance">${p.balance.toLocaleString('fr-FR')}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function renderOnlineMini() {
+  const el = $('online-mini');
+  if (!el) return;
+  const friends = S.friends || [];
+  const online = friends.filter(f => f.online);
+  if (online.length === 0) {
+    el.innerHTML = '<div class="lb-empty" style="font-size:11px">Aucun ami en ligne.</div>';
+    return;
+  }
+  el.innerHTML = online.slice(0, 8).map(f => `
+    <div class="online-mini-row">
+      <span class="online-dot"></span>
+      <span>${escHtml(f.username)}</span>
+    </div>
+  `).join('');
+}
+
+const _seenGiftIds = new Set();
+let _giftsFirstLoad = true;
+async function loadGiftsReceived() {
+  try {
+    const gifts = await api('GET', '/api/user/gifts-received');
+    if (!gifts || gifts.length === 0) { _giftsFirstLoad = false; return; }
+    for (const g of gifts) {
+      const key = `${g.from}_${g.amount}_${g.at || ''}`;
+      if (!_seenGiftIds.has(key)) {
+        _seenGiftIds.add(key);
+        if (!_giftsFirstLoad) {
+          toast(`${escHtml(g.from)} vous a offert ${g.amount.toLocaleString('fr-FR')} 🥞`, 'gold', 5000);
+        }
+      }
+    }
+    _giftsFirstLoad = false;
+  } catch(e) {}
+}
+
+function renderPvpInvitesSide() {
+  const incomingEl = $('pvp-incoming-list-side');
+  const outgoingEl = $('pvp-outgoing-list-side');
+  const badge = $('pvp-invites-badge-side');
+  if (!incomingEl || !outgoingEl) return;
+  const incoming = S.pvpInvites?.incoming || [];
+  const outgoing = S.pvpInvites?.outgoing || [];
+  if (badge) badge.textContent = String(incoming.length + outgoing.length);
+
+  incomingEl.innerHTML = incoming.length ? incoming.map(invite => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
+        <div class="pvp-invite-sub">Vous défie pour <strong>${invite.amount.toLocaleString('fr-FR')} 🥞</strong></div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini accept" data-pvp-accept="${invite.id}">Accepter</button>
+        <button class="btn-pvp-mini decline" data-pvp-decline="${invite.id}">Refuser</button>
+      </div>
+    </div>
+  `).join('') : '<div class="lb-empty" style="font-size:11px">Aucune invitation reçue.</div>';
+
+  outgoingEl.innerHTML = outgoing.length ? outgoing.map(invite => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
+        <div class="pvp-invite-sub">Invitation envoyée pour <strong>${invite.amount.toLocaleString('fr-FR')} 🥞</strong></div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini cancel" data-pvp-cancel="${invite.id}">Annuler</button>
+      </div>
+    </div>
+  `).join('') : '<div class="lb-empty" style="font-size:11px">Aucune invitation envoyée.</div>';
 }
 
 function renderFullLeaderboard(players) {
@@ -2256,6 +3249,244 @@ function renderFullLeaderboard(players) {
       <span class="leaderboard-full-balance">${p.balance.toLocaleString('fr-FR')} 🥞</span>
     </div>
   `).join('');
+}
+
+function setPvpTarget(username) {
+  S.pvpTarget = username || null;
+  $('challenge-modal-name').textContent = S.pvpTarget || 'un ami';
+  $('btn-send-pvp').disabled = !S.pvpTarget;
+}
+
+function renderFriendRequests() {
+  const incomingEl = $('friend-requests-incoming-list');
+  const outgoingEl = $('friend-requests-outgoing-list');
+  const incoming = S.friendRequests?.incoming || [];
+  const outgoing = S.friendRequests?.outgoing || [];
+  $('friend-requests-badge').textContent = String(incoming.length + outgoing.length);
+
+  incomingEl.innerHTML = incoming.length ? incoming.map(req => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${req.online ? '<span class="online-dot"></span>' : ''}${escHtml(req.username)}</div>
+        <div class="pvp-invite-sub">Souhaite vous ajouter en ami</div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini accept" data-friend-accept="${req.id}">Accepter</button>
+        <button class="btn-pvp-mini decline" data-friend-decline="${req.id}">Refuser</button>
+      </div>
+    </div>
+  `).join('') : '<div class="lb-empty">Aucune demande reçue.</div>';
+
+  outgoingEl.innerHTML = outgoing.length ? outgoing.map(req => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${req.online ? '<span class="online-dot"></span>' : ''}${escHtml(req.username)}</div>
+        <div class="pvp-invite-sub">Demande envoyée</div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini cancel" data-friend-cancel="${req.id}">Annuler</button>
+      </div>
+    </div>
+  `).join('') : '<div class="lb-empty">Aucune demande envoyée.</div>';
+}
+
+function openChallengeModal(username) {
+  setPvpTarget(username);
+  syncPvpBetInputLimit();
+  $('modal-overlay').classList.remove('hidden');
+  $('challenge-modal').classList.remove('hidden');
+}
+
+function closeChallengeModal() {
+  $('modal-overlay').classList.add('hidden');
+  $('challenge-modal').classList.add('hidden');
+}
+
+function renderFriends() {
+  const el = $('friends-list');
+  if (!el) return;
+  $('friends-count-badge').textContent = String(S.friends.length);
+  if (!S.friends.length) {
+    el.innerHTML = '<div class="lb-empty">Aucun ami pour le moment.</div>';
+    setPvpTarget(null);
+    return;
+  }
+
+  el.innerHTML = S.friends.map(friend => `
+    <div class="friend-row">
+      <div class="friend-meta">
+        <div class="friend-name">${friend.online ? '<span class="online-dot"></span>' : ''}${escHtml(friend.username)}</div>
+        <div class="friend-sub"><strong>${friend.balance.toLocaleString('fr-FR')} 🥞</strong> disponibles</div>
+      </div>
+      <div class="friend-actions">
+        <button class="btn-friend challenge" data-friend-challenge="${escHtml(friend.username)}">1v1</button>
+        <button class="btn-friend remove" data-friend-remove="${escHtml(friend.username)}">Retirer</button>
+      </div>
+    </div>
+  `).join('');
+  renderOnlineMini();
+}
+
+function renderPvpInvites() {
+  const incomingEl = $('pvp-incoming-list');
+  const outgoingEl = $('pvp-outgoing-list');
+  const incoming = S.pvpInvites?.incoming || [];
+  const outgoing = S.pvpInvites?.outgoing || [];
+  const total = incoming.length + outgoing.length;
+  $('pvp-invites-badge').textContent = String(total);
+
+  // Show/hide the mobile 1v1 section based on whether there are any invitations
+  const mobileSection = $('pvp-mobile-section');
+  if (mobileSection) mobileSection.classList.toggle('hidden', total === 0);
+
+  incomingEl.innerHTML = incoming.length ? incoming.map(invite => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
+        <div class="pvp-invite-sub">Vous défie pour <strong>${invite.amount.toLocaleString('fr-FR')} 🥞</strong></div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini accept" data-pvp-accept="${invite.id}">Accepter</button>
+        <button class="btn-pvp-mini decline" data-pvp-decline="${invite.id}">Refuser</button>
+      </div>
+    </div>
+  `).join('') : '';
+
+  outgoingEl.innerHTML = outgoing.length ? outgoing.map(invite => `
+    <div class="pvp-invite-row">
+      <div class="pvp-invite-meta">
+        <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
+        <div class="pvp-invite-sub">Invitation envoyée pour <strong>${invite.amount.toLocaleString('fr-FR')} 🥞</strong></div>
+      </div>
+      <div class="pvp-invite-actions">
+        <button class="btn-pvp-mini cancel" data-pvp-cancel="${invite.id}">Annuler</button>
+      </div>
+    </div>
+  `).join('') : '';
+  renderPvpInvitesSide();
+}
+
+function pvpResultText(game) {
+  if (!game?.result) return '';
+  const result = game.result;
+  if (result.reason === 'timeout_both') return 'Temps écoulé pour les deux joueurs. Mises remboursées.';
+  if (result.reason === 'timeout') {
+    return result.winnerId === game.me.id
+      ? 'Victoire par inactivité adverse. Vous remportez le pot.'
+      : 'Défaite par inactivité. Vous avez dépassé 1 minute sans jouer.';
+  }
+  if (!result.winnerId) return 'Égalité. Les deux mises sont remboursées.';
+  return result.winnerId === game.me.id
+    ? `Victoire. Vous remportez ${(game.bet * 2).toLocaleString('fr-FR')} 🥞.`
+    : 'Défaite. Votre adversaire remporte le pot.';
+}
+
+function pvpStatusLabel(player) {
+  if (player.busted) return 'Bust';
+  if (player.total === 21) return '21';
+  if (player.stood) return 'Stand';
+  return 'En jeu';
+}
+
+function renderPvpGame() {
+  const game = S.pvpGame;
+  if (!game) return;
+  $('pvp-opponent-cards').innerHTML = '';
+  $('pvp-player-cards').innerHTML = '';
+
+  game.opponent.previewHand.forEach((card) => {
+    $('pvp-opponent-cards').appendChild(buildStaticCard(card));
+  });
+  game.me.hand.forEach((card) => {
+    $('pvp-player-cards').appendChild(buildStaticCard(card));
+  });
+
+  const opponentScore = game.phase === 'complete'
+    ? scoreLabel(game.opponent.previewHand, 'complete', false)
+    : { text: String(game.opponent.initialTotal), cls: '' };
+  $('pvp-opponent-score').textContent = opponentScore.text;
+  $('pvp-opponent-score').className = `hand-score ${opponentScore.cls}`;
+
+  const myScore = scoreLabel(game.me.hand, 'complete', false);
+  $('pvp-player-score').textContent = myScore.text;
+  $('pvp-player-score').className = `hand-score ${myScore.cls}`;
+
+  $('pvp-opponent-status').textContent = game.phase === 'complete'
+    ? `${game.opponent.username} • ${pvpStatusLabel(game.opponent)}${game.opponent.online ? '' : ' • hors ligne'}`
+    : `${game.opponent.username} • main cachée${game.opponent.online ? '' : ' • hors ligne'}`;
+  $('pvp-player-status').textContent = game.phase === 'complete'
+    ? pvpResultText(game)
+    : `Vous • ${pvpStatusLabel(game.me)}`;
+  $('pvp-player-status').className = `pvp-status-line${game.phase === 'complete' ? ' alert' : ''}`;
+
+  const middle = $('pvp-middle-zone');
+  middle.innerHTML = `
+    <div class="bet-chips-display">
+      <span>1v1 :</span><span>${game.bet.toLocaleString('fr-FR')} 🥞</span>
+    </div>
+    <div class="result-banner pvp-banner ${game.phase === 'complete' ? (game.result?.winnerId === game.me.id ? 'win' : game.result?.winnerId ? 'lose' : 'push') : 'push'}">
+      ${game.phase === 'complete'
+        ? escHtml(pvpResultText(game))
+        : `Tour libre : chacun joue sa main en temps réel`}
+    </div>
+  `;
+
+  const bar = $('pvp-action-bar');
+
+  if (game.phase === 'active') {
+    delete bar.dataset.rematchKey;
+    bar.innerHTML = '';
+    const canPlay = !game.me.stood && !game.me.busted;
+    [
+      { label: 'Tirer', action: '/api/pvp/game/hit', cls: 'hit' },
+      { label: 'Rester', action: '/api/pvp/game/stand', cls: 'stand' },
+    ].forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = `btn-action ${item.cls}`;
+      btn.textContent = item.label;
+      btn.disabled = !canPlay;
+      btn.addEventListener('click', () => doPvpAction(item.action));
+      bar.appendChild(btn);
+    });
+  } else {
+    const rematchReady = game.rematchReady || [];
+    const iReady = rematchReady.includes(game.me.id);
+    const opponentReady = rematchReady.includes(game.opponent.id);
+    const opponentLeft = !!game.opponentDismissed;
+
+    // Re-render complete bar when rematch state changes
+    const rematchKey = `${iReady}-${opponentReady}-${opponentLeft}`;
+    if (bar.dataset.rematchKey !== rematchKey) {
+      bar.dataset.rematchKey = rematchKey;
+      bar.innerHTML = '';
+
+      if (!opponentLeft) {
+        const rematchBtn = document.createElement('button');
+        rematchBtn.className = 'btn-action hit';
+        if (iReady) {
+          rematchBtn.textContent = opponentReady ? 'Lancement…' : 'En attente…';
+          rematchBtn.disabled = true;
+        } else {
+          rematchBtn.textContent = opponentReady ? 'Accepter la revanche' : 'Revanche';
+          rematchBtn.addEventListener('click', requestPvpRematch);
+        }
+        bar.appendChild(rematchBtn);
+
+        if (iReady && !opponentReady) {
+          const hint = document.createElement('div');
+          hint.className = 'pvp-rematch-hint';
+          hint.textContent = 'En attente de l\'adversaire…';
+          bar.appendChild(hint);
+        }
+      }
+
+      const dismissBtn = document.createElement('button');
+      dismissBtn.className = 'btn-new-game';
+      dismissBtn.textContent = 'Retour accueil';
+      dismissBtn.addEventListener('click', dismissPvpGame);
+      bar.appendChild(dismissBtn);
+    }
+  }
 }
 
 // Auth tabs
@@ -2317,7 +3548,198 @@ $('btn-logout').addEventListener('click', async () => {
 });
 
 $('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
+$('btn-open-leaderboard-side').addEventListener('click', showLeaderboardScreen);
 $('btn-back-lobby').addEventListener('click', showLobby);
+$('btn-lb-back').addEventListener('click', () => setLobbyTab('play'));
+document.querySelectorAll('.lobby-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => setLobbyTab(btn.dataset.lobbyTab));
+});
+window.addEventListener('resize', () => {
+  if (!$('screen-lobby').classList.contains('hidden')) setLobbyTab(S.lobbyTab || 'play');
+});
+
+$('btn-add-friend').addEventListener('click', async () => {
+  const username = $('friend-username').value.trim();
+  if (!username) { toast('Entrez un pseudo', 'error'); return; }
+
+  $('btn-add-friend').disabled = true;
+  try {
+    await api('POST', '/api/friends/request', { username });
+    $('friend-username').value = '';
+    toast(`Demande d’ami envoyée à ${username}.`, 'success');
+    await loadFriendRequests();
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    $('btn-add-friend').disabled = false;
+  }
+});
+
+$('friend-requests-incoming-list').addEventListener('click', async e => {
+  const accept = e.target.closest('[data-friend-accept]');
+  const decline = e.target.closest('[data-friend-decline]');
+  try {
+    if (accept) {
+      await api('POST', `/api/friends/requests/${accept.dataset.friendAccept}/accept`);
+      toast('Demande d’ami acceptée.', 'success');
+      await Promise.all([loadFriendRequests(), loadFriends()]);
+    } else if (decline) {
+      await api('POST', `/api/friends/requests/${decline.dataset.friendDecline}/decline`);
+      toast('Demande d’ami refusée.', 'success');
+      await loadFriendRequests();
+    }
+  } catch(err) {
+    toast(err.error || 'Erreur', 'error');
+  }
+});
+
+$('friend-requests-outgoing-list').addEventListener('click', async e => {
+  const cancel = e.target.closest('[data-friend-cancel]');
+  if (!cancel) return;
+  try {
+    await api('POST', `/api/friends/requests/${cancel.dataset.friendCancel}/cancel`);
+    toast('Demande d’ami annulée.', 'success');
+    await loadFriendRequests();
+  } catch(err) {
+    toast(err.error || 'Erreur', 'error');
+  }
+});
+
+$('friends-list').addEventListener('click', async e => {
+  const challenge = e.target.closest('[data-friend-challenge]');
+  if (challenge) {
+    openChallengeModal(challenge.dataset.friendChallenge);
+    return;
+  }
+
+  const remove = e.target.closest('[data-friend-remove]');
+  if (!remove) return;
+  const username = remove.dataset.friendRemove;
+  remove.disabled = true;
+  try {
+    await api('DELETE', `/api/friends/${encodeURIComponent(username)}`);
+    if (S.pvpTarget === username) setPvpTarget(null);
+    toast(`${username} retiré des amis.`, 'success');
+    await loadFriends();
+  } catch(e2) {
+    toast(e2.error || 'Erreur', 'error');
+    remove.disabled = false;
+  }
+});
+
+$('btn-close-challenge-modal').addEventListener('click', closeChallengeModal);
+$('modal-overlay').addEventListener('click', closeChallengeModal);
+
+$('btn-send-pvp').addEventListener('click', async () => {
+  const target = S.pvpTarget;
+  const amount = parseInt($('pvp-bet-input').value);
+  if (!target) { toast('Choisissez un ami à défier', 'error'); return; }
+  if (!amount || amount < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
+
+  $('btn-send-pvp').disabled = true;
+  try {
+    await api('POST', '/api/pvp/invite', { to: target, amount });
+    toast(`Invitation 1v1 envoyée à ${target}.`, 'success');
+    closeChallengeModal();
+    await loadPvpInvites();
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    $('btn-send-pvp').disabled = !S.pvpTarget;
+  }
+});
+
+$('pvp-incoming-list').addEventListener('click', async e => {
+  const accept = e.target.closest('[data-pvp-accept]');
+  const decline = e.target.closest('[data-pvp-decline]');
+
+  if (accept) {
+    try {
+      const d = await api('POST', `/api/pvp/invites/${accept.dataset.pvpAccept}/accept`);
+      if (d.game) {
+        S.pvpGame = d.game;
+        renderPvpGame();
+        showPvpGame();
+        setTimeout(() => loadPvpGameState({ keepCurrentScreen: true, silent: true }), 150);
+      } else {
+        await loadPvpGameState({ keepCurrentScreen: true, silent: false });
+      }
+      loadPvpInvites();
+      loadFriends();
+    } catch(err) {
+      toast(err.error || 'Erreur', 'error');
+    }
+    return;
+  }
+
+  if (decline) {
+    try {
+      await api('POST', `/api/pvp/invites/${decline.dataset.pvpDecline}/decline`);
+      toast('Invitation refusée.', 'success');
+      loadPvpInvites();
+    } catch(err) {
+      toast(err.error || 'Erreur', 'error');
+    }
+  }
+});
+
+$('pvp-outgoing-list').addEventListener('click', async e => {
+  const cancel = e.target.closest('[data-pvp-cancel]');
+  if (!cancel) return;
+  try {
+    await api('POST', `/api/pvp/invites/${cancel.dataset.pvpCancel}/cancel`);
+    toast('Invitation annulée.', 'success');
+    loadPvpInvites();
+  } catch(err) {
+    toast(err.error || 'Erreur', 'error');
+  }
+});
+
+$('pvp-incoming-list-side').addEventListener('click', async e => {
+  const accept = e.target.closest('[data-pvp-accept]');
+  const decline = e.target.closest('[data-pvp-decline]');
+
+  if (accept) {
+    try {
+      const d = await api('POST', `/api/pvp/invites/${accept.dataset.pvpAccept}/accept`);
+      if (d.game) {
+        S.pvpGame = d.game;
+        renderPvpGame();
+        showPvpGame();
+        setTimeout(() => loadPvpGameState({ keepCurrentScreen: true, silent: true }), 150);
+      } else {
+        await loadPvpGameState({ keepCurrentScreen: true, silent: false });
+      }
+      loadPvpInvites();
+      loadFriends();
+    } catch(err) {
+      toast(err.error || 'Erreur', 'error');
+    }
+    return;
+  }
+
+  if (decline) {
+    try {
+      await api('POST', `/api/pvp/invites/${decline.dataset.pvpDecline}/decline`);
+      toast('Invitation refusée.', 'success');
+      loadPvpInvites();
+    } catch(err) {
+      toast(err.error || 'Erreur', 'error');
+    }
+  }
+});
+
+$('pvp-outgoing-list-side').addEventListener('click', async e => {
+  const cancel = e.target.closest('[data-pvp-cancel]');
+  if (!cancel) return;
+  try {
+    await api('POST', `/api/pvp/invites/${cancel.dataset.pvpCancel}/cancel`);
+    toast('Invitation annulée.', 'success');
+    loadPvpInvites();
+  } catch(err) {
+    toast(err.error || 'Erreur', 'error');
+  }
+});
 
 // ── Daily bonus ────────────────────────────────────────────────────────────────
 $('btn-daily').addEventListener('click', async () => {
@@ -2380,6 +3802,7 @@ $('btn-minigame').addEventListener('click', playMinigame);
 // ── Chips / bet ────────────────────────────────────────────────────────────────
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
+    if (chip.classList.contains('pvp-chip')) return;
     const inp = $('bet-input');
     const add = chip.dataset.add;
     const cap = getBetCap();
@@ -2439,6 +3862,28 @@ $('bet-input').addEventListener('input', () => {
   syncBetInputLimit();
 });
 
+document.querySelectorAll('.pvp-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const inp = $('pvp-bet-input');
+    const add = chip.dataset.add;
+    const cap = getBetCap();
+    if (add === 'clear') { inp.value = ''; return; }
+    if (!cap) { inp.value = ''; return; }
+    if (add === 'allin') { inp.value = cap; return; }
+    const cur = parseInt(inp.value) || 0;
+    if (cur >= cap) return;
+    inp.value = Math.min(cur + parseInt(add), cap);
+  });
+});
+
+$('pvp-bet-input').addEventListener('input', syncPvpBetInputLimit);
+$('pvp-bet-input').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if ($('btn-send-pvp').disabled) return;
+  $('btn-send-pvp').click();
+});
+
 // ── Game rendering ─────────────────────────────────────────────────────────────
 const SUIT_COLORS = { '♥': true, '♦': true, '♠': false, '♣': false };
 
@@ -2487,6 +3932,13 @@ function buildCard(card, delay = 0) {
     <span class="card-suit">${card.suit}</span>
     <span class="card-rank-br">${card.rank}</span>
   `;
+  return el;
+}
+
+function buildStaticCard(card) {
+  const el = buildCard(card, 0);
+  el.style.animation = 'none';
+  el.style.animationDelay = '0ms';
   return el;
 }
 
@@ -2746,6 +4198,72 @@ async function doAction(endpoint) {
   }
 }
 
+async function doPvpAction(endpoint) {
+  if (S.busy) return;
+  S.busy = true;
+  document.querySelectorAll('#pvp-action-bar .btn-action').forEach(btn => btn.disabled = true);
+
+  try {
+    const d = await api('POST', endpoint);
+    if (d.balance !== undefined) setBalance(d.balance);
+    if (d.success === false) {
+      S.pvpGame = d.game;
+      if (d.game) renderPvpGame();
+      if (d.error) toast(d.error, 'error');
+      return;
+    }
+    if (d.game) {
+      S.pvpGame = d.game;
+      renderPvpGame();
+      setTimeout(() => loadPvpGameState({ keepCurrentScreen: true, silent: true }), 120);
+    } else {
+      await loadPvpGameState({ keepCurrentScreen: true, silent: false });
+    }
+  } catch(e) {
+    console.error('PvP action failed:', e);
+    await loadPvpGameState({ keepCurrentScreen: true, silent: true });
+    if (S.pvpGame) {
+      renderPvpGame();
+      if (e.error) toast(e.error, 'error');
+    } else {
+      toast(e.error || 'Erreur', 'error');
+      document.querySelectorAll('#pvp-action-bar .btn-action').forEach(btn => btn.disabled = false);
+    }
+  } finally {
+    S.busy = false;
+  }
+}
+
+async function requestPvpRematch() {
+  if (S.busy) return;
+  S.busy = true;
+  document.querySelectorAll('#pvp-action-bar .btn-action').forEach(btn => btn.disabled = true);
+  try {
+    const d = await api('POST', '/api/pvp/game/rematch');
+    if (d.game) {
+      S.pvpGame = d.game;
+      if (d.balance != null) setBalance(d.balance);
+      renderPvpGame();
+      showPvpGame();
+      setTimeout(() => loadPvpGameState({ keepCurrentScreen: true, silent: true }), 120);
+    } else if (d.waiting) {
+      await loadPvpGameState({ keepCurrentScreen: true, silent: true });
+    }
+  } catch (e) {
+    toast(e.error || 'Impossible de relancer', 'error');
+    await loadPvpGameState({ keepCurrentScreen: true, silent: true });
+  } finally {
+    S.busy = false;
+  }
+}
+
+async function dismissPvpGame() {
+  await api('POST', '/api/pvp/game/dismiss').catch(() => {});
+  S.pvpGame = null;
+  showLobby();
+  loadLobbyData();
+}
+
 async function goToLobby() {
   S.game = null;
   showLobby();
@@ -2753,45 +4271,77 @@ async function goToLobby() {
 }
 
 // ── Gift Username Autocomplete ──────────────────────────────────────────────
-{
-  const inp = $('gift-username'), box = $('gift-suggestions');
-  let _timer = null, _idx = -1;
+function setupUserAutocomplete({ inputId, boxId, onPick }) {
+  const inp = $(inputId);
+  const box = $(boxId);
+  let timer = null;
+  let idx = -1;
 
-  function closeSugg() { box.classList.remove('open'); box.innerHTML = ''; _idx = -1; }
+  function closeSugg() {
+    box.classList.remove('open');
+    box.innerHTML = '';
+    idx = -1;
+  }
+
+  async function searchUsers(query) {
+    const d = await api('GET', '/api/user/search?q=' + encodeURIComponent(query));
+    return d.users || [];
+  }
 
   inp.addEventListener('input', () => {
-    clearTimeout(_timer);
+    clearTimeout(timer);
     const q = inp.value.trim();
     if (q.length < 1) { closeSugg(); return; }
-    _timer = setTimeout(async () => {
+    timer = setTimeout(async () => {
       try {
-        const d = await api('GET', '/api/user/search?q=' + encodeURIComponent(q));
-        if (!d.users || !d.users.length) { closeSugg(); return; }
-        _idx = -1;
-        box.innerHTML = d.users.map(u => `<div data-u="${escHtml(u)}">${escHtml(u)}</div>`).join('');
+        const users = await searchUsers(q);
+        if (!users.length) { closeSugg(); return; }
+        idx = -1;
+        box.innerHTML = users.map(u => `<div data-u="${escHtml(u)}">${escHtml(u)}</div>`).join('');
         box.classList.add('open');
-      } catch { closeSugg(); }
+      } catch {
+        closeSugg();
+      }
     }, 250);
   });
 
+  const applyChoice = username => {
+    inp.value = username;
+    closeSugg();
+    onPick?.(username);
+  };
+
   box.addEventListener('click', e => {
     const el = e.target.closest('[data-u]');
-    if (el) { inp.value = el.dataset.u; closeSugg(); $('gift-amount').focus(); }
+    if (el) applyChoice(el.dataset.u);
   });
 
   inp.addEventListener('keydown', e => {
     const items = box.querySelectorAll('[data-u]');
     if (!items.length) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); _idx = Math.min(_idx + 1, items.length - 1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); _idx = Math.max(_idx - 1, 0); }
-    else if (e.key === 'Enter' && _idx >= 0) { e.preventDefault(); inp.value = items[_idx].dataset.u; closeSugg(); $('gift-amount').focus(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); }
+    else if (e.key === 'Enter' && idx >= 0) { e.preventDefault(); applyChoice(items[idx].dataset.u); return; }
     else if (e.key === 'Escape') { closeSugg(); return; }
     else return;
-    items.forEach((it, i) => it.classList.toggle('active', i === _idx));
+    items.forEach((it, i) => it.classList.toggle('active', i === idx));
   });
 
-  document.addEventListener('click', e => { if (!e.target.closest('.gift-username-wrap')) closeSugg(); });
+  document.addEventListener('click', e => {
+    if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${boxId}`)) closeSugg();
+  });
 }
+
+setupUserAutocomplete({
+  inputId: 'gift-username',
+  boxId: 'gift-suggestions',
+  onPick: () => $('gift-amount').focus(),
+});
+
+setupUserAutocomplete({
+  inputId: 'friend-username',
+  boxId: 'friend-suggestions',
+});
 
 // ── Gift / Transfer ──────────────────────────────────────────────────────────
 $('btn-gift').addEventListener('click', async () => {
@@ -2822,13 +4372,15 @@ $('btn-gift').addEventListener('click', async () => {
 async function init() {
   const loadingStart = Date.now();
   try {
-    const [d, gd] = await Promise.all([
+    const [d, gd, pd] = await Promise.all([
       api('GET', '/api/user/me'),
       api('GET', '/api/game/state'),
+      api('GET', '/api/pvp/game/state'),
     ]);
     S.user = { id: d.user.id, username: d.user.username, nonTransferable: d.user.nonTransferable || 0 };
     setBalance(d.user.balance);
     applyCooldownState({ serverNow: d.serverNow, ...d.user });
+    S.pvpGame = pd.game;
 
     // Wait for minimum loading time
     const elapsed = Date.now() - loadingStart;
@@ -2836,7 +4388,10 @@ async function init() {
 
     dismissLoading();
 
-    if (gd.game && gd.game.phase !== 'complete') {
+    if (pd.game) {
+      renderPvpGame();
+      showPvpGame();
+    } else if (gd.game && gd.game.phase !== 'complete') {
       S.game = gd.game;
       if (gd.balance !== undefined) setBalance(gd.balance);
       showGame();
