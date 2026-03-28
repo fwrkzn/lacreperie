@@ -56,8 +56,6 @@ body{
 @keyframes chipBounce{ 0%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.1)} 100%{transform:translateY(0) scale(1)} }
 @keyframes glow      { 0%,100%{box-shadow:0 0 12px rgba(201,168,76,.3)} 50%{box-shadow:0 0 28px rgba(201,168,76,.7)} }
 @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-@keyframes lobbyFloat{ 0%,100%{transform:translate3d(0,0,0) rotate(0deg)} 50%{transform:translate3d(0,-18px,0) rotate(6deg)} }
-@keyframes lobbyPulse{ 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.34;transform:scale(1.08)} }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 #header{
@@ -321,41 +319,6 @@ body{
   border-color: rgba(255,255,255,.08);
 }
 .lobby-greeting{ position: relative; z-index: 1; }
-.lobby-ambience{
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
-}
-.lobby-ambience span{
-  position: absolute;
-  display: block;
-  border-radius: 999px;
-  filter: blur(0.4px);
-}
-.lobby-ambience .orb{
-  background: radial-gradient(circle at 30% 30%, rgba(245,223,160,.22), rgba(201,168,76,.04) 58%, transparent 72%);
-  animation: lobbyPulse 9s ease-in-out infinite;
-}
-.lobby-ambience .ring{
-  border: 1px solid rgba(201,168,76,.12);
-  box-shadow: inset 0 0 24px rgba(201,168,76,.04);
-  animation: lobbyFloat 14s ease-in-out infinite;
-}
-.lobby-ambience .spark{
-  font-size: 22px;
-  color: rgba(232,201,125,.12);
-  animation: lobbyFloat 10s ease-in-out infinite;
-}
-.lobby-ambience span:nth-child(1){ width:240px;height:240px;top:8%;left:-40px;animation-delay:-2s; }
-.lobby-ambience span:nth-child(2){ width:180px;height:180px;top:22%;right:2%;animation-delay:-5s; }
-.lobby-ambience span:nth-child(3){ width:320px;height:320px;bottom:-100px;left:18%;animation-delay:-1s; }
-.lobby-ambience span:nth-child(4){ width:180px;height:180px;top:18%;left:24%;animation-delay:-6s; }
-.lobby-ambience span:nth-child(5){ width:220px;height:220px;bottom:10%;right:12%;animation-delay:-8s; }
-.lobby-ambience span:nth-child(6){ top:12%;right:18%;animation-delay:-3s; }
-.lobby-ambience span:nth-child(7){ bottom:20%;left:10%;animation-delay:-7s; }
-.lobby-ambience span:nth-child(8){ top:42%;right:30%;animation-delay:-4s; }
 #screen-lobby h2{
   color: var(--gold);
   letter-spacing: 3px;
@@ -1082,6 +1045,59 @@ body{
   .leaderboard-topbar .btn-secondary{
     width: 100%;
   }
+
+  /* ── Mobile size boost ─────────────────────────────────────────────────── */
+  /* Buttons */
+  .btn-primary{ padding: 17px; font-size: 16px }
+  .btn-deal{ padding: 16px; font-size: 16px }
+  .btn-action{ padding: 16px 14px; font-size: 14px; min-width: 90px }
+  .btn-bonus{ padding: 15px; font-size: 14px }
+  .btn-secondary{ padding: 16px 22px; font-size: 14px }
+  .btn-gift{ padding: 16px; font-size: 14px }
+  .btn-friend,
+  .btn-pvp-mini{ padding: 15px 18px; font-size: 13px }
+  .btn-new-game{ padding: 15px 18px; font-size: 14px }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  .bet-input,
+  .gift-username,
+  .gift-amount{
+    padding: 16px 18px !important;
+    font-size: 17px !important;
+  }
+
+  /* Headings */
+  #screen-lobby h2{ font-size: 15px }
+  .social-head h3{ font-size: 14px }
+  .panel-head h3{ font-size: 13px }
+  .play-section h3{ font-size: 13px }
+
+  /* Text & labels */
+  .friend-name{ font-size: 16px }
+  .friend-status{ font-size: 13px }
+  .rule-item,
+  .tip-item{ font-size: 15px }
+  .stat-row-mini{ font-size: 14px }
+  .social-badge{ font-size: 13px; padding: 5px 12px }
+  .bonus-card h3{ font-size: 12px }
+  .bonus-card .reward{ font-size: 22px }
+  .countdown{ font-size: 12px }
+
+  /* Chips */
+  .chip{ width: 56px; height: 56px; font-size: 13px }
+
+  /* Navbar */
+  .lobby-nav-btn{ min-height: 66px; font-size: 13px }
+  .lobby-nav-btn span:first-child{ font-size: 22px }
+
+  /* Leaderboard */
+  .lb-row{ padding: 14px 16px }
+  .lb-name{ font-size: 15px }
+  .lb-balance{ font-size: 15px }
+  .lb-rank{ font-size: 15px }
 }
 @media(max-width:640px){
   #screen-game{
@@ -1263,7 +1279,7 @@ body{
   :root{ --card-w: 62px; --card-h: 92px }
   .auth-card{ padding: 28px 20px }
   #header-logo span{ display:none }
-  .chip{ width:42px; height:42px; font-size:10px }
+  .chip{ width:48px; height:48px; font-size:11px }
   .lobby-greeting h2{ font-size:22px }
   .bonus-card{
     padding: 12px;
@@ -1276,11 +1292,11 @@ body{
   }
   .bonus-card .reward{ font-size: 17px }
   .btn-bonus{
-    padding: 9px;
-    font-size: 11px;
+    padding: 11px;
+    font-size: 12px;
   }
-  .countdown{ font-size: 9px }
-  .btn-action{ font-size:11px; padding:10px 6px; min-width:60px }
+  .countdown{ font-size: 10px }
+  .btn-action{ font-size:12px; padding:12px 8px; min-width:70px }
   .game-table{
     justify-content: space-between;
     padding: 12px 10px 84px;
@@ -1382,21 +1398,7 @@ body{
     radial-gradient(ellipse at 50% 30%, #161622 0%, var(--bg) 65%);
   position: relative;
 }
-#screen-auth::before, #screen-auth::after {
-  content: '';
-  position: absolute;
-  border: 1px solid rgba(201,168,76,.06);
-  border-radius: 50%;
-  pointer-events: none;
-}
-#screen-auth::before {
-  width: min(600px, 80vw); height: min(600px, 80vw);
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-}
-#screen-auth::after {
-  width: min(900px, 120vw); height: min(900px, 120vw);
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-}
+
 /* Gold top accent line on auth card */
 .auth-card {
   position: relative;
@@ -2211,16 +2213,6 @@ body{
 
 <!-- LOBBY ─────────────────────────────────────────────────────────────────── -->
 <div id="screen-lobby" class="screen hidden">
-  <div class="lobby-ambience" aria-hidden="true">
-    <span class="orb"></span>
-    <span class="orb"></span>
-    <span class="ring"></span>
-    <span class="ring"></span>
-    <span class="ring"></span>
-    <span class="spark">✦</span>
-    <span class="spark">✧</span>
-    <span class="spark">✦</span>
-  </div>
 
   <div class="lobby-greeting">
     <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username">Joueur</span> 👋</h2>
