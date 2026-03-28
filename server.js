@@ -56,7 +56,11 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.set('trust proxy', 1);
 // ── Custom Supabase session store with in-memory cache ────────────────────────
 class SupabaseStore extends session.Store {
-  constructor() { super(); this._mem = new Map(); }
+  constructor() {
+    super();
+    this._mem = new Map();
+    this._touchWriteAt = new Map();
+  }
 
   _mc(sid) {
     const e = this._mem.get(sid);
@@ -90,6 +94,10 @@ class SupabaseStore extends session.Store {
   }
   async touch(sid, sess, cb) {
     this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
+    const now = Date.now();
+    const lastWrite = this._touchWriteAt.get(sid) || 0;
+    if (now - lastWrite < 15 * 60 * 1000) return cb(null);
+    this._touchWriteAt.set(sid, now);
     const expire = sess.cookie?.expires || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     supabase.from('session').update({ expire: new Date(expire).toISOString() }).eq('sid', sid).then(() => {}, () => {});
     cb(null);
@@ -101,7 +109,7 @@ app.use(session({
   secret: getOrCreateSecret(),
   resave: false,
   saveUninitialized: false,
-  rolling: true,
+  rolling: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -119,6 +127,12 @@ const gameLimiter  = rateLimit({ windowMs: 2000, max: 15,
 const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 60,
   message: { error: 'Trop de requêtes admin.' } });
 app.use(globalLimiter);
+
+function requireSession(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: 'Non authentifié' });
+  req.user = { id: req.session.userId };
+  next();
+}
 
 async function requireAuth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: 'Non authentifié' });
@@ -206,7 +220,7 @@ async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
 const _online = new Map(); // userId → timestamp
 const ONLINE_TIMEOUT = 60_000; // 60s without heartbeat → offline
 
-app.post('/api/heartbeat', requireAuth, (req, res) => {
+app.post('/api/heartbeat', requireSession, (req, res) => {
   _online.set(req.user.id, Date.now());
   res.json({ ok: true });
 });
@@ -535,7 +549,7 @@ async function getLeaderboardData() {
   return _lbc.data;
 }
 
-app.get('/api/leaderboard', requireAuth, async (req, res) => {
+app.get('/api/leaderboard', requireSession, async (req, res) => {
   const sorted = await getLeaderboardData();
   const wantsFull = req.query.full === '1';
   if (!sorted.length) return res.json({ top10: [], me: null });
@@ -551,8 +565,9 @@ app.get('/api/leaderboard', requireAuth, async (req, res) => {
     rank: i + 1, username: u.username, balance: u.balance, isMe: u.id === req.user.id, online: isOnline(u.id),
   }));
   const myRank = sorted.findIndex(u => u.id === req.user.id) + 1;
+  const meUser = myRank > 0 ? sorted[myRank - 1] : null;
   const me = myRank > 0 && myRank > 10
-    ? { rank: myRank, username: req.user.username, balance: req.user.balance, isMe: true, online: true }
+    ? { rank: myRank, username: meUser.username, balance: meUser.balance, isMe: true, online: isOnline(req.user.id) }
     : null;
 
   res.json({ top10, me });

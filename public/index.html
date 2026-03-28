@@ -635,6 +635,29 @@ body{
 .result-banner.blackjack { background: rgba(255,224,100,.2); border:1px solid #ffe066; color:#ffe066 }
 .result-banner.bust      { background: rgba(224,68,68,.2);   border:1px solid var(--red); color:var(--red) }
 
+.taunt-box {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  background: rgb(30,30,30); border: 2px solid var(--red);
+  border-radius: 16px; padding: 32px 40px; z-index: 9999;
+  text-align: center; color: #fff; font-size: 1.3rem; font-weight: 600;
+  box-shadow: 0 0 40px rgba(224,68,68,.4);
+  animation: tauntPop .4s ease;
+}
+.taunt-box .taunt-emoji { font-size: 3rem; margin-bottom: 12px; }
+.taunt-box .taunt-text { margin-bottom: 16px; color: var(--red); }
+.taunt-box button {
+  background: var(--red); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 24px; font-size: 1rem; cursor: pointer;
+}
+.taunt-box button:hover { filter: brightness(1.2); }
+.taunt-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9998;
+}
+@keyframes tauntPop {
+  0% { transform: translate(-50%,-50%) scale(.5); opacity: 0; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+}
+
 /* Middle area */
 .middle-zone{
   display: flex;
@@ -2158,7 +2181,7 @@ let _hbInterval = null;
 function startHeartbeat() {
   stopHeartbeat();
   api('POST', '/api/heartbeat').catch(() => {});
-  _hbInterval = setInterval(() => api('POST', '/api/heartbeat').catch(() => {}), 30000);
+  _hbInterval = setInterval(() => api('POST', '/api/heartbeat').catch(() => {}), 60000);
 }
 function stopHeartbeat() {
   if (_hbInterval) { clearInterval(_hbInterval); _hbInterval = null; }
@@ -2171,7 +2194,7 @@ function startLeaderboardRefresh() {
   _lbInterval = setInterval(() => {
     loadLeaderboard();
     if (!$('screen-leaderboard').classList.contains('hidden')) loadFullLeaderboard();
-  }, 10000);
+  }, 30000);
 }
 function stopLeaderboardRefresh() {
   if (_lbInterval) { clearInterval(_lbInterval); _lbInterval = null; }
@@ -2420,11 +2443,31 @@ $('bet-input').addEventListener('input', () => {
 const SUIT_COLORS = { '♥': true, '♦': true, '♠': false, '♣': false };
 
 const _cardSound = new Audio('/assets/sounds/card_pick_sound.mp3');
-function playCardSound() {
-  const s = _cardSound.cloneNode();
-  s.volume = 0.5;
-  s.playbackRate = 2;
+const _successSound = new Audio('/assets/sounds/success_sound.mp3');
+const _catLaughSound = new Audio('/assets/sounds/cat-laughing-at-you.mp3');
+
+function _playSound(src, vol = 0.5, rate = 1) {
+  const s = src.cloneNode();
+  s.volume = vol;
+  s.playbackRate = rate;
   s.play().catch(() => {});
+}
+function playCardSound() { _playSound(_cardSound, 0.5, 2); }
+function playSuccessSound() { _playSound(_successSound, 0.5); }
+function playCatLaughSound() { _playSound(_catLaughSound, 0.7); }
+
+function showTauntBox() {
+  playCatLaughSound();
+  const overlay = document.createElement('div');
+  overlay.className = 'taunt-overlay';
+  const box = document.createElement('div');
+  box.className = 'taunt-box';
+  box.innerHTML = `<div class="taunt-emoji">😹</div><div class="taunt-text">Alors, on sait pas jouer ?</div><button id="taunt-dismiss">OK...</button>`;
+  document.body.appendChild(overlay);
+  document.body.appendChild(box);
+  const dismiss = () => { box.remove(); overlay.remove(); };
+  document.getElementById('taunt-dismiss').addEventListener('click', dismiss);
+  overlay.addEventListener('click', dismiss);
 }
 
 function buildCard(card, delay = 0) {
@@ -2539,6 +2582,10 @@ function renderGame() {
 
   // Results
   if (gs.phase === 'complete' && gs.result) {
+    const hasWin = gs.result.handResults.some(hr => hr.result === 'win' || hr.result === 'blackjack');
+    const hasLoss = gs.result.handResults.some(hr => hr.result === 'lose' || hr.result === 'bust' || hr.result === 'dealer_blackjack');
+    if (hasWin) playSuccessSound();
+    if (hasLoss && S.balance <= 0) showTauntBox();
     gs.result.handResults.forEach((hr, i) => {
       const banner = document.createElement('div');
       banner.className = `result-banner ${resultClass(hr.result)}`;
