@@ -2319,7 +2319,7 @@ body{
       <div class="chip clear" data-add="clear">✕</div>
     </div>
     <div class="bet-input-row">
-      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" autocomplete="off"/>
+      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" autocomplete="one-time-code" data-1p-ignore data-lpignore="true"/>
       <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
     <button class="btn-deal" id="btn-deal">Jouer</button>
@@ -2390,7 +2390,7 @@ body{
             <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" />
             <div class="gift-suggestions" id="gift-suggestions"></div>
           </div>
-          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" />
+          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="one-time-code" data-1p-ignore data-lpignore="true" />
           <span style="color:var(--gold2);font-size:16px">🥞</span>
           <button class="btn-gift" id="btn-gift">Envoyer</button>
         </div>
@@ -2539,7 +2539,7 @@ body{
     <div class="chip clear pvp-chip" data-add="clear">✕</div>
   </div>
   <div class="bet-input-row">
-    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" autocomplete="off"/>
+    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" autocomplete="one-time-code" data-1p-ignore data-lpignore="true"/>
     <span style="color:var(--gold2);font-size:18px">🥞</span>
   </div>
   <div class="friend-actions">
@@ -4217,7 +4217,7 @@ function renderGame() {
     replayWrap.className = 'replay-wrap';
     replayWrap.innerHTML = `
       <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
-        autocomplete="off" />
+        autocomplete="one-time-code" data-1p-ignore data-lpignore="true" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
       <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>
