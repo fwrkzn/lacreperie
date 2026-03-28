@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>🥞 Le Casino des Crêpes</title>
 <style>
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
@@ -881,6 +881,19 @@ body{
 .btn-new-game:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-new-game:disabled{ opacity:.4; cursor:not-allowed; filter:none; transform:none }
 .pvp-rematch-hint{ font-size:12px; color:var(--gold); opacity:.8; margin-top:2px; animation:fadeIn .4s ease }
+.action-bar.pvp-complete{
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.action-bar.pvp-complete .btn-action,
+.action-bar.pvp-complete .btn-new-game{
+  width: 100%;
+  max-width: 260px;
+  min-height: 46px;
+  text-align: center;
+  box-sizing: border-box;
+}
 @media(max-width:900px){
   #header{
     padding: 10px 14px;
@@ -956,9 +969,12 @@ body{
   .lobby-card-grid{
     grid-template-columns: 1fr;
   }
+  #tab-leaderboard #btn-open-leaderboard{
+    display: none;
+  }
   .lobby-bottom-nav{
     position: sticky;
-    bottom: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 5;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -966,7 +982,7 @@ body{
     padding: 10px;
     background: rgba(11,11,14,.88);
     border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px;
+    border-radius: 27px;
     backdrop-filter: blur(18px);
     box-shadow: 0 18px 40px rgba(0,0,0,.28);
   }
@@ -983,7 +999,7 @@ body{
     gap: 10px;
   }
   .gift-row .gift-username-wrap{
-    flex: 1 1 0;
+    flex: 2 1 0;
     width: auto !important;
     min-width: 0;
   }
@@ -1042,6 +1058,16 @@ body{
   .social-section{
     gap: 16px;
     padding: 18px;
+    background: rgba(255,255,255,.015);
+  }
+  .panel-block{
+    background: rgba(20,20,24,.65) !important;
+  }
+  .friends-panel{
+    background: linear-gradient(180deg, rgba(20,20,24,.65), rgba(11,11,14,.7)) !important;
+  }
+  .play-section{
+    background: linear-gradient(135deg, rgba(11,56,36,.65) 0%, rgba(10,48,32,.7) 100%) !important;
   }
   .social-head{
     margin-bottom: 2px;
@@ -1092,6 +1118,19 @@ body{
     width: auto;
     max-width: 100%;
     flex-shrink: 0;
+  }
+  .action-bar.pvp-complete{
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .action-bar.pvp-complete .btn-action,
+  .action-bar.pvp-complete .btn-new-game{
+    width: 100%;
+    max-width: 260px;
+    min-height: 46px;
+    flex: none;
+    text-align: center;
   }
   .replay-wrap{
     flex-direction: row;
@@ -1438,6 +1477,16 @@ body{
     flex-shrink: 0;
     padding-top: 6px;
     animation: fadeIn .7s ease;
+  }
+  .lobby-right .pvp-invite-row{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lobby-right .pvp-invite-actions{
+    justify-content: stretch;
+  }
+  .lobby-right .pvp-invite-actions .btn-pvp-mini{
+    flex: 1;
   }
   .lobby-mobile-only{
     display: none !important;
@@ -2243,7 +2292,7 @@ body{
       <div class="chip clear" data-add="clear">✕</div>
     </div>
     <div class="bet-input-row">
-      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" aria-label="Montant de la mise" autocomplete="off"/>
+      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" autocomplete="off"/>
       <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
     <button class="btn-deal" id="btn-deal">Jouer</button>
@@ -2311,10 +2360,10 @@ body{
         </div>
         <div class="gift-row">
           <div class="gift-username-wrap">
-            <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" aria-label="Pseudo du destinataire" />
+            <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" />
             <div class="gift-suggestions" id="gift-suggestions"></div>
           </div>
-          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" aria-label="Montant à envoyer" />
+          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="off" />
           <span style="color:var(--gold2);font-size:16px">🥞</span>
           <button class="btn-gift" id="btn-gift">Envoyer</button>
         </div>
@@ -2329,23 +2378,24 @@ body{
         </div>
         <div class="gift-row friends-add-row">
           <div class="gift-username-wrap">
-            <input class="gift-username" id="friend-username" type="text" placeholder="Envoyer une demande" autocomplete="off" aria-label="Envoyer une demande d’ami" />
+            <input class="gift-username" id="friend-username" type="text" placeholder="Envoyer une demande" autocomplete="off" />
             <div class="gift-suggestions" id="friend-suggestions"></div>
           </div>
           <button class="btn-gift" id="btn-add-friend">Envoyer</button>
         </div>
-        <div class="social-divider"></div>
-        <div class="social-sub-head">
-          <h4>Demandes reçues</h4>
+        <div id="friend-requests-incoming-wrap" class="hidden">
+          <div class="social-divider"></div>
+          <div class="social-sub-head">
+            <h4>Demandes reçues</h4>
+          </div>
+          <div class="pvp-invite-list" id="friend-requests-incoming-list"></div>
         </div>
-        <div class="pvp-invite-list" id="friend-requests-incoming-list">
-          <div class="lb-empty">Aucune demande reçue.</div>
-        </div>
-        <div class="social-sub-head">
-          <h4>Demandes envoyées</h4>
-        </div>
-        <div class="pvp-invite-list" id="friend-requests-outgoing-list">
-          <div class="lb-empty">Aucune demande envoyée.</div>
+        <div id="friend-requests-outgoing-wrap" class="hidden">
+          <div class="social-divider"></div>
+          <div class="social-sub-head">
+            <h4>Demandes envoyées</h4>
+          </div>
+          <div class="pvp-invite-list" id="friend-requests-outgoing-list"></div>
         </div>
       </div>
     </div>
@@ -2357,7 +2407,6 @@ body{
       <div class="lb-empty">Chargement…</div>
     </div>
     <button class="btn-secondary" id="btn-open-leaderboard">Classement complet</button>
-    <button class="btn-secondary lobby-mobile-only" id="btn-lb-back" style="margin-top:4px">← Retour accueil</button>
   </div>
 
   <div class="lobby-tab-panel hidden" id="tab-prizes">
@@ -2413,6 +2462,13 @@ body{
 
   <!-- ── Right sidebar (desktop/tablet only) ── -->
   <div class="lobby-right">
+    <div class="panel-block hidden" id="pvp-invites-panel-side">
+      <div class="panel-head"><span>⚔️</span><h3>Invitations 1v1</h3><span class="social-badge" id="pvp-invites-badge-side">0</span></div>
+      <div class="panel-body">
+        <div class="pvp-invite-list" id="pvp-incoming-list-side"></div>
+        <div class="pvp-invite-list" id="pvp-outgoing-list-side"></div>
+      </div>
+    </div>
     <div class="panel-block">
       <div class="panel-head"><span>✦</span><h3>En Ligne</h3></div>
       <div class="panel-body">
@@ -2430,22 +2486,13 @@ body{
         <button class="btn-secondary btn-mini-full" id="btn-open-leaderboard-side">Classement complet</button>
       </div>
     </div>
-    <div class="panel-block">
-      <div class="panel-head"><span>⚔️</span><h3>Invitations 1v1</h3><span class="social-badge" id="pvp-invites-badge-side">0</span></div>
-      <div class="panel-body">
-        <div class="pvp-invite-list" id="pvp-incoming-list-side">
-          <div class="lb-empty" style="font-size:11px">Aucune invitation.</div>
-        </div>
-        <div class="pvp-invite-list" id="pvp-outgoing-list-side"></div>
-      </div>
-    </div>
   </div>
 
   <div class="lobby-bottom-nav">
+    <button class="lobby-nav-btn" data-lobby-tab="prizes"><span>🎁</span><span>Primes</span></button>
     <button class="lobby-nav-btn active" data-lobby-tab="play"><span>🂡</span><span>Jouer</span></button>
     <button class="lobby-nav-btn" data-lobby-tab="social"><span>✦</span><span>Social</span></button>
     <button class="lobby-nav-btn" data-lobby-tab="leaderboard"><span>🏆</span><span>Classement</span></button>
-    <button class="lobby-nav-btn" data-lobby-tab="prizes"><span>🎁</span><span>Primes</span></button>
   </div>
   </div><!-- /.lobby-content -->
 
@@ -2465,7 +2512,7 @@ body{
     <div class="chip clear pvp-chip" data-add="clear">✕</div>
   </div>
   <div class="bet-input-row">
-    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" aria-label="Montant de la mise 1v1" autocomplete="off"/>
+    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" autocomplete="off"/>
     <span style="color:var(--gold2);font-size:18px">🥞</span>
   </div>
   <div class="friend-actions">
@@ -2987,8 +3034,8 @@ async function loadLobbyData() {
 
 async function loadLeaderboard() {
   try {
-    const d = await api('GET', '/api/leaderboard');
-    renderLeaderboard(d.top10, d.me);
+    const d = await api('GET', '/api/leaderboard?full=1');
+    renderLeaderboard(d.players || [], null);
   } catch(e) {
     const el = $('leaderboard');
     if (el) {
@@ -3206,9 +3253,12 @@ function renderPvpInvitesSide() {
   if (!incomingEl || !outgoingEl) return;
   const incoming = S.pvpInvites?.incoming || [];
   const outgoing = S.pvpInvites?.outgoing || [];
-  if (badge) badge.textContent = String(incoming.length + outgoing.length);
+  const total = incoming.length + outgoing.length;
+  if (badge) badge.textContent = String(total);
+  const panel = $('pvp-invites-panel-side');
+  if (panel) panel.classList.toggle('hidden', !total);
 
-  incomingEl.innerHTML = incoming.length ? incoming.map(invite => `
+  incomingEl.innerHTML = incoming.map(invite => `
     <div class="pvp-invite-row">
       <div class="pvp-invite-meta">
         <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
@@ -3219,9 +3269,9 @@ function renderPvpInvitesSide() {
         <button class="btn-pvp-mini decline" data-pvp-decline="${invite.id}">Refuser</button>
       </div>
     </div>
-  `).join('') : '<div class="lb-empty" style="font-size:11px">Aucune invitation reçue.</div>';
+  `).join('');
 
-  outgoingEl.innerHTML = outgoing.length ? outgoing.map(invite => `
+  outgoingEl.innerHTML = outgoing.map(invite => `
     <div class="pvp-invite-row">
       <div class="pvp-invite-meta">
         <div class="pvp-invite-name">${invite.online ? '<span class="online-dot"></span>' : ''}${escHtml(invite.username)}</div>
@@ -3231,7 +3281,7 @@ function renderPvpInvitesSide() {
         <button class="btn-pvp-mini cancel" data-pvp-cancel="${invite.id}">Annuler</button>
       </div>
     </div>
-  `).join('') : '<div class="lb-empty" style="font-size:11px">Aucune invitation envoyée.</div>';
+  `).join('');
 }
 
 function renderFullLeaderboard(players) {
@@ -3264,7 +3314,8 @@ function renderFriendRequests() {
   const outgoing = S.friendRequests?.outgoing || [];
   $('friend-requests-badge').textContent = String(incoming.length + outgoing.length);
 
-  incomingEl.innerHTML = incoming.length ? incoming.map(req => `
+  $('friend-requests-incoming-wrap').classList.toggle('hidden', !incoming.length);
+  incomingEl.innerHTML = incoming.map(req => `
     <div class="pvp-invite-row">
       <div class="pvp-invite-meta">
         <div class="pvp-invite-name">${req.online ? '<span class="online-dot"></span>' : ''}${escHtml(req.username)}</div>
@@ -3275,9 +3326,10 @@ function renderFriendRequests() {
         <button class="btn-pvp-mini decline" data-friend-decline="${req.id}">Refuser</button>
       </div>
     </div>
-  `).join('') : '<div class="lb-empty">Aucune demande reçue.</div>';
+  `).join('');
 
-  outgoingEl.innerHTML = outgoing.length ? outgoing.map(req => `
+  $('friend-requests-outgoing-wrap').classList.toggle('hidden', !outgoing.length);
+  outgoingEl.innerHTML = outgoing.map(req => `
     <div class="pvp-invite-row">
       <div class="pvp-invite-meta">
         <div class="pvp-invite-name">${req.online ? '<span class="online-dot"></span>' : ''}${escHtml(req.username)}</div>
@@ -3287,7 +3339,7 @@ function renderFriendRequests() {
         <button class="btn-pvp-mini cancel" data-friend-cancel="${req.id}">Annuler</button>
       </div>
     </div>
-  `).join('') : '<div class="lb-empty">Aucune demande envoyée.</div>';
+  `).join('');
 }
 
 function openChallengeModal(username) {
@@ -3394,18 +3446,21 @@ function renderPvpGame() {
   $('pvp-opponent-cards').innerHTML = '';
   $('pvp-player-cards').innerHTML = '';
 
-  game.opponent.previewHand.forEach((card) => {
-    $('pvp-opponent-cards').appendChild(buildStaticCard(card));
-  });
+  if (game.phase === 'complete') {
+    game.opponent.previewHand.forEach((card) => {
+      $('pvp-opponent-cards').appendChild(buildStaticCard(card));
+    });
+    const opponentScore = scoreLabel(game.opponent.previewHand, 'complete', false);
+    $('pvp-opponent-score').textContent = opponentScore.text;
+    $('pvp-opponent-score').className = `hand-score ${opponentScore.cls}`;
+  } else {
+    $('pvp-opponent-score').textContent = '';
+    $('pvp-opponent-score').className = 'hand-score';
+  }
+
   game.me.hand.forEach((card) => {
     $('pvp-player-cards').appendChild(buildStaticCard(card));
   });
-
-  const opponentScore = game.phase === 'complete'
-    ? scoreLabel(game.opponent.previewHand, 'complete', false)
-    : { text: String(game.opponent.initialTotal), cls: '' };
-  $('pvp-opponent-score').textContent = opponentScore.text;
-  $('pvp-opponent-score').className = `hand-score ${opponentScore.cls}`;
 
   const myScore = scoreLabel(game.me.hand, 'complete', false);
   $('pvp-player-score').textContent = myScore.text;
@@ -3413,7 +3468,7 @@ function renderPvpGame() {
 
   $('pvp-opponent-status').textContent = game.phase === 'complete'
     ? `${game.opponent.username} • ${pvpStatusLabel(game.opponent)}${game.opponent.online ? '' : ' • hors ligne'}`
-    : `${game.opponent.username} • main cachée${game.opponent.online ? '' : ' • hors ligne'}`;
+    : `${game.opponent.username}${game.opponent.online ? '' : ' • hors ligne'}`;
   $('pvp-player-status').textContent = game.phase === 'complete'
     ? pvpResultText(game)
     : `Vous • ${pvpStatusLabel(game.me)}`;
@@ -3424,16 +3479,15 @@ function renderPvpGame() {
     <div class="bet-chips-display">
       <span>1v1 :</span><span>${game.bet.toLocaleString('fr-FR')} 🥞</span>
     </div>
-    <div class="result-banner pvp-banner ${game.phase === 'complete' ? (game.result?.winnerId === game.me.id ? 'win' : game.result?.winnerId ? 'lose' : 'push') : 'push'}">
-      ${game.phase === 'complete'
-        ? escHtml(pvpResultText(game))
-        : `Tour libre : chacun joue sa main en temps réel`}
-    </div>
+    ${game.phase === 'complete' ? `<div class="result-banner pvp-banner ${game.result?.winnerId === game.me.id ? 'win' : game.result?.winnerId ? 'lose' : 'push'}">
+      ${escHtml(pvpResultText(game))}
+    </div>` : ''}
   `;
 
   const bar = $('pvp-action-bar');
 
   if (game.phase === 'active') {
+    bar.classList.remove('pvp-complete');
     delete bar.dataset.rematchKey;
     bar.innerHTML = '';
     const canPlay = !game.me.stood && !game.me.busted;
@@ -3455,6 +3509,7 @@ function renderPvpGame() {
     const opponentLeft = !!game.opponentDismissed;
 
     // Re-render complete bar when rematch state changes
+    bar.classList.add('pvp-complete');
     const rematchKey = `${iReady}-${opponentReady}-${opponentLeft}`;
     if (bar.dataset.rematchKey !== rematchKey) {
       bar.dataset.rematchKey = rematchKey;
@@ -3550,7 +3605,6 @@ $('btn-logout').addEventListener('click', async () => {
 $('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
 $('btn-open-leaderboard-side').addEventListener('click', showLeaderboardScreen);
 $('btn-back-lobby').addEventListener('click', showLobby);
-$('btn-lb-back').addEventListener('click', () => setLobbyTab('play'));
 document.querySelectorAll('.lobby-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => setLobbyTab(btn.dataset.lobbyTab));
 });
@@ -3829,6 +3883,7 @@ async function startGameFromInput(bet) {
   if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
 
   $('btn-deal').disabled = true;
+  playCardSound();
   S.game = { phase: 'loading', dealerHand: [], hands: [], bets: [bet] };
   showGame();
   renderGameLoading();
@@ -4000,7 +4055,6 @@ function renderGameLoading() {
 function renderGame() {
   const gs = S.game;
   if (!gs) return;
-  playCardSound();
 
   const dealerCards = $('dealer-cards');
   const dealerScore = $('dealer-score');
@@ -4115,9 +4169,8 @@ function renderGame() {
     const replayWrap = document.createElement('div');
     replayWrap.className = 'replay-wrap';
     replayWrap.innerHTML = `
-      <label for="replay-bet">Nouvelle mise :</label>
       <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
-        aria-label="Nouvelle mise" autocomplete="off" />
+        autocomplete="off" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
       <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>
@@ -4134,6 +4187,7 @@ function renderGame() {
       replayBtn.disabled = true;
       replayAllInBtn.disabled = true;
       if (homeLink) homeLink.disabled = true;
+      playCardSound();
       try {
         await api('POST', '/api/game/clear');
         const d = await api('POST', '/api/game/start', { bet });
@@ -4179,6 +4233,7 @@ function renderGame() {
 async function doAction(endpoint) {
   if (S.busy) return;
   S.busy = true;
+  playCardSound();
 
   // Disable all action buttons
   document.querySelectorAll('.btn-action').forEach(b => b.disabled = true);
@@ -4296,6 +4351,7 @@ function setupUserAutocomplete({ inputId, boxId, onPick }) {
       try {
         const users = await searchUsers(q);
         if (!users.length) { closeSugg(); return; }
+        if (users.length === 1) { applyChoice(users[0]); return; }
         idx = -1;
         box.innerHTML = users.map(u => `<div data-u="${escHtml(u)}">${escHtml(u)}</div>`).join('');
         box.classList.add('open');
@@ -4423,7 +4479,7 @@ init();
   const suits = ['♠','♥','♦','♣'];
   const goldC = 'rgba(201,168,76,';
   const redC  = 'rgba(180,40,40,';
-  const count = 80;
+  const count = 120;
   for (let i = 0; i < count; i++) {
     const el = document.createElement('span');
     el.className = 'suit';
@@ -4431,7 +4487,7 @@ init();
     el.textContent = suits[suitIdx];
     const isRed = suitIdx === 1 || suitIdx === 2;
     const base = isRed ? redC : goldC;
-    const opacity = 0.02 + Math.random() * 0.05;
+    const opacity = 0.035 + Math.random() * 0.065;
     const x   = 2 + Math.random() * 96;
     const sz  = 12 + Math.random() * 28;
     const dur = 12 + Math.random() * 20;
