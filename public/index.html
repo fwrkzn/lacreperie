@@ -403,6 +403,38 @@ body{
   font-weight: bold;
   color: var(--gold2);
 }
+.bonus-meta{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 54px;
+}
+.bonus-note{
+  font-size: 11px;
+  color: var(--text);
+  font-family: sans-serif;
+  text-align: center;
+  line-height: 1.45;
+}
+.bonus-note strong{
+  color: var(--gold2);
+}
+.progress-track{
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.progress-fill{
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  transition: width .25s ease;
+}
 .btn-bonus{
   width: 100%;
   padding: 11px;
@@ -2444,6 +2476,10 @@ body{
       <div class="icon">🌅</div>
       <h3>Bonus Quotidien</h3>
       <div class="reward">+2 000 🥞</div>
+      <div class="bonus-meta">
+        <div class="bonus-note" id="daily-streak-note"></div>
+        <div class="bonus-note" id="daily-milestone-note"></div>
+      </div>
       <button class="btn-bonus" id="btn-daily">Réclamer</button>
       <div class="countdown" id="daily-countdown"></div>
     </div>
@@ -2455,6 +2491,12 @@ body{
       </div>
       <h3>Mini-jeu Spatule</h3>
       <div class="reward">30–5 000 🥞</div>
+      <div class="bonus-meta">
+        <div class="bonus-note" id="minigame-pity-note"></div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="minigame-pity-fill"></div>
+        </div>
+      </div>
       <button class="btn-bonus" id="btn-minigame">Jouer</button>
       <div class="countdown" id="minigame-countdown"></div>
     </div>
@@ -2645,6 +2687,11 @@ const S = {
   serverTimeOffsetMs: 0,
   dailyAvailableAtMs: 0,
   minigameAvailableAtMs: 0,
+  dailyStreak: 0,
+  dailyNextMilestoneDay: 3,
+  dailyNextMilestoneBonus: 1000,
+  minigamePity: 0,
+  minigamePityCap: 5,
   currentTab: 'login',
   lobbyTab: 'play',
   countdownInterval: null,
@@ -2779,7 +2826,22 @@ function getRemainingCooldownSeconds(availableAtMs) {
   return Math.max(0, Math.ceil((availableAtMs - getServerNowMs()) / 1000));
 }
 
-function applyCooldownState({ serverNow, dailyCooldown, minigameCooldown, dailyAvailableAt, minigameAvailableAt } = {}) {
+function syncRewardProgress(data = {}) {
+  if (Number.isFinite(data.dailyStreak)) S.dailyStreak = data.dailyStreak;
+  if (Number.isFinite(data.dailyNextMilestoneDay)) S.dailyNextMilestoneDay = data.dailyNextMilestoneDay;
+  if (Number.isFinite(data.dailyNextMilestoneBonus)) S.dailyNextMilestoneBonus = data.dailyNextMilestoneBonus;
+  if (Number.isFinite(data.minigamePity)) S.minigamePity = data.minigamePity;
+  if (Number.isFinite(data.minigamePityCap)) S.minigamePityCap = data.minigamePityCap;
+}
+
+function applyCooldownState(data = {}) {
+  const {
+    serverNow,
+    dailyCooldown,
+    minigameCooldown,
+    dailyAvailableAt,
+    minigameAvailableAt,
+  } = data;
   syncServerClock(serverNow);
   const baseServerNow = Number.isFinite(serverNow)
     ? serverNow
@@ -2796,11 +2858,34 @@ function applyCooldownState({ serverNow, dailyCooldown, minigameCooldown, dailyA
   } else if (Number.isFinite(minigameCooldown)) {
     S.minigameAvailableAtMs = (baseServerNow + minigameCooldown) * 1000;
   }
+
+  syncRewardProgress(data);
+}
+
+function renderRewardProgress() {
+  const streak = Math.max(0, S.dailyStreak || 0);
+  const nextDay = S.dailyNextMilestoneDay || 3;
+  const nextBonus = S.dailyNextMilestoneBonus || 0;
+  $('daily-streak-note').innerHTML = streak > 0
+    ? `Série en cours : <strong>${streak} jour${streak > 1 ? 's' : ''}</strong>`
+    : `Réclame demain pour lancer ta <strong>série</strong>`;
+  $('daily-milestone-note').innerHTML = streak >= nextDay
+    ? `Palier max actif : <strong>jour ${nextDay}</strong> pour <strong>+${nextBonus.toLocaleString('fr-FR')} 🥞</strong>`
+    : `Prochain palier : <strong>jour ${nextDay}</strong> pour <strong>+${nextBonus.toLocaleString('fr-FR')} 🥞</strong>`;
+
+  const pity = Math.max(0, Math.min(S.minigamePityCap || 5, S.minigamePity || 0));
+  const pityCap = Math.max(1, S.minigamePityCap || 5);
+  const pityFill = Math.round((pity / pityCap) * 100);
+  $('minigame-pity-fill').style.width = `${pityFill}%`;
+  $('minigame-pity-note').innerHTML = pity >= pityCap
+    ? `Spatule dorée chargée : <strong>prochain tir = gros lot</strong>`
+    : `Charge jackpot : <strong>${pity}/${pityCap}</strong> essais`;
 }
 
 function renderCooldowns() {
   S.dailyCooldown = getRemainingCooldownSeconds(S.dailyAvailableAtMs);
   S.minigameCooldown = getRemainingCooldownSeconds(S.minigameAvailableAtMs);
+  renderRewardProgress();
 
   $('btn-daily').disabled = S.dailyCooldown > 0;
   $('daily-countdown').textContent = S.dailyCooldown > 0
@@ -3830,11 +3915,14 @@ $('btn-daily').addEventListener('click', async () => {
     const d = await api('POST', '/api/user/daily-bonus');
     setBalance(d.balance);
     applyCooldownState({ serverNow: d.serverNow, dailyCooldown: d.cooldown, dailyAvailableAt: d.availableAt });
-    toast('🌅 +2 000 Crêpes ! Bonus quotidien réclamé !', 'gold', 3500);
+    syncRewardProgress(d);
+    const milestoneMsg = d.milestoneBonus > 0 ? ` ${d.milestoneLabel} débloqué : +${d.milestoneBonus.toLocaleString('fr-FR')} 🥞 !` : '';
+    toast(`🌅 Jour ${d.streak} validé : +${d.bonus.toLocaleString('fr-FR')} 🥞 !${milestoneMsg}`, d.milestoneBonus > 0 ? 'gold' : 'success', 4200);
     startCountdowns();
     loadLeaderboard();
   } catch(e) {
     applyCooldownState({ serverNow: e.serverNow, dailyCooldown: e.cooldown, dailyAvailableAt: e.availableAt });
+    syncRewardProgress(e);
     toast(e.error || 'Erreur', 'error');
     startCountdowns();
   }
@@ -3857,6 +3945,7 @@ async function playMinigame() {
     const d = await api('POST', '/api/user/minigame');
     setBalance(d.balance);
     applyCooldownState({ serverNow: d.serverNow, minigameCooldown: d.cooldown, minigameAvailableAt: d.availableAt });
+    syncRewardProgress(d);
 
     // Floating reward
     const fl = document.createElement('div');
@@ -3865,13 +3954,18 @@ async function playMinigame() {
     document.body.appendChild(fl);
     setTimeout(() => fl.remove(), 700);
 
-    if (d.reward >= 1000) toast(`🎉 JACKPOT ! +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4000);
-    else toast(`🍳 +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'success');
+    if (d.rarity === 'jackpot') {
+      const prefix = d.guaranteed ? '🎯 Spatule dorée !' : '🎉 JACKPOT !';
+      toast(`${prefix} +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4200);
+    } else {
+      toast(`🍳 +${d.reward.toLocaleString('fr-FR')} Crêpes ! Charge ${d.pityAfter}/${d.minigamePityCap}`, 'success');
+    }
 
     startCountdowns();
     loadLeaderboard();
   } catch(e) {
     applyCooldownState({ serverNow: e.serverNow, minigameCooldown: e.cooldown, minigameAvailableAt: e.availableAt });
+    syncRewardProgress(e);
     toast(e.error || 'Erreur', 'error');
     startCountdowns();
   } finally {
