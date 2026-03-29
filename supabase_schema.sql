@@ -11,10 +11,15 @@ CREATE TABLE IF NOT EXISTS users (
   non_transferable    INTEGER NOT NULL DEFAULT 3000,
   last_daily_claim    BIGINT NOT NULL DEFAULT 0,
   last_minigame_claim BIGINT NOT NULL DEFAULT 0,
+  daily_streak        INTEGER NOT NULL DEFAULT 0,
+  minigame_pity       INTEGER NOT NULL DEFAULT 0,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON users (LOWER(username));
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_streak INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS minigame_pity INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS active_games (
   user_id    UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

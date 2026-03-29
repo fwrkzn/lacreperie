@@ -158,26 +158,62 @@ const _uc = new Map();
 function _ucGet(id)       { const e = _uc.get(id); return (e && e.exp > Date.now()) ? e.d : null; }
 function _ucSet(id, data) { _uc.set(id, { d: data, exp: Date.now() + 60_000 }); }
 function _ucDel(id)       { _uc.delete(id); }
+const _progressionSchema = { supported: null };
+
+function isMissingColumnError(error) {
+  return error && error.code === '42703';
+}
+
+function withProgressionDefaults(user) {
+  if (!user) return user;
+  return {
+    daily_streak: 0,
+    minigame_pity: 0,
+    ...user,
+  };
+}
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
 async function getUserByUsername(username) {
-  const { data } = await supabase
-    .from('users')
-    .select('id, username, balance, non_transferable, password_hash, is_admin')
-    .ilike('username', username)
-    .maybeSingle();
-  return data;
+  const richSelect = 'id, username, balance, non_transferable, daily_streak, minigame_pity, password_hash, is_admin';
+  const legacySelect = 'id, username, balance, non_transferable, password_hash, is_admin';
+
+  if (_progressionSchema.supported === false) {
+    const { data } = await supabase.from('users').select(legacySelect).ilike('username', username).maybeSingle();
+    return withProgressionDefaults(data);
+  }
+
+  const { data, error } = await supabase.from('users').select(richSelect).ilike('username', username).maybeSingle();
+  if (isMissingColumnError(error)) {
+    _progressionSchema.supported = false;
+    const fallback = await supabase.from('users').select(legacySelect).ilike('username', username).maybeSingle();
+    return withProgressionDefaults(fallback.data);
+  }
+  if (!error) _progressionSchema.supported = true;
+  return withProgressionDefaults(data);
 }
 
 async function getUserById(id, { fresh = false } = {}) {
   if (!fresh) { const c = _ucGet(id); if (c) return c; }
-  const { data } = await supabase
-    .from('users')
-    .select('id, username, balance, non_transferable, last_daily_claim, last_minigame_claim, is_admin')
-    .eq('id', id)
-    .maybeSingle();
-  if (data) _ucSet(id, data);
-  return data;
+  const richSelect = 'id, username, balance, non_transferable, last_daily_claim, last_minigame_claim, daily_streak, minigame_pity, is_admin';
+  const legacySelect = 'id, username, balance, non_transferable, last_daily_claim, last_minigame_claim, is_admin';
+
+  let data, error;
+  if (_progressionSchema.supported === false) {
+    ({ data, error } = await supabase.from('users').select(legacySelect).eq('id', id).maybeSingle());
+  } else {
+    ({ data, error } = await supabase.from('users').select(richSelect).eq('id', id).maybeSingle());
+    if (isMissingColumnError(error)) {
+      _progressionSchema.supported = false;
+      ({ data, error } = await supabase.from('users').select(legacySelect).eq('id', id).maybeSingle());
+    } else if (!error) {
+      _progressionSchema.supported = true;
+    }
+  }
+
+  const out = withProgressionDefaults(data);
+  if (out) _ucSet(id, out);
+  return out;
 }
 
 async function createUser(username, passwordHash) {
@@ -808,6 +844,43 @@ function getMinigameCooldownSeconds(lastClaim, now = getNowSeconds()) {
   return Math.max(0, (lastClaim + 120) - now);
 }
 
+const DAILY_BASE_BONUS = 2000;
+const DAILY_STREAK_MILESTONES = [
+  { day: 3, bonus: 1000, label: 'Palier Jour 3' },
+  { day: 7, bonus: 4000, label: 'Coffre Jour 7' },
+  { day: 14, bonus: 8000, label: 'Palier Jour 14' },
+  { day: 30, bonus: 20000, label: 'Couronne Jour 30' },
+];
+const MINIGAME_PITY_CAP = 5;
+
+function getDailyMilestone(streak) {
+  return DAILY_STREAK_MILESTONES.find(m => m.day === streak) || null;
+}
+
+function getNextDailyMilestone(streak) {
+  return DAILY_STREAK_MILESTONES.find(m => m.day > streak) || DAILY_STREAK_MILESTONES[DAILY_STREAK_MILESTONES.length - 1];
+}
+
+function getDailyProgress(u) {
+  const streak = Math.max(0, u.daily_streak || 0);
+  const nextMilestone = getNextDailyMilestone(streak);
+  return {
+    dailyStreak: streak,
+    dailyBaseBonus: DAILY_BASE_BONUS,
+    dailyNextMilestoneDay: nextMilestone.day,
+    dailyNextMilestoneBonus: nextMilestone.bonus,
+  };
+}
+
+function getMinigameProgress(u) {
+  const pity = Math.max(0, Math.min(MINIGAME_PITY_CAP, u.minigame_pity || 0));
+  return {
+    minigamePity: pity,
+    minigamePityCap: MINIGAME_PITY_CAP,
+    minigameGuaranteedReady: pity >= MINIGAME_PITY_CAP,
+  };
+}
+
 function buildCooldowns(u, now = getNowSeconds()) {
   const dailyCooldown = getDailyCooldownSeconds(u.last_daily_claim, now);
   const minigameCooldown = getMinigameCooldownSeconds(u.last_minigame_claim, now);
@@ -917,6 +990,8 @@ function respondMe(req, res) {
     user: {
       id: u.id, username: u.username, balance: u.balance,
       nonTransferable: u.non_transferable || 0,
+      ...getDailyProgress(u),
+      ...getMinigameProgress(u),
       ...cooldowns,
     }
   });
@@ -926,38 +1001,102 @@ app.get('/api/user/me',  requireAuth, respondMe);
 
 app.post('/api/user/daily-bonus', requireAuth, async (req, res) => {
   const now = getNowSeconds();
+  const user = await getUserById(req.user.id, { fresh: true });
+  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
   const startOfToday = getStartOfServerDaySeconds(new Date(now * 1000));
+  const compatibilityMode = _progressionSchema.supported === false;
+
+  if (compatibilityMode) {
+    const { data, error } = await supabase.from('users')
+      .update({ last_daily_claim: now })
+      .eq('id', req.user.id)
+      .or(`last_daily_claim.is.null,last_daily_claim.lt.${startOfToday}`)
+      .select('last_daily_claim').maybeSingle();
+
+    if (!data || error) {
+      const cooldown = getDailyCooldownSeconds(user.last_daily_claim, now);
+      return res.status(429).json({
+        error: 'Bonus déjà réclamé aujourd’hui',
+        serverNow: now,
+        cooldown,
+        availableAt: now + cooldown,
+        ...getDailyProgress(user),
+      });
+    }
+
+    const newBal = await addBalance(req.user.id, DAILY_BASE_BONUS, { nonTransferable: DAILY_BASE_BONUS });
+    const cooldown = getDailyCooldownSeconds(now, now);
+    _ucDel(req.user.id);
+    return res.json({
+      success: true,
+      bonus: DAILY_BASE_BONUS,
+      baseBonus: DAILY_BASE_BONUS,
+      streak: 0,
+      milestoneBonus: 0,
+      milestoneLabel: '',
+      balance: newBal,
+      serverNow: now,
+      cooldown,
+      availableAt: now + cooldown,
+      ...getDailyProgress(user),
+      compatibilityMode: true,
+    });
+  }
+
+  const startOfYesterday = startOfToday - 86400;
+
+  const previousClaim = user.last_daily_claim || 0;
+  let nextStreak = 1;
+  if (previousClaim >= startOfYesterday && previousClaim < startOfToday) {
+    nextStreak = Math.max(1, (user.daily_streak || 0) + 1);
+  } else if (previousClaim >= startOfToday) {
+    nextStreak = Math.max(1, user.daily_streak || 1);
+  }
 
   // Atomic: update only succeeds if the last claim is before today's server date.
   const { data } = await supabase.from('users')
-    .update({ last_daily_claim: now })
+    .update({ last_daily_claim: now, daily_streak: nextStreak })
     .eq('id', req.user.id)
     .or(`last_daily_claim.is.null,last_daily_claim.lt.${startOfToday}`)
-    .select('last_daily_claim').maybeSingle();
+    .select('last_daily_claim,daily_streak').maybeSingle();
 
   if (!data) {
-    const cooldown = getDailyCooldownSeconds(req.user.last_daily_claim, now);
+    const cooldown = getDailyCooldownSeconds(user.last_daily_claim, now);
     return res.status(429).json({
       error: 'Bonus déjà réclamé aujourd’hui',
       serverNow: now,
       cooldown,
       availableAt: now + cooldown,
+      ...getDailyProgress(user),
     });
   }
-  const newBal = await addBalance(req.user.id, 2000, { nonTransferable: 2000 });
+  const milestone = getDailyMilestone(nextStreak);
+  const milestoneBonus = milestone ? milestone.bonus : 0;
+  const totalBonus = DAILY_BASE_BONUS + milestoneBonus;
+  const newBal = await addBalance(req.user.id, totalBonus, { nonTransferable: totalBonus });
   const cooldown = getDailyCooldownSeconds(now, now);
+  const updatedUser = { ...user, last_daily_claim: now, daily_streak: nextStreak };
+  _ucDel(req.user.id);
   res.json({
     success: true,
-    bonus: 2000,
+    bonus: totalBonus,
+    baseBonus: DAILY_BASE_BONUS,
+    streak: nextStreak,
+    milestoneBonus,
+    milestoneLabel: milestone ? milestone.label : '',
     balance: newBal,
     serverNow: now,
     cooldown,
     availableAt: now + cooldown,
+    ...getDailyProgress(updatedUser),
   });
 });
 
 app.post('/api/user/minigame', requireAuth, async (req, res) => {
   const now = getNowSeconds();
+  const user = await getUserById(req.user.id, { fresh: true });
+  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+  const compatibilityMode = _progressionSchema.supported === false;
   // Atomic: update only succeeds if cooldown has passed — prevents double-claim race condition
   const { data } = await supabase.from('users')
     .update({ last_minigame_claim: now })
@@ -966,29 +1105,79 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
     .select('last_minigame_claim').maybeSingle();
 
   if (!data) {
-    const cooldown = getMinigameCooldownSeconds(req.user.last_minigame_claim, now);
+    const cooldown = getMinigameCooldownSeconds(user.last_minigame_claim, now);
     return res.status(429).json({
       error: 'Spatule en recharge',
       serverNow: now,
       cooldown,
       availableAt: now + cooldown,
+      ...getMinigameProgress(user),
     });
   }
+
+  if (compatibilityMode) {
+    const roll = Math.random();
+    let reward;
+    if      (roll < 0.70) reward = 30   + Math.floor(Math.random() * 71);
+    else if (roll < 0.95) reward = 101  + Math.floor(Math.random() * 900);
+    else                  reward = 1001 + Math.floor(Math.random() * 4000);
+
+    const newBal = await addBalance(req.user.id, reward, { nonTransferable: reward });
+    const cooldown = getMinigameCooldownSeconds(now, now);
+    _ucDel(req.user.id);
+    return res.json({
+      success: true,
+      reward,
+      rarity: reward >= 1000 ? 'jackpot' : reward >= 101 ? 'medium' : 'small',
+      pityBefore: 0,
+      pityAfter: 0,
+      guaranteed: false,
+      balance: newBal,
+      serverNow: now,
+      cooldown,
+      availableAt: now + cooldown,
+      ...getMinigameProgress(user),
+      compatibilityMode: true,
+    });
+  }
+
+  const pityBefore = Math.max(0, Math.min(MINIGAME_PITY_CAP, user.minigame_pity || 0));
+  const guaranteed = pityBefore >= MINIGAME_PITY_CAP;
   const roll = Math.random();
   let reward;
-  if      (roll < 0.70) reward = 30   + Math.floor(Math.random() * 71);
-  else if (roll < 0.95) reward = 101  + Math.floor(Math.random() * 900);
-  else                  reward = 1001 + Math.floor(Math.random() * 4000);
+  let rarity = 'small';
+  if (guaranteed || roll >= 0.95) {
+    reward = 1001 + Math.floor(Math.random() * 4000);
+    rarity = 'jackpot';
+  } else if (roll >= 0.70) {
+    reward = 101 + Math.floor(Math.random() * 900);
+    rarity = 'medium';
+  } else {
+    reward = 30 + Math.floor(Math.random() * 71);
+  }
+
+  const nextPity = rarity === 'jackpot' ? 0 : Math.min(MINIGAME_PITY_CAP, pityBefore + 1);
+  await supabase
+    .from('users')
+    .update({ minigame_pity: nextPity })
+    .eq('id', req.user.id);
 
   const newBal = await addBalance(req.user.id, reward, { nonTransferable: reward });
   const cooldown = getMinigameCooldownSeconds(now, now);
+  const updatedUser = { ...user, last_minigame_claim: now, minigame_pity: nextPity };
+  _ucDel(req.user.id);
   res.json({
     success: true,
     reward,
+    rarity,
+    pityBefore,
+    pityAfter: nextPity,
+    guaranteed,
     balance: newBal,
     serverNow: now,
     cooldown,
     availableAt: now + cooldown,
+    ...getMinigameProgress(updatedUser),
   });
 });
 
@@ -1866,6 +2055,15 @@ async function checkDB() {
     console.error('\n❌  Tables Supabase introuvables.');
     console.error('   → Exécute supabase_schema.sql dans le SQL Editor de ton projet Supabase.\n');
     process.exit(1);
+  }
+
+  const progressionCheck = await supabase.from('users').select('daily_streak,minigame_pity').limit(1);
+  if (isMissingColumnError(progressionCheck.error)) {
+    _progressionSchema.supported = false;
+    console.warn('\n⚠️  Colonnes de progression absentes: users.daily_streak, users.minigame_pity');
+    console.warn('   → Le jeu démarre en mode compatibilité. Exécute supabase_schema.sql pour activer les streaks et la progression spatule.\n');
+  } else if (!progressionCheck.error) {
+    _progressionSchema.supported = true;
   }
 }
 
