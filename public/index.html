@@ -2150,6 +2150,12 @@ body{
   overflow: visible;
   box-shadow: 0 28px 80px rgba(0,0,0,.35);
 }
+.btn-back-bottom{
+  margin: 20px auto 0;
+  display: block;
+  padding: 12px 28px;
+  font-size: 14px;
+}
 .leaderboard-full-head,
 .leaderboard-full-row{
   display: grid;
@@ -2351,7 +2357,7 @@ body{
       <div class="chip clear" data-add="clear">✕</div>
     </div>
     <div class="bet-input-row">
-      <input class="bet-input" id="bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise" autocomplete="one-time-code" data-1p-ignore data-lpignore="true"/>
+      <input class="bet-input" id="bet-input" type="number" min="10" max="999999999" value="100" placeholder="Mise" autocomplete="off" inputmode="numeric" name="bet_amt" data-1p-ignore data-lpignore="true"/>
       <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
     <button class="btn-deal" id="btn-deal">Jouer</button>
@@ -2419,10 +2425,10 @@ body{
         </div>
         <div class="gift-row">
           <div class="gift-username-wrap">
-            <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" />
+            <input class="gift-username" id="gift-username" type="text" placeholder="Pseudo du joueur" autocomplete="off" name="gift_target" data-1p-ignore data-lpignore="true" />
             <div class="gift-suggestions" id="gift-suggestions"></div>
           </div>
-          <input class="gift-amount" id="gift-amount" type="number" min="1" max="50000" placeholder="Montant" autocomplete="one-time-code" data-1p-ignore data-lpignore="true" />
+          <input class="gift-amount" id="gift-amount" type="number" min="1" max="999999999" placeholder="Montant" autocomplete="off" inputmode="numeric" name="gift_amt" data-1p-ignore data-lpignore="true" />
           <span style="color:var(--gold2);font-size:16px">🥞</span>
           <button class="btn-gift" id="btn-gift">Envoyer</button>
         </div>
@@ -2437,7 +2443,7 @@ body{
         </div>
         <div class="gift-row friends-add-row">
           <div class="gift-username-wrap">
-            <input class="gift-username" id="friend-username" type="text" placeholder="Envoyer une demande" autocomplete="off" />
+            <input class="gift-username" id="friend-username" type="text" placeholder="Envoyer une demande" autocomplete="off" name="friend_target" data-1p-ignore data-lpignore="true" />
             <div class="gift-suggestions" id="friend-suggestions"></div>
           </div>
           <button class="btn-gift" id="btn-add-friend">Envoyer</button>
@@ -2581,7 +2587,7 @@ body{
     <div class="chip clear pvp-chip" data-add="clear">✕</div>
   </div>
   <div class="bet-input-row">
-    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="50000" value="100" placeholder="Mise 1v1" autocomplete="one-time-code" data-1p-ignore data-lpignore="true"/>
+    <input class="bet-input" id="pvp-bet-input" type="number" min="10" max="999999999" value="100" placeholder="Mise 1v1" autocomplete="off" inputmode="numeric" name="pvp_bet_amt" data-1p-ignore data-lpignore="true"/>
     <span style="color:var(--gold2);font-size:18px">🥞</span>
   </div>
   <div class="friend-actions">
@@ -2608,6 +2614,7 @@ body{
     <div class="leaderboard-full-list" id="leaderboard-full-list">
       <div class="leaderboard-full-empty">Chargement…</div>
     </div>
+    <button class="btn-secondary btn-back-bottom" id="btn-back-lobby-bottom">← Retour accueil</button>
   </div>
 </div>
 
@@ -2779,7 +2786,7 @@ function updateTransferableHint() {
 }
 
 function getBetCap() {
-  return Math.max(0, Math.min(S.balance || 0, 50000));
+  return Math.max(0, S.balance || 0);
 }
 
 function syncBetInputLimit() {
@@ -3718,6 +3725,7 @@ $('btn-logout').addEventListener('click', async () => {
 $('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
 $('btn-open-leaderboard-side').addEventListener('click', showLeaderboardScreen);
 $('btn-back-lobby').addEventListener('click', showLobby);
+$('btn-back-lobby-bottom').addEventListener('click', showLobby);
 document.querySelectorAll('.lobby-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => setLobbyTab(btn.dataset.lobbyTab));
 });
@@ -4310,8 +4318,8 @@ function renderGame() {
     const replayWrap = document.createElement('div');
     replayWrap.className = 'replay-wrap';
     replayWrap.innerHTML = `
-      <input id="replay-bet" type="number" min="10" max="50000" value="${Math.round(lastBet)}"
-        autocomplete="one-time-code" data-1p-ignore data-lpignore="true" />
+      <input id="replay-bet" type="number" min="10" max="999999999" value="${Math.round(lastBet)}"
+        autocomplete="off" inputmode="numeric" name="replay_amt" data-1p-ignore data-lpignore="true" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
       <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>

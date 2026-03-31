@@ -1370,8 +1370,8 @@ app.post('/api/user/transfer', requireAuth, transferLimiter, async (req, res) =>
     return res.status(400).json({ error: 'Pseudo du destinataire requis' });
   if (isNaN(amt) || amt < 1)
     return res.status(400).json({ error: 'Montant minimum : 1 🥞' });
-  if (amt > 50000)
-    return res.status(400).json({ error: 'Montant maximum : 50 000 🥞' });
+  if (amt > 999999999)
+    return res.status(400).json({ error: 'Montant maximum : 999 999 999 🥞' });
 
   const sender = req.user;
   if (to.trim().toLowerCase() === sender.username.toLowerCase())
@@ -1433,8 +1433,8 @@ app.post('/api/pvp/invite', requireAuth, inviteLimiter, async (req, res) => {
   const username = String(req.body?.to || '').trim();
   const amount = parseInt(req.body?.amount);
   if (!username) return res.status(400).json({ error: 'Ami requis' });
-  if (isNaN(amount) || amount < 10 || amount > 50000) {
-    return res.status(400).json({ error: 'Mise 1v1 invalide (10 à 50 000 🥞)' });
+  if (isNaN(amount) || amount < 10 || amount > 999999999) {
+    return res.status(400).json({ error: 'Mise 1v1 invalide (10 à 999 999 999 🥞)' });
   }
   if (req.user.balance < amount) {
     return res.status(400).json({ error: 'Solde insuffisant pour cette invitation' });
@@ -1759,7 +1759,7 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   }
   const bet = parseInt(req.body?.bet);
   if (isNaN(bet) || bet < 10)  return res.status(400).json({ error: 'Mise minimum : 10 🥞' });
-  if (bet > 50000)              return res.status(400).json({ error: 'Mise maximum : 50 000 🥞' });
+  if (bet > 999999999)           return res.status(400).json({ error: 'Mise maximum : 999 999 999 🥞' });
 
   const u = req.user;
   if (u.balance < bet) return res.status(400).json({ error: 'Solde insuffisant' });
