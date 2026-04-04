@@ -923,7 +923,7 @@ const DAILY_STREAK_MILESTONES = [
   { day: 14, bonus: 8000, label: 'Palier Jour 14' },
   { day: 30, bonus: 20000, label: 'Couronne Jour 30' },
 ];
-const MINIGAME_PITY_CAP = 5;
+const MINIGAME_PITY_CAP = 4;
 
 function getDailyMilestone(streak) {
   return DAILY_STREAK_MILESTONES.find(m => m.day === streak) || null;
@@ -2108,6 +2108,34 @@ app.post('/api/admin/users/:id/password', requireAdmin, adminLimiter, async (req
 
   console.log(`[ADMIN] ${req.user.username} → reset password pour ${target.username}`);
   res.json({ success: true });
+});
+
+// Changer le pseudo d'un joueur
+app.post('/api/admin/users/:id/username', requireAdmin, adminLimiter, async (req, res) => {
+  const { id } = req.params;
+  const newName = (req.body?.username || '').trim();
+  if (!newName) return res.status(400).json({ error: "Nom d'utilisateur requis" });
+  if (newName.length < 3 || newName.length > 20)
+    return res.status(400).json({ error: "Nom d'utilisateur : 3–20 caractères" });
+  if (!/^[a-zA-Z0-9_]+$/.test(newName))
+    return res.status(400).json({ error: "Lettres, chiffres et _ uniquement" });
+
+  const target = await getUserById(id);
+  if (!target || target.is_admin) return res.status(404).json({ error: 'Joueur introuvable' });
+
+  if (newName.toLowerCase() === target.username.toLowerCase())
+    return res.status(400).json({ error: "C'est déjà son pseudo" });
+
+  const existing = await getUserByUsername(newName);
+  if (existing) return res.status(409).json({ error: "Ce nom d'utilisateur est déjà pris" });
+
+  const { error } = await supabase.from('users').update({ username: newName }).eq('id', id);
+  if (error) return res.status(500).json({ error: 'Erreur serveur' });
+
+  _ucDel(id);
+  _lbc.exp = 0;
+  console.log(`[ADMIN] ${req.user.username} → renamed ${target.username} to ${newName}`);
+  res.json({ success: true, username: newName });
 });
 
 // Réinitialiser le solde à 3000

@@ -422,6 +422,7 @@ function renderTable(players) {
       <td>
         <div class="actions">
           <button class="btn-act gold"  data-action="balance"  data-id="${esc(p.id)}" data-username="${esc(p.username)}" data-balance="${p.balance}">💰 Solde</button>
+          <button class="btn-act blue"  data-action="username" data-id="${esc(p.id)}" data-username="${esc(p.username)}">✏️ Pseudo</button>
           <button class="btn-act blue"  data-action="password" data-id="${esc(p.id)}" data-username="${esc(p.username)}">🔑 MDP</button>
           <button class="btn-act green" data-action="reset"    data-id="${esc(p.id)}" data-username="${esc(p.username)}">↺ Reset</button>
           <button class="btn-act red"   data-action="delete"   data-id="${esc(p.id)}" data-username="${esc(p.username)}">🗑</button>
@@ -445,6 +446,7 @@ $('players-tbody').addEventListener('click', e => {
   if (!btn) return;
   const { action, id, username, balance } = btn.dataset;
   if (action === 'balance')  openBalance(id, username, parseInt(balance));
+  if (action === 'username') openUsername(id, username);
   if (action === 'password') openPassword(id, username);
   if (action === 'reset')    openReset(id, username);
   if (action === 'delete')   openDelete(id, username);
@@ -511,6 +513,24 @@ function openBalance(id, username, currentBal) {
       if (isNaN(amount) || amount < 0) throw { error: 'Montant invalide' };
       await api('POST', `/api/admin/users/${id}/balance`, { action, amount });
       toast(`✅ Solde mis à jour pour ${username}`);
+    }
+  );
+}
+
+function openUsername(id, username) {
+  openModal(
+    '✏️ Changer le pseudo',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong></div>
+     <div class="field"><label>Nouveau pseudo</label>
+       <input id="m-username" type="text" placeholder="3–20 caractères, lettres/chiffres/_" maxlength="20" autocomplete="off"/>
+     </div>
+     <div class="modal-error"></div>`,
+    'Changer', 'blue',
+    async () => {
+      const newName = $('m-username').value.trim();
+      if (!newName || newName.length < 3) throw { error: 'Pseudo trop court (3 min)' };
+      await api('POST', `/api/admin/users/${id}/username`, { username: newName });
+      toast(`✅ Pseudo changé : ${username} → ${newName}`);
     }
   );
 }
