@@ -330,6 +330,78 @@ app.get('/api/events', requireSession, (req, res) => {
   });
 });
 
+// ── Player Stats (in-memory, resets on server restart) ──────────────────────
+const _stats = new Map(); // userId → { handsPlayed, wins, losses, pushes, blackjacks, busts, biggestWin, biggestBet, totalWagered, totalWon }
+
+function getStats(userId) {
+  if (!_stats.has(userId)) {
+    _stats.set(userId, {
+      handsPlayed: 0, wins: 0, losses: 0, pushes: 0,
+      blackjacks: 0, busts: 0, biggestWin: 0, biggestBet: 0,
+      totalWagered: 0, totalWon: 0, doubles: 0, splits: 0,
+    });
+  }
+  return _stats.get(userId);
+}
+
+function recordGameStats(userId, gs) {
+  if (!gs.result) return;
+  const st = getStats(userId);
+  const totalBet = gs.bets.reduce((a, b) => a + b, 0);
+  st.totalWagered += totalBet;
+  if (totalBet > st.biggestBet) st.biggestBet = totalBet;
+
+  for (const hr of gs.result.handResults) {
+    st.handsPlayed++;
+    if (hr.result === 'win') st.wins++;
+    else if (hr.result === 'blackjack') { st.wins++; st.blackjacks++; }
+    else if (hr.result === 'lose' || hr.result === 'dealer_blackjack') st.losses++;
+    else if (hr.result === 'push') st.pushes++;
+    if (hr.result === 'bust') st.busts++;
+    st.totalWon += hr.win;
+    if (hr.win > st.biggestWin) st.biggestWin = hr.win;
+  }
+}
+
+app.get('/api/user/stats', requireAuth, (req, res) => {
+  const st = getStats(req.user.id);
+  const winRate = st.handsPlayed > 0 ? ((st.wins / st.handsPlayed) * 100).toFixed(1) : '0.0';
+  res.json({ ...st, winRate });
+});
+
+// ── Chat (in-memory ring buffer) ─────────────────────────────────────────────
+const CHAT_MAX = 80;
+const _chatMessages = []; // { id, userId, username, text, ts }
+let _chatIdSeq = 0;
+const chatLimiter = rateLimit({ windowMs: 10_000, max: 8, keyGenerator: req => req.user?.id || req.ip, standardHeaders: false });
+
+app.get('/api/chat/history', requireAuth, (req, res) => {
+  res.json({ messages: _chatMessages.slice(-50) });
+});
+
+app.post('/api/chat/send', requireAuth, chatLimiter, (req, res) => {
+  const text = (req.body?.text || '').trim().slice(0, 200);
+  if (!text) return res.status(400).json({ error: 'Message vide' });
+
+  const msg = {
+    id: ++_chatIdSeq,
+    userId: req.user.id,
+    username: req.user.username,
+    text,
+    ts: Date.now(),
+  };
+  _chatMessages.push(msg);
+  if (_chatMessages.length > CHAT_MAX) _chatMessages.shift();
+
+  // Broadcast to all connected clients
+  for (const [, set] of _liveClients) {
+    const body = `event: chat:message\ndata: ${JSON.stringify(msg)}\n\n`;
+    for (const r of set) { try { r.write(body); } catch {} }
+  }
+
+  res.json({ success: true, message: msg });
+});
+
 // ── Game state cache (avoids re-reading 10KB shoe JSON from Supabase each action)
 const _gc = new Map();
 function _gcGet(uid) { const e = _gc.get(uid); return (e && e.exp > Date.now()) ? e.d : null; }
@@ -998,6 +1070,28 @@ function respondMe(req, res) {
 }
 app.get('/api/auth/me',  requireAuth, respondMe);
 app.get('/api/user/me',  requireAuth, respondMe);
+
+app.post('/api/user/change-username', requireAuth, async (req, res) => {
+  const newName = (req.body?.username || '').trim();
+  if (!newName) return res.status(400).json({ error: "Nom d'utilisateur requis" });
+  if (newName.length < 3 || newName.length > 20)
+    return res.status(400).json({ error: "Nom d'utilisateur : 3–20 caractères" });
+  if (!/^[a-zA-Z0-9_]+$/.test(newName))
+    return res.status(400).json({ error: "Lettres, chiffres et _ uniquement" });
+  if (newName.toLowerCase() === req.user.username.toLowerCase())
+    return res.status(400).json({ error: "C'est déjà votre pseudo" });
+
+  const existing = await getUserByUsername(newName);
+  if (existing) return res.status(409).json({ error: "Ce nom d'utilisateur est déjà pris" });
+
+  const { error } = await supabase.from('users').update({ username: newName }).eq('id', req.user.id);
+  if (error) return res.status(500).json({ error: 'Erreur serveur' });
+
+  _ucDel(req.user.id);
+  _lbc.exp = 0;
+  console.log(`[USER] ${req.user.username} → renamed to ${newName}`);
+  res.json({ success: true, username: newName });
+});
 
 app.post('/api/user/daily-bonus', requireAuth, async (req, res) => {
   const now = getNowSeconds();
@@ -1782,6 +1876,7 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
     gs.phase  = 'complete';
     gs.result = resolveGame(gs);
     bal = await addBalance(u.id, gs.result.totalWin) ?? bal;
+    recordGameStats(u.id, gs);
   }
 
   await setGame(u.id, gs);
@@ -1830,6 +1925,7 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   try { await deductBalance(u.id, extra, { burnBonus: true }); } catch { return res.status(400).json({ error: 'Solde insuffisant pour doubler' }); }
   gs.bets[idx] *= 2;
   gs.hands[idx].push(drawCard(gs.shoe));
+  getStats(u.id).doubles++;
 
   if (idx < gs.hands.length - 1) gs.activeHandIndex++;
   else await _runDealer(gs, req.user.id);
@@ -1856,6 +1952,7 @@ app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
   gs.hands[idx] = [c1, drawCard(gs.shoe)];
   gs.hands.splice(idx + 1, 0, [c2, drawCard(gs.shoe)]);
   gs.bets.splice(idx + 1, 0, splitBet);
+  getStats(u.id).splits++;
 
   await _save(req.user.id, gs, res, req.user.balance);
 });
@@ -1887,6 +1984,15 @@ async function _save(userId, gs, res, balance) {
     win > 0 ? addBalance(userId, win) : Promise.resolve(null),
   ]);
   const bal = newBal ?? balance ?? (await getUserById(userId, { fresh: true })).balance;
+  // Record stats and broadcast leaderboard update when a game completes
+  if (gs.phase === 'complete') {
+    recordGameStats(userId, gs);
+    _lbc.exp = 0; // bust the leaderboard cache
+    for (const [, set] of _liveClients) {
+      const body = `event: leaderboard:update\ndata: {}\n\n`;
+      for (const r of set) { try { r.write(body); } catch {} }
+    }
+  }
   res.json({ success: true, game: sanitize(gs), balance: bal });
 }
 

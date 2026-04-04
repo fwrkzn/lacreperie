@@ -55,7 +55,8 @@ body{
 /* ── Animations ───────────────────────────────────────────────────────────── */
 @keyframes fadeIn    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:none} }
-@keyframes dealCard  { from{opacity:0;transform:translateY(-60px) rotate(-8deg) scale(.8)} to{opacity:1;transform:none} }
+@keyframes dealCard  { from{opacity:0;transform:translateY(-80px) rotate(-10deg) scale(.7)} 60%{opacity:1;transform:translateY(4px) rotate(1deg) scale(1.02)} to{opacity:1;transform:none} }
+@keyframes dealCardHit { from{opacity:0;transform:translateX(40px) scale(.8)} to{opacity:1;transform:none} }
 @keyframes flip      { 0%{transform:rotateY(0deg)} 50%{transform:rotateY(90deg)} 100%{transform:rotateY(0deg)} }
 @keyframes pop       { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
 @keyframes shimmer   { 0%,100%{opacity:0.6} 50%{opacity:1} }
@@ -63,6 +64,13 @@ body{
 @keyframes chipBounce{ 0%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.1)} 100%{transform:translateY(0) scale(1)} }
 @keyframes glow      { 0%,100%{box-shadow:0 0 12px rgba(201,168,76,.3)} 50%{box-shadow:0 0 28px rgba(201,168,76,.7)} }
 @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes holeFlip  {
+  0%{transform:rotateY(0deg)}
+  50%{transform:rotateY(90deg) scale(1.05)}
+  100%{transform:rotateY(0deg) scale(1)}
+}
+@keyframes cardWin   { 0%{box-shadow:0 6px 20px rgba(0,0,0,.5)} 50%{box-shadow:0 0 24px rgba(201,168,76,.6)} 100%{box-shadow:0 6px 20px rgba(0,0,0,.5)} }
+@keyframes cardBust  { 0%,100%{opacity:1} 50%{opacity:.5} }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 #header{
@@ -284,6 +292,9 @@ body{
 .lobby-tab-panel#tab-leaderboard{
   grid-column: 2;
 }
+.lobby-tab-panel#tab-stats{
+  grid-column: 2;
+}
 .lobby-tab-panel#tab-prizes{
   grid-column: 1;
 }
@@ -373,6 +384,57 @@ body{
   font-family: sans-serif;
   font-size: 14px;
 }
+.editable-username{
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(201,168,76,.3);
+  transition: border-color .2s;
+}
+.editable-username:hover{
+  border-color: var(--gold);
+}
+.username-edit-row{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  animation: fadeIn .2s ease;
+}
+.username-edit-row.hidden{ display:none }
+.username-edit-row input{
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: sans-serif;
+  width: 160px;
+  text-align: center;
+  outline: none;
+}
+.username-edit-row input:focus{ border-color: var(--gold) }
+.btn-username-save{
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 32px;height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;align-items: center;justify-content: center;
+}
+.btn-username-cancel{
+  background: rgba(255,255,255,.08);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;align-items: center;justify-content: center;
+}
+.btn-username-cancel:hover{ color: var(--red); border-color: var(--red) }
 
 /* Bonus cards */
 .bonus-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
@@ -488,6 +550,45 @@ body{
   pointer-events: none;
   z-index: 999;
   animation: countUp .6s ease forwards;
+}
+
+/* ── Spinning Wheel ─────────────────────────────────────────────────────── */
+.wheel-overlay{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+  animation:fadeIn .3s ease;
+}
+.wheel-container{
+  position:relative;width:280px;height:280px;
+}
+.wheel-pointer{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  z-index:2;font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  line-height:1;
+}
+.wheel-canvas{
+  width:280px;height:280px;
+  border-radius:50%;
+  border:4px solid var(--gold);
+  box-shadow:0 0 30px rgba(201,168,76,.4), inset 0 0 20px rgba(0,0,0,.3);
+  transition: transform 4s cubic-bezier(.17,.67,.12,.99);
+}
+.wheel-canvas.spinning{
+  /* rotation set via JS */
+}
+.wheel-result{
+  position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;
+  font-size:22px;font-weight:bold;color:var(--gold2);
+  text-shadow:0 0 16px rgba(201,168,76,.6);
+  opacity:0;transition:opacity .4s;
+}
+.wheel-result.show{opacity:1}
+@media(max-width:760px){
+  .wheel-container{width:240px;height:240px}
+  .wheel-canvas{width:240px;height:240px}
 }
 
 /* Play button */
@@ -660,6 +761,7 @@ body{
   gap: 6px;
   justify-content: center;
   min-height: calc(var(--card-h) + 4px);
+  perspective: 800px;
 }
 
 /* Card */
@@ -696,7 +798,10 @@ body{
   opacity: .3;
   position: absolute;
 }
-.card.flipping{ animation: flip .5s ease }
+.card.flipping{ animation: holeFlip .6s ease; transform-style:preserve-3d }
+.card.card-hit{ animation: dealCardHit .3s cubic-bezier(.34,1.56,.64,1) both }
+.card.card-win{ animation: cardWin 1s ease 2 }
+.card.card-bust{ animation: cardBust .5s ease }
 .card-rank{
   position: absolute;
   top: 5px;
@@ -965,7 +1070,8 @@ body{
   .lobby-tab-panel#tab-play,
   .lobby-tab-panel#tab-social,
   .lobby-tab-panel#tab-leaderboard,
-  .lobby-tab-panel#tab-prizes{
+  .lobby-tab-panel#tab-prizes,
+  .lobby-tab-panel#tab-stats{
     grid-column: auto;
   }
   #screen-lobby h2{
@@ -984,6 +1090,13 @@ body{
   .lobby-greeting p{
     font-size: 13px;
   }
+  .mute-btn{
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+    top: 14px;
+    right: 4px;
+  }
   .bonus-row{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -998,9 +1111,9 @@ body{
     bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     z-index: 5;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    padding: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px 10px;
     background: rgba(11,11,14,.88);
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 27px;
@@ -1573,7 +1686,8 @@ body{
   .lobby-tab-panel.hidden{
     display: flex !important;
   }
-  #tab-leaderboard{
+  #tab-leaderboard,
+  #tab-stats{
     display: none !important;
   }
   #tab-prizes{
@@ -1874,6 +1988,192 @@ body{
 }
 .btn-gift:hover{ filter: brightness(1.1); transform: translateY(-1px) }
 .btn-gift:disabled{ opacity:.5; cursor:not-allowed; transform:none }
+/* ── Stats Dashboard ───────────────────────────────────────────────────── */
+.stats-dashboard{
+  animation: fadeIn .4s ease;
+}
+.stats-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-card{
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+}
+.stat-value{
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--gold2);
+  font-family: sans-serif;
+  margin-bottom: 4px;
+}
+.stat-label{
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: sans-serif;
+}
+.stats-breakdown{
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.stats-breakdown-title{
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  font-family: sans-serif;
+  margin-bottom: 12px;
+}
+.stats-breakdown-grid{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-detail{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: sans-serif;
+  font-size: 13px;
+}
+.sd-icon{
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+.sd-label{
+  flex: 1;
+  color: var(--text);
+}
+.sd-val{
+  color: var(--gold2);
+  font-weight: bold;
+  min-width: 40px;
+  text-align: right;
+}
+.stats-note{
+  font-size: 11px;
+  color: var(--muted);
+  font-family: sans-serif;
+  text-align: center;
+  font-style: italic;
+}
+@media(max-width:760px){
+  .stats-grid{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .stat-card{
+    padding: 12px 10px;
+  }
+  .stat-value{
+    font-size: 18px;
+  }
+}
+
+/* ── Chat ──────────────────────────────────────────────────────────────── */
+.chat-panel{
+  background: linear-gradient(180deg, rgba(20,20,24,.96), rgba(11,11,14,.98));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 22px 60px rgba(0,0,0,.22);
+}
+.chat-panel .social-head{
+  margin-bottom: 10px;
+}
+.chat-messages{
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0,0,0,.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.04);
+  margin-bottom: 10px;
+  scroll-behavior: smooth;
+}
+.chat-msg{
+  font-size: 13px;
+  font-family: sans-serif;
+  line-height: 1.45;
+  padding: 4px 0;
+  word-break: break-word;
+  animation: fadeIn .2s ease;
+}
+.chat-msg-user{
+  color: var(--gold2);
+  font-weight: bold;
+  margin-right: 6px;
+}
+.chat-msg-text{
+  color: var(--text);
+}
+.chat-msg-time{
+  color: var(--muted);
+  font-size: 10px;
+  margin-left: 6px;
+}
+.chat-msg.system{
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+}
+.chat-input-row{
+  display: flex;
+  gap: 8px;
+}
+.chat-input{
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: sans-serif;
+  outline: none;
+}
+.chat-input:focus{
+  border-color: var(--gold);
+}
+.chat-input::placeholder{
+  color: var(--muted);
+}
+.btn-chat-send{
+  background: linear-gradient(135deg, var(--gold), #b89440);
+  color: #0b0b0e;
+  border: none;
+  border-radius: 10px;
+  width: 42px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-chat-send:hover{ opacity:.9 }
+.btn-chat-send:disabled{ opacity:.4; cursor:not-allowed }
+.chat-empty{
+  color: var(--muted);
+  font-size: 12px;
+  font-family: sans-serif;
+  text-align: center;
+  padding: 20px 0;
+}
+
 .friends-panel,
 .pvp-invites{
   display: flex;
@@ -2288,7 +2588,12 @@ body{
 
   <div class="lobby-greeting">
     <button id="btn-mute" class="mute-btn" title="Couper le son">🔊</button>
-    <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username">Joueur</span> 👋</h2>
+    <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username" class="editable-username" title="Cliquer pour modifier">Joueur</span> 👋</h2>
+    <div id="username-edit-row" class="username-edit-row hidden">
+      <input id="username-edit-input" type="text" maxlength="20" placeholder="Nouveau pseudo" autocomplete="off"/>
+      <button id="username-edit-save" class="btn-username-save">✓</button>
+      <button id="username-edit-cancel" class="btn-username-cancel">✗</button>
+    </div>
     <p>Bienvenue au Casino des Crêpes</p>
   </div>
 
@@ -2322,7 +2627,7 @@ body{
       <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
       <div class="panel-body">
         <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
-        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Roue de Fortune</span><span class="srm-val">30–5K</span></div>
         <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
         <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
           Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
@@ -2392,6 +2697,18 @@ body{
 
   <div class="lobby-tab-panel hidden" id="tab-social">
   <h2>Social 🤝</h2>
+
+  <!-- Chat -->
+  <div class="chat-panel">
+    <div class="social-head">
+      <h3>💬 Chat du Casino</h3>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" type="text" placeholder="Écrire un message…" maxlength="200" autocomplete="off"/>
+      <button class="btn-chat-send" id="btn-chat-send">→</button>
+    </div>
+  </div>
 
   <div class="friends-panel">
       <!-- 1v1 Invitations (mobile only — hidden until invites exist) -->
@@ -2466,6 +2783,51 @@ body{
     </div>
   </div>
 
+  <div class="lobby-tab-panel hidden" id="tab-stats">
+    <h2>Statistiques 📊</h2>
+    <div class="stats-dashboard" id="stats-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-hands">—</div>
+          <div class="stat-label">Mains jouées</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-winrate">—</div>
+          <div class="stat-label">Taux de victoire</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-biggest-win">—</div>
+          <div class="stat-label">Plus gros gain</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-biggest-bet">—</div>
+          <div class="stat-label">Plus grosse mise</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-wagered">—</div>
+          <div class="stat-label">Total misé</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-won">—</div>
+          <div class="stat-label">Total gagné</div>
+        </div>
+      </div>
+      <div class="stats-breakdown">
+        <div class="stats-breakdown-title">Détails</div>
+        <div class="stats-breakdown-grid">
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--green)">✓</span><span class="sd-label">Victoires</span><span class="sd-val" id="stat-wins">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--red)">✗</span><span class="sd-label">Défaites</span><span class="sd-val" id="stat-losses">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--muted)">⇄</span><span class="sd-label">Égalités</span><span class="sd-val" id="stat-pushes">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:#ffe066">🃏</span><span class="sd-label">Blackjacks</span><span class="sd-val" id="stat-blackjacks">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--red)">💥</span><span class="sd-label">Busts</span><span class="sd-val" id="stat-busts">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--gold2)">⊕</span><span class="sd-label">Doubles</span><span class="sd-val" id="stat-doubles">0</span></div>
+          <div class="stat-detail"><span class="sd-icon" style="color:var(--gold2)">⇔</span><span class="sd-label">Splits</span><span class="sd-val" id="stat-splits">0</span></div>
+        </div>
+      </div>
+      <p class="stats-note">Les statistiques sont comptées depuis le dernier redémarrage du serveur.</p>
+    </div>
+  </div>
+
   <div class="lobby-tab-panel hidden" id="tab-leaderboard">
     <h2>Classement 🏆</h2>
     <div class="leaderboard" id="leaderboard">
@@ -2490,12 +2852,12 @@ body{
       <div class="countdown" id="daily-countdown"></div>
     </div>
 
-    <!-- Spatula minigame -->
+    <!-- Spatula minigame / Wheel -->
     <div class="bonus-card">
       <div class="icon">
-        <span class="spatula-btn" id="spatula-emoji">🍳</span>
+        <span class="spatula-btn" id="spatula-emoji">🎡</span>
       </div>
-      <h3>Mini-jeu Spatule</h3>
+      <h3>Roue de Fortune</h3>
       <div class="reward">30–5 000 🥞</div>
       <div class="bonus-meta">
         <div class="bonus-note" id="minigame-pity-note"></div>
@@ -2503,7 +2865,7 @@ body{
           <div class="progress-fill" id="minigame-pity-fill"></div>
         </div>
       </div>
-      <button class="btn-bonus" id="btn-minigame">Jouer</button>
+      <button class="btn-bonus" id="btn-minigame">Tourner la Roue</button>
       <div class="countdown" id="minigame-countdown"></div>
     </div>
   </div>
@@ -2514,7 +2876,7 @@ body{
       <div class="panel-head"><span>🥞</span><h3>Crêpes Gratuites</h3></div>
       <div class="panel-body">
         <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
-        <div class="stat-row-mini"><span class="srm-label">Mini-jeu spatule</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Roue de Fortune</span><span class="srm-val">30–5K</span></div>
         <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
         <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
           Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
@@ -2561,12 +2923,22 @@ body{
         <button class="btn-secondary btn-mini-full" id="btn-open-leaderboard-side">Classement complet</button>
       </div>
     </div>
+    <div class="panel-block">
+      <div class="panel-head"><span>📊</span><h3>Mes Stats</h3></div>
+      <div class="panel-body" id="stats-mini">
+        <div class="stat-row-mini"><span class="srm-label">Mains</span><span class="srm-val" id="stat-mini-hands">—</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Victoires</span><span class="srm-val" id="stat-mini-winrate">—</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Blackjacks</span><span class="srm-val" id="stat-mini-bj">—</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Plus gros gain</span><span class="srm-val" id="stat-mini-biggest">—</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="lobby-bottom-nav">
     <button class="lobby-nav-btn" data-lobby-tab="prizes"><span>🎁</span><span>Primes</span></button>
     <button class="lobby-nav-btn active" data-lobby-tab="play"><span>🂡</span><span>Jouer</span></button>
     <button class="lobby-nav-btn" data-lobby-tab="social"><span>✦</span><span>Social</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="stats"><span>📊</span><span>Stats</span></button>
     <button class="lobby-nav-btn" data-lobby-tab="leaderboard"><span>🏆</span><span>Classement</span></button>
   </div>
   </div><!-- /.lobby-content -->
@@ -2938,7 +3310,6 @@ function startLiveUpdates() {
     try {
       const d = JSON.parse(e.data);
       toast(`${escHtml(d.from)} vous a offert ${d.amount.toLocaleString('fr-FR')} 🥞`, 'gold', 5000);
-      // Refresh balance
       api('GET', '/api/user/me').then(u => {
         if (u) {
           S.balance = u.balance;
@@ -2947,6 +3318,15 @@ function startLiveUpdates() {
           updateTransferableHint();
         }
       }).catch(() => {});
+    } catch {}
+  });
+  src.addEventListener('leaderboard:update', () => {
+    loadLeaderboard();
+  });
+  src.addEventListener('chat:message', (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      appendChatMessage(msg);
     } catch {}
   });
   src.onerror = () => {
@@ -2969,13 +3349,14 @@ function stopLiveUpdates() {
 
 function startSocialRefresh() {
   stopSocialRefresh();
+  // SSE handles most updates; this is a fallback sync
   S.socialRefreshInterval = setInterval(() => {
     if ($('screen-lobby').classList.contains('screen-visible')) {
       loadFriendRequests();
       loadFriends();
       loadPvpInvites();
     }
-  }, 12000);
+  }, 30000);
 }
 
 function stopSocialRefresh() {
@@ -3066,6 +3447,7 @@ function setLobbyTab(tab) {
   });
   // Re-sync reward cooldowns every time the prizes tab appears
   if (tab === 'prizes') renderCooldowns();
+  if (tab === 'stats') loadStats();
 }
 
 function unlockEditableField(el) {
@@ -3150,6 +3532,8 @@ async function loadLobbyData() {
   loadFriends();
   loadPvpInvites();
   loadGiftsReceived();
+  loadChatHistory();
+  loadStats();
 }
 
 async function loadLeaderboard() {
@@ -3722,6 +4106,47 @@ $('btn-logout').addEventListener('click', async () => {
   await api('POST', '/api/auth/logout').catch(() => {});
 });
 
+// ── Username editing ────────────────────────────────────────────────────────
+$('lobby-username').addEventListener('click', () => {
+  const row = $('username-edit-row');
+  const inp = $('username-edit-input');
+  row.classList.remove('hidden');
+  inp.value = S.user.username;
+  inp.focus();
+  inp.select();
+});
+
+$('username-edit-cancel').addEventListener('click', () => {
+  $('username-edit-row').classList.add('hidden');
+});
+
+async function saveUsername() {
+  const inp = $('username-edit-input');
+  const newName = inp.value.trim();
+  if (!newName) return;
+
+  $('username-edit-save').disabled = true;
+  try {
+    const d = await api('POST', '/api/user/change-username', { username: newName });
+    S.user.username = d.username;
+    $('lobby-username').textContent = d.username;
+    $('username-edit-row').classList.add('hidden');
+    toast('Pseudo modifié !', 'success');
+    loadLeaderboard();
+    loadFriends();
+  } catch (e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    $('username-edit-save').disabled = false;
+  }
+}
+
+$('username-edit-save').addEventListener('click', saveUsername);
+$('username-edit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); saveUsername(); }
+  if (e.key === 'Escape') $('username-edit-cancel').click();
+});
+
 $('btn-open-leaderboard').addEventListener('click', showLeaderboardScreen);
 $('btn-open-leaderboard-side').addEventListener('click', showLeaderboardScreen);
 $('btn-back-lobby').addEventListener('click', showLobby);
@@ -3936,7 +4361,133 @@ $('btn-daily').addEventListener('click', async () => {
   }
 });
 
-// ── Spatula mini-game ──────────────────────────────────────────────────────────
+// ── Spinning Wheel mini-game ──────────────────────────────────────────────────
+const WHEEL_SEGMENTS = [
+  { label:'50',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
+  { label:'200',   color:'#0f4a2b', text:'#e8c97d', min:101, max:300 },
+  { label:'80',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
+  { label:'500',   color:'#4a2a0e', text:'#f5dfa0', min:101, max:1000 },
+  { label:'30',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
+  { label:'1K',    color:'#0f4a2b', text:'#e8c97d', min:101, max:1000 },
+  { label:'60',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
+  { label:'5K 🎉', color:'#6e3a1a', text:'#f5dfa0', min:1001,max:5000 },
+  { label:'40',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
+  { label:'300',   color:'#0f4a2b', text:'#e8c97d', min:101, max:1000 },
+  { label:'70',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
+  { label:'2K',    color:'#4a2a0e', text:'#f5dfa0', min:1001,max:5000 },
+];
+
+function drawWheel(canvas) {
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 4;
+  const n = WHEEL_SEGMENTS.length;
+  const arc = (2 * Math.PI) / n;
+
+  for (let i = 0; i < n; i++) {
+    const seg = WHEEL_SEGMENTS[i];
+    const startA = i * arc - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startA, startA + arc);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(201,168,76,.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startA + arc / 2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = seg.text;
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(seg.label, r * 0.65, 4);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = '#0b0b0e';
+  ctx.fill();
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🥞', cx, cy + 6);
+}
+
+function getWheelSegmentForReward(reward) {
+  // Find best matching segment
+  for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+    if (reward >= WHEEL_SEGMENTS[i].min && reward <= WHEEL_SEGMENTS[i].max) return i;
+  }
+  return reward >= 1001 ? 7 : reward >= 101 ? 1 : 0;
+}
+
+function showWheelSpin(reward, rarity, callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'wheel-overlay';
+
+  const container = document.createElement('div');
+  container.className = 'wheel-container';
+
+  const pointer = document.createElement('div');
+  pointer.className = 'wheel-pointer';
+  pointer.textContent = '▼';
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'wheel-canvas';
+  canvas.width = 280;
+  canvas.height = 280;
+
+  const resultEl = document.createElement('div');
+  resultEl.className = 'wheel-result';
+
+  container.appendChild(pointer);
+  container.appendChild(canvas);
+  container.appendChild(resultEl);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+
+  drawWheel(canvas);
+
+  const segIdx = getWheelSegmentForReward(reward);
+  const n = WHEEL_SEGMENTS.length;
+  const segAngle = 360 / n;
+  // Target: segment center should be at top (pointer). Top = 0deg.
+  // segment i center is at i*segAngle + segAngle/2 from start
+  const targetAngle = segIdx * segAngle + segAngle / 2;
+  // Spin 5+ full rotations + offset so segment lands at top
+  const totalRotation = 360 * (5 + Math.floor(Math.random() * 3)) + (360 - targetAngle);
+
+  requestAnimationFrame(() => {
+    canvas.style.transform = `rotate(${totalRotation}deg)`;
+  });
+
+  setTimeout(() => {
+    resultEl.textContent = `+${reward.toLocaleString('fr-FR')} 🥞`;
+    resultEl.classList.add('show');
+    if (rarity === 'jackpot') {
+      resultEl.style.fontSize = '26px';
+      resultEl.style.color = '#f5dfa0';
+    }
+  }, 4200);
+
+  setTimeout(() => {
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity .4s';
+    setTimeout(() => {
+      overlay.remove();
+      callback?.();
+    }, 400);
+  }, 5500);
+}
+
 async function playMinigame() {
   const sp  = $('spatula-emoji');
   const btn = $('btn-minigame');
@@ -3951,32 +4502,28 @@ async function playMinigame() {
 
   try {
     const d = await api('POST', '/api/user/minigame');
-    setBalance(d.balance);
-    applyCooldownState({ serverNow: d.serverNow, minigameCooldown: d.cooldown, minigameAvailableAt: d.availableAt });
-    syncRewardProgress(d);
 
-    // Floating reward
-    const fl = document.createElement('div');
-    fl.className = 'spatula-reward';
-    fl.textContent = `+${d.reward.toLocaleString('fr-FR')} 🥞`;
-    document.body.appendChild(fl);
-    setTimeout(() => fl.remove(), 700);
+    showWheelSpin(d.reward, d.rarity, () => {
+      setBalance(d.balance);
+      applyCooldownState({ serverNow: d.serverNow, minigameCooldown: d.cooldown, minigameAvailableAt: d.availableAt });
+      syncRewardProgress(d);
 
-    if (d.rarity === 'jackpot') {
-      const prefix = d.guaranteed ? '🎯 Spatule dorée !' : '🎉 JACKPOT !';
-      toast(`${prefix} +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4200);
-    } else {
-      toast(`🍳 +${d.reward.toLocaleString('fr-FR')} Crêpes ! Charge ${d.pityAfter}/${d.minigamePityCap}`, 'success');
-    }
+      if (d.rarity === 'jackpot') {
+        const prefix = d.guaranteed ? '🎯 Jackpot garanti !' : '🎉 JACKPOT !';
+        toast(`${prefix} +${d.reward.toLocaleString('fr-FR')} Crêpes !`, 'gold', 4200);
+      } else {
+        toast(`🎡 +${d.reward.toLocaleString('fr-FR')} Crêpes ! Charge ${d.pityAfter}/${d.minigamePityCap}`, 'success');
+      }
 
-    startCountdowns();
-    loadLeaderboard();
+      startCountdowns();
+      loadLeaderboard();
+      S.busy = false;
+    });
   } catch(e) {
     applyCooldownState({ serverNow: e.serverNow, minigameCooldown: e.cooldown, minigameAvailableAt: e.availableAt });
     syncRewardProgress(e);
     toast(e.error || 'Erreur', 'error');
     startCountdowns();
-  } finally {
     S.busy = false;
   }
 }
@@ -4015,6 +4562,8 @@ async function startGameFromInput(bet) {
   $('btn-deal').disabled = true;
   playCardSound();
   S.game = { phase: 'loading', dealerHand: [], hands: [], bets: [bet] };
+  S._prevDealerCount = 0;
+  S._prevHandCounts = [];
   showGame();
   renderGameLoading();
   try {
@@ -4078,6 +4627,59 @@ const _catLaughSound = new Audio('/assets/sounds/cat-laughing-at-you.mp3');
 
 let _soundMuted = localStorage.getItem('muted') === '1';
 
+// ── Synced background music ─────────────────────────────────────────────────
+const _bgMusic = new Audio('/assets/sounds/jazz50min.mp3');
+_bgMusic.loop = true;
+_bgMusic.volume = 0.25;
+let _bgMusicStarted = false;
+
+function syncBgMusic() {
+  if (!_bgMusicStarted || !_bgMusic.duration) return;
+  const nowMs = _getBgSyncMs();
+  const durationMs = _bgMusic.duration * 1000;
+  const targetPos = (nowMs % durationMs) / 1000;
+  // Only seek if drifted more than 2 seconds
+  if (Math.abs(_bgMusic.currentTime - targetPos) > 2) {
+    _bgMusic.currentTime = targetPos;
+  }
+}
+
+function _getBgSyncMs() {
+  // Use server-synced clock if available, otherwise fall back to Date.now()
+  return (S.serverTimeOffsetMs != null) ? getServerNowMs() : Date.now();
+}
+
+function startBgMusic() {
+  if (_soundMuted) { _bgMusic.pause(); return; }
+  if (!_bgMusic.duration) {
+    _bgMusic.addEventListener('loadedmetadata', () => startBgMusic(), { once: true });
+    _bgMusic.load();
+    return;
+  }
+  const nowMs = _getBgSyncMs();
+  const durationMs = _bgMusic.duration * 1000;
+  _bgMusic.currentTime = (nowMs % durationMs) / 1000;
+  _bgMusic.play().catch(() => {
+    // Autoplay blocked — start on first user interaction
+    document.addEventListener('click', function _resumeBg() {
+      if (!_soundMuted) {
+        syncBgMusic();
+        _bgMusic.play().catch(() => {});
+      }
+      document.removeEventListener('click', _resumeBg);
+    });
+  });
+  _bgMusicStarted = true;
+  clearInterval(S._bgSyncInterval);
+  S._bgSyncInterval = setInterval(syncBgMusic, 30000);
+}
+
+function stopBgMusic() {
+  _bgMusic.pause();
+  _bgMusicStarted = false;
+  clearInterval(S._bgSyncInterval);
+}
+
 function _initMuteBtn() {
   const btn = $('btn-mute');
   if (!btn) return;
@@ -4085,6 +4687,13 @@ function _initMuteBtn() {
     btn.textContent = _soundMuted ? '🔇' : '🔊';
     btn.classList.toggle('muted', _soundMuted);
     btn.title = _soundMuted ? 'Activer le son' : 'Couper le son';
+    // Sync music mute state
+    if (_soundMuted) {
+      _bgMusic.pause();
+    } else if (_bgMusicStarted) {
+      syncBgMusic();
+      _bgMusic.play().catch(() => {});
+    }
   }
   update();
   btn.onclick = () => {
@@ -4119,7 +4728,7 @@ function showTauntBox() {
   overlay.addEventListener('click', dismiss);
 }
 
-function buildCard(card, delay = 0) {
+function buildCard(card, delay = 0, isHit = false) {
   if (!card || card.hidden) {
     const el = document.createElement('div');
     el.className = 'card face-down';
@@ -4129,7 +4738,7 @@ function buildCard(card, delay = 0) {
   }
   const el = document.createElement('div');
   const isRed = SUIT_COLORS[card.suit];
-  el.className = `card face-up${isRed ? ' red' : ''}`;
+  el.className = `card face-up${isRed ? ' red' : ''}${isHit ? ' card-hit' : ''}`;
   el.style.animationDelay = delay + 'ms';
   el.innerHTML = `
     <span class="card-rank">${card.rank}</span>
@@ -4215,10 +4824,21 @@ function renderGame() {
   playerHands.innerHTML = '';
   actionBar.innerHTML   = '';
 
+  // Track previous card counts for hit animation
+  const prevDealerCount = S._prevDealerCount || 0;
+  const prevHandCounts = S._prevHandCounts || [];
+  const isInitialDeal = prevDealerCount === 0;
+
   // Dealer cards
   gs.dealerHand.forEach((c, i) => {
-    dealerCards.appendChild(buildCard(c, i * 80));
+    const isNewCard = !isInitialDeal && i >= prevDealerCount;
+    dealerCards.appendChild(buildCard(c, isInitialDeal ? i * 80 : (isNewCard ? 0 : 0), isNewCard));
+    if (!isNewCard && !isInitialDeal) {
+      const card = dealerCards.lastChild;
+      card.style.animation = 'none';
+    }
   });
+  S._prevDealerCount = gs.dealerHand.length;
 
   // Dealer score
   const dScore = scoreLabel(gs.dealerHand, gs.phase, true);
@@ -4259,7 +4879,13 @@ function renderGame() {
 
     const cardsRow = document.createElement('div');
     cardsRow.className = 'cards-row';
-    hand.forEach((c, ci) => cardsRow.appendChild(buildCard(c, (hi * 4 + ci) * 60 + 160)));
+    const prevCount = prevHandCounts[hi] || 0;
+    hand.forEach((c, ci) => {
+      const isNewCard = !isInitialDeal && ci >= prevCount;
+      const card = buildCard(c, isInitialDeal ? (hi * 4 + ci) * 60 + 160 : 0, isNewCard);
+      if (!isNewCard && !isInitialDeal) card.style.animation = 'none';
+      cardsRow.appendChild(card);
+    });
     wrapper.appendChild(cardsRow);
 
     const sc = scoreLabel(hand, gs.phase, false);
@@ -4270,6 +4896,19 @@ function renderGame() {
 
     playerHands.appendChild(wrapper);
   });
+  S._prevHandCounts = gs.hands.map(h => h.length);
+
+  // Add win/bust glow to cards on completion
+  if (gs.phase === 'complete' && gs.result) {
+    gs.result.handResults.forEach((hr, hi) => {
+      const handCards = playerHands.querySelectorAll(`.hand-wrapper:nth-child(${hi+1}) .card`);
+      if (hr.result === 'win' || hr.result === 'blackjack') {
+        handCards.forEach(c => c.classList.add('card-win'));
+      } else if (hr.result === 'bust') {
+        handCards.forEach(c => c.classList.add('card-bust'));
+      }
+    });
+  }
 
   // Action buttons
   if (gs.phase === 'player_turn') {
@@ -4337,6 +4976,8 @@ function renderGame() {
       replayAllInBtn.disabled = true;
       if (homeLink) homeLink.disabled = true;
       playCardSound();
+      S._prevDealerCount = 0;
+      S._prevHandCounts = [];
       try {
         await api('POST', '/api/game/clear');
         const d = await api('POST', '/api/game/start', { bet });
@@ -4392,7 +5033,7 @@ async function doAction(endpoint) {
     S.game = d.game;
     if (d.balance !== undefined) setBalance(d.balance);
     renderGame();
-    if (d.game && d.game.phase === 'complete') loadLeaderboard();
+    if (d.game && d.game.phase === 'complete') { loadLeaderboard(); loadStats(); }
   } catch(e) {
     toast(e.error || 'Erreur', 'error');
     // Re-enable buttons on error
@@ -4473,6 +5114,106 @@ async function goToLobby() {
   showLobby();
   await api('POST', '/api/game/clear').catch(()=>{});
 }
+
+// ── Stats Dashboard ──────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const st = await api('GET', '/api/user/stats');
+    const fmt = n => (n || 0).toLocaleString('fr-FR');
+    // Full stats tab
+    $('stat-hands').textContent = fmt(st.handsPlayed);
+    $('stat-winrate').textContent = st.winRate + '%';
+    $('stat-biggest-win').textContent = fmt(st.biggestWin) + ' 🥞';
+    $('stat-biggest-bet').textContent = fmt(st.biggestBet) + ' 🥞';
+    $('stat-wagered').textContent = fmt(st.totalWagered) + ' 🥞';
+    $('stat-won').textContent = fmt(st.totalWon) + ' 🥞';
+    $('stat-wins').textContent = fmt(st.wins);
+    $('stat-losses').textContent = fmt(st.losses);
+    $('stat-pushes').textContent = fmt(st.pushes);
+    $('stat-blackjacks').textContent = fmt(st.blackjacks);
+    $('stat-busts').textContent = fmt(st.busts);
+    $('stat-doubles').textContent = fmt(st.doubles);
+    $('stat-splits').textContent = fmt(st.splits);
+    // Mini sidebar stats
+    const mh = $('stat-mini-hands');
+    if (mh) {
+      mh.textContent = fmt(st.handsPlayed);
+      $('stat-mini-winrate').textContent = st.winRate + '%';
+      $('stat-mini-bj').textContent = fmt(st.blackjacks);
+      $('stat-mini-biggest').textContent = fmt(st.biggestWin);
+    }
+  } catch { /* silent */ }
+}
+
+// ── Chat ────────────────────────────────────────────────────────────────────
+function formatChatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function appendChatMessage(msg) {
+  const box = $('chat-messages');
+  if (!box) return;
+  // Remove empty placeholder
+  const empty = box.querySelector('.chat-empty');
+  if (empty) empty.remove();
+
+  const el = document.createElement('div');
+  el.className = 'chat-msg';
+  const isMe = S.user && msg.userId === S.user.id;
+  el.innerHTML = `<span class="chat-msg-user" style="${isMe ? 'color:var(--gold3)' : ''}">${escHtml(msg.username)}</span><span class="chat-msg-text">${escHtml(msg.text)}</span><span class="chat-msg-time">${formatChatTime(msg.ts)}</span>`;
+  box.appendChild(el);
+
+  // Keep max 60 visible messages
+  while (box.children.length > 60) box.removeChild(box.firstChild);
+
+  // Auto-scroll if near bottom
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  if (nearBottom || isMe) box.scrollTop = box.scrollHeight;
+}
+
+async function loadChatHistory() {
+  const box = $('chat-messages');
+  if (!box) return;
+  box.innerHTML = '<div class="chat-empty">Chargement…</div>';
+  try {
+    const d = await api('GET', '/api/chat/history');
+    box.innerHTML = '';
+    if (!d.messages || d.messages.length === 0) {
+      box.innerHTML = '<div class="chat-empty">Aucun message. Soyez le premier !</div>';
+      return;
+    }
+    d.messages.forEach(m => appendChatMessage(m));
+    box.scrollTop = box.scrollHeight;
+  } catch {
+    box.innerHTML = '<div class="chat-empty">Erreur de chargement</div>';
+  }
+}
+
+async function sendChatMessage() {
+  const inp = $('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+
+  const btn = $('btn-chat-send');
+  btn.disabled = true;
+  inp.value = '';
+
+  try {
+    await api('POST', '/api/chat/send', { text });
+  } catch (e) {
+    toast(e.error || 'Erreur envoi message', 'error');
+    inp.value = text; // Restore on error
+  } finally {
+    btn.disabled = false;
+    inp.focus();
+  }
+}
+
+$('btn-chat-send').addEventListener('click', sendChatMessage);
+$('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+});
 
 // ── Gift Username Autocomplete ──────────────────────────────────────────────
 function setupUserAutocomplete({ inputId, boxId, onPick }) {
@@ -4575,6 +5316,7 @@ $('btn-gift').addEventListener('click', async () => {
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
+  startBgMusic();
   const loadingStart = Date.now();
   try {
     const [d, gd, pd] = await Promise.all([
