@@ -208,6 +208,25 @@ body{
 }
 .field input:focus{ border-color: var(--gold) }
 .field input::placeholder{ color: var(--muted) }
+.password-wrap{
+  position: relative;
+}
+.password-wrap input{ padding-right: 42px }
+.btn-toggle-pw{
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  opacity: .5;
+  transition: opacity .2s;
+  line-height: 1;
+}
+.btn-toggle-pw:hover{ opacity: 1 }
 .btn-primary{
   width: 100%;
   padding: 12px;
@@ -338,9 +357,6 @@ body{
 }
 .lobby-greeting{ position: relative; z-index: 1; }
 .mute-btn{
-  position: absolute;
-  top: 20px;
-  right: 8px;
   background: rgba(255,255,255,.06);
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -353,6 +369,7 @@ body{
   font-size: 16px;
   color: var(--muted);
   transition: background .2s, color .2s;
+  flex-shrink: 0;
 }
 .mute-btn:hover{ background: rgba(255,255,255,.1); }
 .mute-btn.muted{ color: var(--red); }
@@ -1094,8 +1111,6 @@ body{
     width: 28px;
     height: 28px;
     font-size: 13px;
-    top: 14px;
-    right: 4px;
   }
   .bonus-row{
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2547,6 +2562,7 @@ body{
       <span class="icon">🥞</span>
       <span class="amount" id="header-balance">0</span>
     </div>
+    <button id="btn-mute" class="mute-btn" title="Couper le son">🔊</button>
     <button id="btn-logout">Déconnexion</button>
   </div>
 </div>
@@ -2577,7 +2593,10 @@ body{
     </div>
     <div class="field">
       <label>Mot de passe</label>
-      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" readonly data-unlock-edit/>
+      <div class="password-wrap">
+        <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" readonly data-unlock-edit/>
+        <button type="button" class="btn-toggle-pw" id="btn-toggle-pw" tabindex="-1">👁</button>
+      </div>
     </div>
     <button class="btn-primary" id="auth-submit">Se connecter</button>
   </div>
@@ -2587,7 +2606,6 @@ body{
 <div id="screen-lobby" class="screen hidden">
 
   <div class="lobby-greeting">
-    <button id="btn-mute" class="mute-btn" title="Couper le son">🔊</button>
     <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username" class="editable-username" title="Cliquer pour modifier">Joueur</span> 👋</h2>
     <div id="username-edit-row" class="username-edit-row hidden">
       <input id="username-edit-input" type="text" maxlength="20" placeholder="Nouveau pseudo" autocomplete="off"/>
@@ -3720,7 +3738,7 @@ function renderOnlineMini() {
   const friends = S.friends || [];
   const online = friends.filter(f => f.online);
   if (online.length === 0) {
-    el.innerHTML = '<div class="lb-empty" style="font-size:11px">Aucun ami en ligne.</div>';
+    el.innerHTML = '<div class="lb-empty" style="font-size:11px">Personne n\'est en ligne.</div>';
     return;
   }
   el.innerHTML = online.slice(0, 8).map(f => `
@@ -4097,6 +4115,13 @@ $('auth-submit').addEventListener('click', async () => {
 // Enter on password
 $('auth-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') $('auth-submit').click();
+});
+
+$('btn-toggle-pw').addEventListener('click', () => {
+  const inp = $('auth-password');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  $('btn-toggle-pw').textContent = show ? '🙈' : '👁';
 });
 
 $('btn-logout').addEventListener('click', async () => {
@@ -4630,7 +4655,7 @@ let _soundMuted = localStorage.getItem('muted') === '1';
 // ── Synced background music ─────────────────────────────────────────────────
 const _bgMusic = new Audio('/assets/sounds/jazz50min.mp3');
 _bgMusic.loop = true;
-_bgMusic.volume = 0.25;
+_bgMusic.volume = 0.10;
 let _bgMusicStarted = false;
 
 function syncBgMusic() {
@@ -4661,13 +4686,14 @@ function startBgMusic() {
   _bgMusic.currentTime = (nowMs % durationMs) / 1000;
   _bgMusic.play().catch(() => {
     // Autoplay blocked — start on first user interaction
-    document.addEventListener('click', function _resumeBg() {
+    function _resumeBg() {
       if (!_soundMuted) {
         syncBgMusic();
         _bgMusic.play().catch(() => {});
       }
-      document.removeEventListener('click', _resumeBg);
-    });
+      ['click','touchstart','keydown'].forEach(e => document.removeEventListener(e, _resumeBg));
+    }
+    ['click','touchstart','keydown'].forEach(e => document.addEventListener(e, _resumeBg, { once: false }));
   });
   _bgMusicStarted = true;
   clearInterval(S._bgSyncInterval);
