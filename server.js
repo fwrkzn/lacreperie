@@ -14,6 +14,29 @@ const helmet           = require('helmet');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Banned username words ────────────────────────────────────────────────────
+const BANNED_USERNAME_WORDS = [
+  'penis', 'dick', 'cock', 'pussy', 'vagina', 'cunt', 'asshole',
+  'fuck', 'shit', 'bitch', 'whore', 'slut', 'nigger', 'nigga',
+  'fag', 'faggot', 'retard', 'rape', 'cum', 'semen', 'dildo',
+  'porn', 'hentai', 'anal', 'anus', 'tits', 'boobs', 'blowjob',
+  'handjob', 'masturbat', 'orgasm', 'erection', 'ejaculat',
+  'clitoris', 'scrotum', 'testicle', 'butthole', 'jizz', 'wank',
+  'prick', 'twat', 'ballsack', 'nutsack', 'jackoff', 'jerkoff',
+  'sexe', 'sexy', 'phallus', 'fetish', 'bondage', 'milf',
+  'negro', 'spic', 'chink', 'kike', 'gook', 'wetback',
+];
+const LEET_MAP = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '8': 'b', '@': 'a', '$': 's', '!': 'i' };
+function normalizeLeet(str) {
+  return str.toLowerCase().replace(/[013457@$!8]/g, c => LEET_MAP[c] || c);
+}
+function containsBannedWord(username) {
+  const lower = username.toLowerCase();
+  const normalized = normalizeLeet(username);
+  // check both raw lowercase and leet-normalized version
+  return BANNED_USERNAME_WORDS.some(w => lower.includes(w) || normalized.includes(w));
+}
+
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -1007,6 +1030,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     return res.status(400).json({ error: "Nom d'utilisateur : 3–20 caractères" });
   if (!/^[a-zA-Z0-9_]+$/.test(username))
     return res.status(400).json({ error: "Nom d'utilisateur : lettres, chiffres et _ uniquement" });
+  if (containsBannedWord(username))
+    return res.status(400).json({ error: "Ce nom d'utilisateur n'est pas autorisé" });
   if (password.length < 6)
     return res.status(400).json({ error: 'Mot de passe : 6 caractères minimum' });
 
@@ -1078,6 +1103,8 @@ app.post('/api/user/change-username', requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Nom d'utilisateur : 3–20 caractères" });
   if (!/^[a-zA-Z0-9_]+$/.test(newName))
     return res.status(400).json({ error: "Lettres, chiffres et _ uniquement" });
+  if (containsBannedWord(newName))
+    return res.status(400).json({ error: "Ce nom d'utilisateur n'est pas autorisé" });
   if (newName.toLowerCase() === req.user.username.toLowerCase())
     return res.status(400).json({ error: "C'est déjà votre pseudo" });
 
@@ -2125,6 +2152,8 @@ app.post('/api/admin/users/:id/username', requireAdmin, adminLimiter, async (req
     return res.status(400).json({ error: "Nom d'utilisateur : 3–20 caractères" });
   if (!/^[a-zA-Z0-9_]+$/.test(newName))
     return res.status(400).json({ error: "Lettres, chiffres et _ uniquement" });
+  if (containsBannedWord(newName))
+    return res.status(400).json({ error: "Ce nom d'utilisateur n'est pas autorisé" });
 
   const target = await getUserById(id);
   if (!target || target.is_admin) return res.status(404).json({ error: 'Joueur introuvable' });
