@@ -4388,18 +4388,18 @@ $('btn-daily').addEventListener('click', async () => {
 
 // ── Spinning Wheel mini-game ──────────────────────────────────────────────────
 const WHEEL_SEGMENTS = [
-  { label:'50',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
-  { label:'200',   color:'#0f4a2b', text:'#e8c97d', min:101, max:300 },
-  { label:'80',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
-  { label:'500',   color:'#4a2a0e', text:'#f5dfa0', min:101, max:1000 },
-  { label:'30',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
-  { label:'1K',    color:'#0f4a2b', text:'#e8c97d', min:101, max:1000 },
-  { label:'60',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
-  { label:'5K 🎉', color:'#6e3a1a', text:'#f5dfa0', min:1001,max:5000 },
-  { label:'40',    color:'#1a3a6e', text:'#e8c97d', min:30,  max:100 },
-  { label:'300',   color:'#0f4a2b', text:'#e8c97d', min:101, max:1000 },
-  { label:'70',    color:'#2a1a4e', text:'#e8c97d', min:30,  max:100 },
-  { label:'2K',    color:'#4a2a0e', text:'#f5dfa0', min:1001,max:5000 },
+  { label:'50',    color:'#1a3a6e', text:'#e8c97d', value:50 },
+  { label:'200',   color:'#0f4a2b', text:'#e8c97d', value:200 },
+  { label:'80',    color:'#2a1a4e', text:'#e8c97d', value:80 },
+  { label:'500',   color:'#4a2a0e', text:'#f5dfa0', value:500 },
+  { label:'30',    color:'#1a3a6e', text:'#e8c97d', value:30 },
+  { label:'1K',    color:'#0f4a2b', text:'#e8c97d', value:1000 },
+  { label:'60',    color:'#2a1a4e', text:'#e8c97d', value:60 },
+  { label:'5K 🎉', color:'#6e3a1a', text:'#f5dfa0', value:5000 },
+  { label:'40',    color:'#1a3a6e', text:'#e8c97d', value:40 },
+  { label:'300',   color:'#0f4a2b', text:'#e8c97d', value:300 },
+  { label:'70',    color:'#2a1a4e', text:'#e8c97d', value:70 },
+  { label:'2K',    color:'#4a2a0e', text:'#f5dfa0', value:2000 },
 ];
 
 function drawWheel(canvas) {
@@ -4447,11 +4447,16 @@ function drawWheel(canvas) {
 }
 
 function getWheelSegmentForReward(reward) {
-  // Find best matching segment
   for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
-    if (reward >= WHEEL_SEGMENTS[i].min && reward <= WHEEL_SEGMENTS[i].max) return i;
+    if (WHEEL_SEGMENTS[i].value === reward) return i;
   }
-  return reward >= 1001 ? 7 : reward >= 101 ? 1 : 0;
+  // Fallback: closest segment
+  let best = 0, bestDiff = Infinity;
+  for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+    const diff = Math.abs(WHEEL_SEGMENTS[i].value - reward);
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  }
+  return best;
 }
 
 function showWheelSpin(reward, rarity, callback) {
