@@ -1210,11 +1210,14 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
   }
 
   if (compatibilityMode) {
+    const SMALL_R = [30, 40, 50, 60, 70, 80];
+    const MED_R   = [200, 300, 500, 1000];
+    const JACK_R  = [2000, 5000];
     const roll = Math.random();
     let reward;
-    if      (roll < 0.70) reward = 30   + Math.floor(Math.random() * 71);
-    else if (roll < 0.95) reward = 101  + Math.floor(Math.random() * 900);
-    else                  reward = 1001 + Math.floor(Math.random() * 4000);
+    if      (roll < 0.70) reward = SMALL_R[Math.floor(Math.random() * SMALL_R.length)];
+    else if (roll < 0.95) reward = MED_R[Math.floor(Math.random() * MED_R.length)];
+    else                  reward = JACK_R[Math.floor(Math.random() * JACK_R.length)];
 
     const newBal = await addBalance(req.user.id, reward, { nonTransferable: reward });
     const cooldown = getMinigameCooldownSeconds(now, now);
@@ -1240,14 +1243,17 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
   const roll = Math.random();
   let reward;
   let rarity = 'small';
+  const SMALL_REWARDS   = [30, 40, 50, 60, 70, 80];
+  const MEDIUM_REWARDS  = [200, 300, 500, 1000];
+  const JACKPOT_REWARDS = [2000, 5000];
   if (guaranteed || roll >= 0.95) {
-    reward = 1001 + Math.floor(Math.random() * 4000);
+    reward = JACKPOT_REWARDS[Math.floor(Math.random() * JACKPOT_REWARDS.length)];
     rarity = 'jackpot';
   } else if (roll >= 0.70) {
-    reward = 101 + Math.floor(Math.random() * 900);
+    reward = MEDIUM_REWARDS[Math.floor(Math.random() * MEDIUM_REWARDS.length)];
     rarity = 'medium';
   } else {
-    reward = 30 + Math.floor(Math.random() * 71);
+    reward = SMALL_REWARDS[Math.floor(Math.random() * SMALL_REWARDS.length)];
   }
 
   const nextPity = rarity === 'jackpot' ? 0 : Math.min(MINIGAME_PITY_CAP, pityBefore + 1);
