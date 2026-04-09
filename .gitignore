@@ -1,4 +1,7 @@
 .env
+.env.*
+.DS_Store
+.playwright-mcp/
 data/
 node_modules/
 AI_CONTEXT.md

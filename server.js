@@ -47,6 +47,7 @@ const supabase = createClient(
 // ── Session secret ────────────────────────────────────────────────────────────
 const DATA_DIR    = path.join(__dirname, 'data');
 const SECRET_FILE = path.join(DATA_DIR, 'secret.key');
+const ADMIN_PANEL_FILE = path.join(__dirname, 'private', 'admin.html');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function getOrCreateSecret() {
@@ -175,6 +176,10 @@ async function requireAdmin(req, res, next) {
   req.user = user;
   next();
 }
+
+app.get('/admin', requireAdmin, (_req, res) => {
+  res.sendFile(ADMIN_PANEL_FILE);
+});
 
 // ── User cache (10s TTL — avoids repeated DB lookups per request) ─────────────
 const _uc = new Map();

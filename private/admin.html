@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Casino des Crêpes</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:      #08080c;
+  --s1:      #111116;
+  --s2:      #18181f;
+  --border:  #25252e;
+  --gold:    #c9a84c;
+  --gold2:   #e8c97d;
+  --text:    #e8e6e0;
+  --muted:   #666070;
+  --red:     #e04444;
+  --green:   #3fb56e;
+  --blue:    #4a9edd;
+  --radius:  10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:sans-serif}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* Header */
+#header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;
+  background:var(--s1);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+#header-title{font-size:15px;font-weight:bold;letter-spacing:2px;color:var(--gold)}
+#header-title span{color:var(--muted);font-weight:normal;font-size:12px;margin-left:8px}
+#header-right{display:flex;align-items:center;gap:10px}
+#admin-name{font-size:13px;color:var(--muted)}
+.btn-sm{
+  padding:6px 12px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:12px;cursor:pointer;
+  transition:all .2s;
+}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Layout */
+#content{flex:1;padding:24px;max-width:1100px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px;
+}
+.stat-card .label{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.stat-card .value{font-size:26px;font-weight:bold;color:var(--gold2)}
+
+/* Search bar */
+.search-bar{
+  display:flex;gap:10px;align-items:center;
+}
+.search-input{
+  flex:1;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:10px 14px;font-size:14px;outline:none;transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--gold)}
+.search-input::placeholder{color:var(--muted)}
+.btn-search{
+  padding:10px 20px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:13px;cursor:pointer;transition:all .2s;
+}
+.btn-search:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Table */
+.table-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{
+  padding:12px 20px;border-bottom:1px solid var(--border);
+  font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:center;
+}
+#player-count{font-size:12px;color:var(--muted);font-weight:normal;letter-spacing:0}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;padding:10px 16px;font-size:11px;letter-spacing:1px;
+  color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);
+}
+td{padding:11px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-balance{font-weight:bold;color:var(--gold2);font-family:monospace}
+.td-date{color:var(--muted);font-size:12px}
+.actions{display:flex;gap:6px}
+.btn-act{
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;font-size:11px;cursor:pointer;transition:all .15s;
+  white-space:nowrap;
+}
+.btn-act.blue {border-color:#2a5a80;color:var(--blue)}
+.btn-act.blue:hover{background:rgba(74,158,221,.1)}
+.btn-act.green{border-color:#1d6040;color:var(--green)}
+.btn-act.green:hover{background:rgba(63,181,110,.1)}
+.btn-act.red  {border-color:#6a2020;color:var(--red)}
+.btn-act.red:hover{background:rgba(224,68,68,.1)}
+.btn-act.gold {border-color:rgba(201,168,76,.4);color:var(--gold)}
+.btn-act.gold:hover{background:rgba(201,168,76,.1)}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:14px}
+
+/* Modal */
+#modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);z-index:100;
+  align-items:center;justify-content:center;padding:20px;
+}
+#modal-overlay.open{display:flex}
+.modal{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);
+  width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.6);
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+}
+.modal-header h3{font-size:14px;letter-spacing:1px;color:var(--gold)}
+.btn-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.btn-close:hover{color:var(--text)}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal-target{font-size:13px;color:var(--muted)}
+.modal-target strong{color:var(--text)}
+.field label{display:block;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.field input, .field select{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:10px 12px;font-size:14px;outline:none;transition:border-color .2s;
+}
+.field input:focus, .field select:focus{border-color:var(--gold)}
+.field select option{background:var(--s2)}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn-cancel{
+  padding:9px 18px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:13px;cursor:pointer;transition:all .2s;
+}
+.btn-cancel:hover{border-color:var(--muted);color:var(--text)}
+.btn-confirm{
+  padding:9px 18px;border-radius:8px;border:none;
+  font-size:13px;font-weight:bold;cursor:pointer;transition:all .2s;
+}
+.btn-confirm.green{background:linear-gradient(135deg,#1d7a45,#145530);color:#fff}
+.btn-confirm.blue {background:linear-gradient(135deg,#1a5a8a,#0f3a5a);color:#fff}
+.btn-confirm.red  {background:linear-gradient(135deg,#7a1d1d,#551414);color:#fff}
+.btn-confirm.gold {background:linear-gradient(135deg,var(--gold),#a87e30);color:#0b0b0e}
+.btn-confirm:hover{filter:brightness(1.15)}
+.btn-confirm:disabled{opacity:.4;cursor:not-allowed}
+.modal-error{color:var(--red);font-size:12px;text-align:center}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 20px;font-size:13px;opacity:0;transition:all .3s;
+  pointer-events:none;z-index:200;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok  {border-color:var(--green);color:var(--green)}
+#toast.err {border-color:var(--red);color:var(--red)}
+
+/* Auth screen */
+#screen-auth{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,#141420 0%,var(--bg) 70%);
+}
+.auth-box{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);
+  padding:40px;width:100%;max-width:360px;text-align:center;
+}
+.auth-box h1{font-size:18px;letter-spacing:3px;color:var(--gold);margin-bottom:4px}
+.auth-box p{color:var(--muted);font-size:13px;margin-bottom:28px}
+.auth-box .field{text-align:left;margin-bottom:14px}
+.btn-login{
+  width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),#a87e30);
+  border:none;border-radius:8px;color:#0b0b0e;font-size:14px;font-weight:bold;
+  letter-spacing:1px;cursor:pointer;margin-top:4px;
+}
+.auth-err{color:var(--red);font-size:13px;margin-top:10px;min-height:20px}
+
+/* Responsive */
+@media(max-width:700px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stats-row .stat-card:last-child{grid-column:1/-1}
+  th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4){display:none}
+  #content{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div id="screen-auth">
+  <div class="auth-box">
+    <h1>⚙️ ADMIN</h1>
+    <p>Casino des Crêpes — Panneau d'administration</p>
+    <div class="field">
+      <label>Identifiant</label>
+      <input id="auth-user" type="text" placeholder="admin" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-login" id="btn-login">Connexion</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- Main panel (hidden until authenticated) -->
+<div id="panel" style="display:none;flex-direction:column;flex:1">
+  <div id="header">
+    <div id="header-title">⚙️ ADMIN PANEL <span>Casino des Crêpes</span></div>
+    <div id="header-right">
+      <span id="admin-name"></span>
+      <a href="/" class="btn-sm">← Jeu</a>
+      <button class="btn-sm" id="btn-change-pwd">🔑 Mot de passe</button>
+      <button class="btn-sm" id="btn-logout">Déconnexion</button>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">Joueurs inscrits</div>
+        <div class="value" id="stat-players">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Crêpes en circulation</div>
+        <div class="value" id="stat-circ">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Parties en cours</div>
+        <div class="value" id="stat-games">—</div>
+      </div>
+    </div>
+
+    <!-- Search + table -->
+    <div class="search-bar">
+      <input class="search-input" id="search-input" type="text" placeholder="Rechercher un joueur…" maxlength="50"/>
+      <button class="btn-search" id="btn-search">Rechercher</button>
+      <button class="btn-search" id="btn-refresh">↺ Actualiser</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>Joueurs</span>
+        <span id="player-count"></span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Joueur</th>
+            <th>Solde</th>
+            <th>Inscription</th>
+            <th>Dernier bonus</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="players-tbody">
+          <tr><td colspan="5" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Action</h3>
+      <button class="btn-close" id="btn-close-modal">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btn-cancel-modal">Annuler</button>
+      <button class="btn-confirm" id="btn-confirm-modal">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentAction = null;
+let allPlayers    = [];
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin',
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastT;
+function toast(msg, type='ok', dur=2800) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.className = '', dur);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function checkAuth() {
+  try {
+    const d = await api('GET', '/api/admin/me');
+    showPanel(d.username);
+  } catch {
+    $('screen-auth').style.display = 'flex';
+    document.getElementById('panel').style.display = 'none';
+  }
+}
+
+function showPanel(username) {
+  $('screen-auth').style.display = 'none';
+  $('panel').style.display = 'flex';
+  $('admin-name').textContent = username;
+  loadStats();
+  loadPlayers();
+}
+
+$('btn-login').addEventListener('click', async () => {
+  const username = $('auth-user').value.trim();
+  const password = $('auth-pass').value;
+  $('auth-err').textContent = '';
+  $('btn-login').disabled = true;
+  try {
+    await api('POST', '/api/auth/login', { username, password });
+    const d = await api('GET', '/api/admin/me');
+    showPanel(d.username);
+  } catch(e) {
+    $('auth-err').textContent = e.error || 'Accès refusé';
+  } finally {
+    $('btn-login').disabled = false;
+  }
+});
+$('auth-pass').addEventListener('keydown', e => e.key === 'Enter' && $('btn-login').click());
+
+$('btn-logout').addEventListener('click', async () => {
+  await api('POST', '/api/auth/logout');
+  location.reload();
+});
+
+$('btn-change-pwd').addEventListener('click', () => {
+  openModal(
+    '🔑 Changer mon mot de passe',
+    `<div class="field"><label>Mot de passe actuel</label>
+       <input id="m-cur-pwd" type="password" autocomplete="current-password" placeholder="••••••••"/>
+     </div>
+     <div class="field"><label>Nouveau mot de passe</label>
+       <input id="m-new-pwd" type="password" autocomplete="new-password" placeholder="8 caractères minimum"/>
+     </div>
+     <div class="field"><label>Confirmer le nouveau mot de passe</label>
+       <input id="m-new-pwd2" type="password" autocomplete="new-password" placeholder="••••••••"/>
+     </div>
+     <div class="modal-error"></div>`,
+    'Changer', 'gold',
+    async () => {
+      const cur  = $('m-cur-pwd').value;
+      const np   = $('m-new-pwd').value;
+      const np2  = $('m-new-pwd2').value;
+      if (!cur || !np || !np2) throw { error: 'Tous les champs sont requis' };
+      if (np.length < 8) throw { error: 'Nouveau mot de passe : 8 caractères minimum' };
+      if (np !== np2) throw { error: 'Les mots de passe ne correspondent pas' };
+      await api('POST', '/api/admin/change-password', { currentPassword: cur, newPassword: np });
+      toast('✅ Mot de passe admin changé');
+    }
+  );
+});
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const d = await api('GET', '/api/admin/stats');
+    $('stat-players').textContent = d.totalPlayers.toLocaleString('fr-FR');
+    $('stat-circ').textContent    = d.totalCirculation.toLocaleString('fr-FR') + ' 🥞';
+    $('stat-games').textContent   = d.activeGames;
+  } catch {}
+}
+
+// ── Players ───────────────────────────────────────────────────────────────────
+async function loadPlayers(query = '') {
+  const tbody = $('players-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="empty">Chargement…</td></tr>';
+  try {
+    const url = query ? `/api/admin/users?q=${encodeURIComponent(query)}` : '/api/admin/users';
+    const d = await api('GET', url);
+    allPlayers = d.users;
+    renderTable(d.users);
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Erreur de chargement</td></tr>';
+  }
+}
+
+function renderTable(players) {
+  $('player-count').textContent = `${players.length} joueur${players.length !== 1 ? 's' : ''}`;
+  const tbody = $('players-tbody');
+  if (!players.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Aucun joueur trouvé</td></tr>';
+    return;
+  }
+  tbody.innerHTML = players.map(p => `
+    <tr data-id="${esc(p.id)}">
+      <td><strong>${esc(p.username)}</strong></td>
+      <td class="td-balance">${p.balance.toLocaleString('fr-FR')} 🥞</td>
+      <td class="td-date">${formatDate(p.created_at)}</td>
+      <td class="td-date">${p.last_daily_claim ? formatDate(new Date(p.last_daily_claim * 1000).toISOString()) : '—'}</td>
+      <td>
+        <div class="actions">
+          <button class="btn-act gold"  data-action="balance"  data-id="${esc(p.id)}" data-username="${esc(p.username)}" data-balance="${p.balance}">💰 Solde</button>
+          <button class="btn-act blue"  data-action="username" data-id="${esc(p.id)}" data-username="${esc(p.username)}">✏️ Pseudo</button>
+          <button class="btn-act blue"  data-action="password" data-id="${esc(p.id)}" data-username="${esc(p.username)}">🔑 MDP</button>
+          <button class="btn-act green" data-action="reset"    data-id="${esc(p.id)}" data-username="${esc(p.username)}">↺ Reset</button>
+          <button class="btn-act red"   data-action="delete"   data-id="${esc(p.id)}" data-username="${esc(p.username)}">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+
+$('players-tbody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const { action, id, username, balance } = btn.dataset;
+  if (action === 'balance')  openBalance(id, username, parseInt(balance));
+  if (action === 'username') openUsername(id, username);
+  if (action === 'password') openPassword(id, username);
+  if (action === 'reset')    openReset(id, username);
+  if (action === 'delete')   openDelete(id, username);
+});
+
+$('btn-search').addEventListener('click', () => loadPlayers($('search-input').value.trim()));
+$('btn-refresh').addEventListener('click', () => { $('search-input').value = ''; loadPlayers(); loadStats(); });
+$('search-input').addEventListener('keydown', e => e.key === 'Enter' && $('btn-search').click());
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(title, bodyHTML, confirmLabel, confirmClass, action) {
+  $('modal-title').textContent  = title;
+  $('modal-body').innerHTML     = bodyHTML;
+  const btn = $('btn-confirm-modal');
+  btn.textContent = confirmLabel;
+  btn.className   = `btn-confirm ${confirmClass}`;
+  btn.disabled    = false;
+  currentAction   = action;
+  $('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  $('modal-overlay').classList.remove('open');
+  currentAction = null;
+}
+$('btn-close-modal').addEventListener('click', closeModal);
+$('btn-cancel-modal').addEventListener('click', closeModal);
+$('modal-overlay').addEventListener('click', e => { if (e.target === $('modal-overlay')) closeModal(); });
+
+$('btn-confirm-modal').addEventListener('click', async () => {
+  if (!currentAction) return;
+  $('btn-confirm-modal').disabled = true;
+  try {
+    await currentAction();
+    closeModal();
+    loadPlayers($('search-input').value.trim());
+    loadStats();
+  } catch(e) {
+    const errEl = $('modal-body').querySelector('.modal-error');
+    if (errEl) errEl.textContent = e.error || 'Erreur';
+    $('btn-confirm-modal').disabled = false;
+  }
+});
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function openBalance(id, username, currentBal) {
+  openModal(
+    '💰 Modifier le solde',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong> — Solde actuel : <strong>${currentBal.toLocaleString('fr-FR')} 🥞</strong></div>
+     <div class="field"><label>Action</label>
+       <select id="m-action">
+         <option value="add">➕ Ajouter</option>
+         <option value="remove">➖ Retirer</option>
+         <option value="set">🎯 Définir exactement</option>
+       </select>
+     </div>
+     <div class="field"><label>Montant (🥞)</label>
+       <input id="m-amount" type="number" min="0" max="9999999" placeholder="0"/>
+     </div>
+     <div class="modal-error"></div>`,
+    'Confirmer', 'gold',
+    async () => {
+      const action = $('m-action').value;
+      const amount = parseInt($('m-amount').value);
+      if (isNaN(amount) || amount < 0) throw { error: 'Montant invalide' };
+      await api('POST', `/api/admin/users/${id}/balance`, { action, amount });
+      toast(`✅ Solde mis à jour pour ${username}`);
+    }
+  );
+}
+
+function openUsername(id, username) {
+  openModal(
+    '✏️ Changer le pseudo',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong></div>
+     <div class="field"><label>Nouveau pseudo</label>
+       <input id="m-username" type="text" placeholder="3–20 caractères, lettres/chiffres/_" maxlength="20" autocomplete="off"/>
+     </div>
+     <div class="modal-error"></div>`,
+    'Changer', 'blue',
+    async () => {
+      const newName = $('m-username').value.trim();
+      if (!newName || newName.length < 3) throw { error: 'Pseudo trop court (3 min)' };
+      await api('POST', `/api/admin/users/${id}/username`, { username: newName });
+      toast(`✅ Pseudo changé : ${username} → ${newName}`);
+    }
+  );
+}
+
+function openPassword(id, username) {
+  openModal(
+    '🔑 Réinitialiser le mot de passe',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong></div>
+     <div class="field"><label>Nouveau mot de passe</label>
+       <input id="m-pass" type="text" placeholder="Minimum 6 caractères" autocomplete="off"/>
+     </div>
+     <div class="modal-error"></div>`,
+    'Changer', 'blue',
+    async () => {
+      const password = $('m-pass').value;
+      if (!password || password.length < 6) throw { error: 'Mot de passe trop court' };
+      await api('POST', `/api/admin/users/${id}/password`, { password });
+      toast(`✅ Mot de passe changé pour ${username}`);
+    }
+  );
+}
+
+function openReset(id, username) {
+  openModal(
+    '↺ Réinitialiser le compte',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong></div>
+     <p style="color:var(--muted);font-size:13px;line-height:1.6">Le solde sera remis à <strong style="color:var(--text)">3 000 🥞</strong> et la partie en cours sera annulée. Le mot de passe n'est pas modifié.</p>
+     <div class="modal-error"></div>`,
+    'Réinitialiser', 'green',
+    async () => {
+      await api('POST', `/api/admin/users/${id}/reset`);
+      toast(`✅ Compte de ${username} réinitialisé`);
+    }
+  );
+}
+
+function openDelete(id, username) {
+  openModal(
+    '🗑 Supprimer le compte',
+    `<div class="modal-target">Joueur : <strong>${esc(username)}</strong></div>
+     <p style="color:var(--red);font-size:13px;line-height:1.6">⚠️ Cette action est <strong>irréversible</strong>. Le compte et toutes les données associées seront définitivement supprimés.</p>
+     <div class="modal-error"></div>`,
+    'Supprimer définitivement', 'red',
+    async () => {
+      await api('DELETE', `/api/admin/users/${id}`);
+      toast(`✅ Compte de ${username} supprimé`);
+    }
+  );
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
