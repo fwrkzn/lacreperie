@@ -277,6 +277,7 @@ async function deductBalance(userId, amount, { burnBonus = false } = {}) {
   if (error) throw { error: 'Solde insuffisant' };
   _ucDel(userId); // invalidate cache — balance changed
   _lbc.exp = 0;
+  emitToUser(userId, 'balance:update', { balance: data });
   return data;
 }
 
@@ -290,6 +291,7 @@ async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
   if (error) throw error;
   _ucDel(userId); // invalidate cache — balance changed
   _lbc.exp = 0;
+  emitToUser(userId, 'balance:update', { balance: data });
   return data;
 }
 
@@ -397,29 +399,38 @@ app.get('/api/user/stats', requireAuth, (req, res) => {
   res.json({ ...st, winRate });
 });
 
-// ── Chat (in-memory ring buffer) ─────────────────────────────────────────────
-const CHAT_MAX = 80;
-const _chatMessages = []; // { id, userId, username, text, ts }
-let _chatIdSeq = 0;
+// ── Chat (Supabase-backed, 150-message cap) ──────────────────────────────────
+const CHAT_MAX = 150;
 const chatLimiter = rateLimit({ windowMs: 10_000, max: 8, keyGenerator: req => req.user?.id || req.ip, standardHeaders: false });
 
-app.get('/api/chat/history', requireAuth, (req, res) => {
-  res.json({ messages: _chatMessages.slice(-50) });
+app.get('/api/chat/history', requireAuth, async (req, res) => {
+  const { data } = await supabase
+    .from('chat_messages').select('id, user_id, username, text, created_at')
+    .order('created_at', { ascending: true })
+    .limit(CHAT_MAX);
+  const messages = (data || []).map(r => ({ id: r.id, userId: r.user_id, username: r.username, text: r.text, ts: r.created_at }));
+  res.json({ messages });
 });
 
-app.post('/api/chat/send', requireAuth, chatLimiter, (req, res) => {
+app.post('/api/chat/send', requireAuth, chatLimiter, async (req, res) => {
   const text = (req.body?.text || '').trim().slice(0, 200);
   if (!text) return res.status(400).json({ error: 'Message vide' });
 
-  const msg = {
-    id: ++_chatIdSeq,
-    userId: req.user.id,
-    username: req.user.username,
-    text,
-    ts: Date.now(),
-  };
-  _chatMessages.push(msg);
-  if (_chatMessages.length > CHAT_MAX) _chatMessages.shift();
+  const { data, error } = await supabase.from('chat_messages')
+    .insert({ user_id: req.user.id, username: req.user.username, text, created_at: Date.now() })
+    .select('id, created_at').single();
+  if (error) return res.status(500).json({ error: 'Erreur chat' });
+
+  const msg = { id: data.id, userId: req.user.id, username: req.user.username, text, ts: data.created_at };
+
+  // Trim to 150 messages — delete oldest beyond the cap
+  const { data: oldest } = await supabase
+    .from('chat_messages').select('id')
+    .order('created_at', { ascending: false })
+    .range(CHAT_MAX, CHAT_MAX + 100);
+  if (oldest?.length) {
+    await supabase.from('chat_messages').delete().in('id', oldest.map(r => r.id));
+  }
 
   // Broadcast to all connected clients
   for (const [, set] of _liveClients) {
@@ -2113,6 +2124,8 @@ app.post('/api/admin/users/:id/balance', requireAdmin, adminLimiter, async (req,
   if (action === 'set') {
     const { data } = await supabase.from('users').update({ balance: amount }).eq('id', id).select('balance').single();
     newBalance = data.balance;
+    _ucDel(id);
+    emitToUser(id, 'balance:update', { balance: newBalance });
   } else if (action === 'add') {
     newBalance = await addBalance(id, amount);
   } else {
@@ -2186,6 +2199,8 @@ app.post('/api/admin/users/:id/reset', requireAdmin, adminLimiter, async (req, r
 
   await supabase.from('users').update({ balance: 3000, non_transferable: 3000 }).eq('id', id);
   await supabase.from('active_games').delete().eq('user_id', id);
+  _ucDel(id);
+  emitToUser(id, 'balance:update', { balance: 3000 });
 
   console.log(`[ADMIN] ${req.user.username} → reset compte de ${target.username}`);
   res.json({ success: true, balance: 3000 });

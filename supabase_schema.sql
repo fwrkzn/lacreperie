@@ -95,6 +95,16 @@ CREATE TABLE IF NOT EXISTS gift_log (
 
 CREATE INDEX IF NOT EXISTS gift_log_to_user_idx ON gift_log (to_user_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  username   TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS chat_messages_created_idx ON chat_messages (created_at DESC);
+
 -- ── Fonctions atomiques (évitent la race condition sur le solde) ───────────────
 
 -- Déduit un montant du solde, échoue si insuffisant

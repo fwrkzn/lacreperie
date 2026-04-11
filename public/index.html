@@ -670,6 +670,14 @@ body{
 .chip.c100 { --chip-bg: rgba(201,168,76,.12);  --chip-border: var(--gold); --chip-color: var(--gold2) }
 .chip.c500 { --chip-bg: rgba(224,68,68,.12);   --chip-border: var(--red); --chip-color: #f06060 }
 .chip.c1k  { --chip-bg: rgba(140,100,220,.15); --chip-border: #9b72d4; --chip-color: #c0a0f0 }
+.chip.chalf{
+  width: 60px;
+  --chip-bg: rgba(60,140,220,.15);
+  --chip-border: #4a9de0;
+  --chip-color: #a0d0ff;
+  font-size: 10px;
+  letter-spacing: .8px;
+}
 .chip.callin{
   width: 68px;
   --chip-bg: rgba(224,68,68,.18);
@@ -1140,7 +1148,7 @@ body{
       padding-top: env(safe-area-inset-top, 0px);
     }
     .lobby-bottom-nav{
-      bottom: env(safe-area-inset-bottom, 0px);
+      bottom: env(safe-area-inset-bottom, 8px);
     }
   }
   .play-section h3{
@@ -2111,6 +2119,7 @@ body{
 .chat-messages{
   max-height: 220px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2121,6 +2130,7 @@ body{
   margin-bottom: 10px;
   scroll-behavior: smooth;
 }
+.chat-msg:first-child{ margin-top: auto }
 .chat-msg{
   font-size: 13px;
   font-family: sans-serif;
@@ -2676,6 +2686,7 @@ body{
       <div class="chip c100" data-add="100">100</div>
       <div class="chip c500" data-add="500">500</div>
       <div class="chip c1k"  data-add="1000">1K</div>
+      <div class="chip chalf" data-add="half">HALF</div>
       <div class="chip callin" data-add="allin">ALL-IN</div>
       <div class="chip clear" data-add="clear">✕</div>
     </div>
@@ -3330,12 +3341,17 @@ function startLiveUpdates() {
       toast(`${escHtml(d.from)} vous a offert ${d.amount.toLocaleString('fr-FR')} 🥞`, 'gold', 5000);
       api('GET', '/api/user/me').then(u => {
         if (u) {
-          S.balance = u.balance;
           S.user.nonTransferable = u.nonTransferable || 0;
-          animateBalance(u.balance);
+          setBalance(u.balance);
           updateTransferableHint();
         }
       }).catch(() => {});
+    } catch {}
+  });
+  src.addEventListener('balance:update', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.balance != null) setBalance(d.balance);
     } catch {}
   });
   src.addEventListener('leaderboard:update', () => {
@@ -3745,6 +3761,7 @@ function renderOnlineMini() {
     <div class="online-mini-row">
       <span class="online-dot"></span>
       <span>${escHtml(f.username)}</span>
+      <span style="margin-left:auto;opacity:.6;font-size:11px">${f.balance.toLocaleString('fr-FR')} 🥞</span>
     </div>
   `).join('');
 }
@@ -4569,6 +4586,7 @@ document.querySelectorAll('.chip').forEach(chip => {
     const cap = getBetCap();
     if (add === 'clear') { inp.value = ''; return; }
     if (!cap) { inp.value = ''; return; }
+    if (add === 'half') { inp.value = Math.max(10, Math.floor(cap / 2)); return; }
     if (add === 'allin') { inp.value = cap; return; }
     const cur = parseInt(inp.value) || 0;
     if (cur >= cap) return;
@@ -4733,6 +4751,15 @@ function _initMuteBtn() {
     update();
   };
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    _bgMusic.pause();
+  } else if (_bgMusicStarted && !_soundMuted) {
+    syncBgMusic();
+    _bgMusic.play().catch(() => {});
+  }
+});
 
 function _playSound(src, vol = 0.5, rate = 1) {
   if (_soundMuted) return;
@@ -4992,18 +5019,21 @@ function renderGame() {
         autocomplete="off" inputmode="numeric" name="replay_amt" data-1p-ignore data-lpignore="true" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
+      <button class="chip chalf replay-chip" id="btn-replay-half" type="button">HALF</button>
       <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>
     `;
     actionBar.appendChild(replayWrap);
 
     const replayBetInput = replayWrap.querySelector('#replay-bet');
     const replayBtn = replayWrap.querySelector('#btn-replay');
+    const replayHalfBtn = replayWrap.querySelector('#btn-replay-half');
     const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
     let homeLink;
 
     async function replayWithBet(bet) {
       if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
       replayBtn.disabled = true;
+      replayHalfBtn.disabled = true;
       replayAllInBtn.disabled = true;
       if (homeLink) homeLink.disabled = true;
       playCardSound();
@@ -5018,6 +5048,7 @@ function renderGame() {
       } catch(e) {
         toast(e.error || 'Erreur', 'error');
         replayBtn.disabled = false;
+        replayHalfBtn.disabled = false;
         replayAllInBtn.disabled = false;
         if (homeLink) homeLink.disabled = false;
       }
@@ -5026,6 +5057,12 @@ function renderGame() {
     replayBtn.addEventListener('click', async () => {
       const bet = parseInt(replayBetInput.value);
       await replayWithBet(bet);
+    });
+
+    replayHalfBtn.addEventListener('click', () => {
+      const cap = getBetCap();
+      replayBetInput.value = Math.max(10, Math.floor(cap / 2));
+      replayBetInput.focus();
     });
 
     replayAllInBtn.addEventListener('click', async () => {
