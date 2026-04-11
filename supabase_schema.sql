@@ -105,6 +105,20 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 CREATE INDEX IF NOT EXISTS chat_messages_created_idx ON chat_messages (created_at DESC);
 
+-- ── Stats columns ─────────────────────────────────────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS hands_played   INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS wins           INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS losses         INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pushes         INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS blackjacks     INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS busts          INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS doubles        INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS splits         INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS biggest_win    INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS biggest_bet    INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS total_wagered  BIGINT  NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS total_won      BIGINT  NOT NULL DEFAULT 0;
+
 -- ── Fonctions atomiques (évitent la race condition sur le solde) ───────────────
 
 -- Déduit un montant du solde, échoue si insuffisant
@@ -153,5 +167,38 @@ BEGIN
     RETURNING balance INTO v_new_balance;
 
   RETURN v_new_balance;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Batch-update game stats after a hand completes
+CREATE OR REPLACE FUNCTION update_stats(
+  p_user_id UUID,
+  p_hands INTEGER, p_wins INTEGER, p_losses INTEGER, p_pushes INTEGER,
+  p_blackjacks INTEGER, p_busts INTEGER,
+  p_wagered BIGINT, p_won BIGINT,
+  p_biggest_win INTEGER, p_biggest_bet INTEGER
+)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE users SET
+    hands_played  = hands_played  + p_hands,
+    wins          = wins          + p_wins,
+    losses        = losses        + p_losses,
+    pushes        = pushes        + p_pushes,
+    blackjacks    = blackjacks    + p_blackjacks,
+    busts         = busts         + p_busts,
+    total_wagered = total_wagered + p_wagered,
+    total_won     = total_won     + p_won,
+    biggest_win   = GREATEST(biggest_win, p_biggest_win),
+    biggest_bet   = GREATEST(biggest_bet, p_biggest_bet)
+  WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Increment a single stat column by 1 (for doubles/splits)
+CREATE OR REPLACE FUNCTION increment_stat(p_user_id UUID, p_column TEXT)
+RETURNS VOID AS $$
+BEGIN
+  EXECUTE format('UPDATE users SET %I = %I + 1 WHERE id = $1', p_column, p_column) USING p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

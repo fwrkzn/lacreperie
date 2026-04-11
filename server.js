@@ -360,41 +360,45 @@ app.get('/api/events', requireSession, (req, res) => {
   });
 });
 
-// ── Player Stats (in-memory, resets on server restart) ──────────────────────
-const _stats = new Map(); // userId → { handsPlayed, wins, losses, pushes, blackjacks, busts, biggestWin, biggestBet, totalWagered, totalWon }
+// ── Player Stats (persisted in Supabase) ────────────────────────────────────
 
-function getStats(userId) {
-  if (!_stats.has(userId)) {
-    _stats.set(userId, {
-      handsPlayed: 0, wins: 0, losses: 0, pushes: 0,
-      blackjacks: 0, busts: 0, biggestWin: 0, biggestBet: 0,
-      totalWagered: 0, totalWon: 0, doubles: 0, splits: 0,
-    });
-  }
-  return _stats.get(userId);
-}
-
-function recordGameStats(userId, gs) {
+async function recordGameStats(userId, gs) {
   if (!gs.result) return;
-  const st = getStats(userId);
   const totalBet = gs.bets.reduce((a, b) => a + b, 0);
-  st.totalWagered += totalBet;
-  if (totalBet > st.biggestBet) st.biggestBet = totalBet;
 
+  let dWins = 0, dLosses = 0, dPushes = 0, dBlackjacks = 0, dBusts = 0, dHands = 0, dTotalWon = 0, maxWin = 0;
   for (const hr of gs.result.handResults) {
-    st.handsPlayed++;
-    if (hr.result === 'win') st.wins++;
-    else if (hr.result === 'blackjack') { st.wins++; st.blackjacks++; }
-    else if (hr.result === 'lose' || hr.result === 'dealer_blackjack') st.losses++;
-    else if (hr.result === 'push') st.pushes++;
-    if (hr.result === 'bust') st.busts++;
-    st.totalWon += hr.win;
-    if (hr.win > st.biggestWin) st.biggestWin = hr.win;
+    dHands++;
+    if (hr.result === 'win') dWins++;
+    else if (hr.result === 'blackjack') { dWins++; dBlackjacks++; }
+    else if (hr.result === 'lose' || hr.result === 'dealer_blackjack') dLosses++;
+    else if (hr.result === 'push') dPushes++;
+    if (hr.result === 'bust') dBusts++;
+    dTotalWon += hr.win;
+    if (hr.win > maxWin) maxWin = hr.win;
   }
+
+  await supabase.rpc('update_stats', {
+    p_user_id: userId,
+    p_hands: dHands, p_wins: dWins, p_losses: dLosses, p_pushes: dPushes,
+    p_blackjacks: dBlackjacks, p_busts: dBusts,
+    p_wagered: totalBet, p_won: dTotalWon,
+    p_biggest_win: maxWin, p_biggest_bet: totalBet,
+  });
 }
 
-app.get('/api/user/stats', requireAuth, (req, res) => {
-  const st = getStats(req.user.id);
+app.get('/api/user/stats', requireAuth, async (req, res) => {
+  const { data } = await supabase.from('users')
+    .select('hands_played,wins,losses,pushes,blackjacks,busts,doubles,splits,biggest_win,biggest_bet,total_wagered,total_won')
+    .eq('id', req.user.id).single();
+  if (!data) return res.json({});
+  const st = {
+    handsPlayed: data.hands_played, wins: data.wins, losses: data.losses,
+    pushes: data.pushes, blackjacks: data.blackjacks, busts: data.busts,
+    doubles: data.doubles, splits: data.splits,
+    biggestWin: data.biggest_win, biggestBet: data.biggest_bet,
+    totalWagered: Number(data.total_wagered), totalWon: Number(data.total_won),
+  };
   const winRate = st.handsPlayed > 0 ? ((st.wins / st.handsPlayed) * 100).toFixed(1) : '0.0';
   res.json({ ...st, winRate });
 });
@@ -1324,6 +1328,115 @@ app.post('/api/user/minigame', requireAuth, async (req, res) => {
   });
 });
 
+// ── Scratch Card ──────────────────────────────────────────────────────────────
+const SCRATCH_COSTS = [100, 500, 2000];
+const SCRATCH_SYMBOLS = [
+  { emoji: '🥞', label: 'Crêpe' },
+  { emoji: '🍒', label: 'Cerise' },
+  { emoji: '💎', label: 'Diamant' },
+  { emoji: '🍀', label: 'Trèfle' },
+  { emoji: '⭐', label: 'Étoile' },
+  { emoji: '🔔', label: 'Cloche' },
+  { emoji: '👑', label: 'Couronne' },
+  { emoji: '🎰', label: 'Jackpot' },
+];
+
+function generateScratchCard(cost) {
+  // Multiplier tiers with probabilities
+  // ~55% lose, ~25% 1.5x, ~12% 2x, ~5% 3x, ~2.5% 5x, ~0.5% 10x
+  const roll = Math.random();
+  let winMult = 0;
+  if      (roll >= 0.995) winMult = 10;
+  else if (roll >= 0.97)  winMult = 5;
+  else if (roll >= 0.92)  winMult = 3;
+  else if (roll >= 0.80)  winMult = 2;
+  else if (roll >= 0.55)  winMult = 1.5;
+  // else 0 = lose
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const cells = [];
+  const winIndices = [];
+
+  if (winMult > 0) {
+    // Pick the winning symbol
+    const winSym = pick(SCRATCH_SYMBOLS);
+    // Place 3 winning symbols at random positions in 3x3 grid
+    const positions = [0,1,2,3,4,5,6,7,8];
+    // Shuffle and pick 3
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+    const winPos = new Set(positions.slice(0, 3));
+
+    for (let i = 0; i < 9; i++) {
+      if (winPos.has(i)) {
+        cells.push({ emoji: winSym.emoji, mult: `×${winMult}` });
+        winIndices.push(i);
+      } else {
+        // Pick a different symbol (not the winning one)
+        let sym;
+        do { sym = pick(SCRATCH_SYMBOLS); } while (sym.emoji === winSym.emoji);
+        // Random non-winning multiplier label
+        const fakes = ['×1', '×0.5', '×2', '×0'];
+        cells.push({ emoji: sym.emoji, mult: pick(fakes) });
+      }
+    }
+  } else {
+    // Losing card: ensure no 3 identical symbols
+    // Use 4+ different symbols so no triple can form
+    const shuffled = [...SCRATCH_SYMBOLS].sort(() => Math.random() - 0.5);
+    const pool = shuffled.slice(0, 5); // 5 different symbols
+    // Place at most 2 of each
+    const placed = [];
+    const counts = {};
+    for (let i = 0; i < 9; i++) {
+      let sym;
+      let tries = 0;
+      do {
+        sym = pick(pool);
+        tries++;
+      } while ((counts[sym.emoji] || 0) >= 2 && tries < 50);
+      counts[sym.emoji] = (counts[sym.emoji] || 0) + 1;
+      const fakes = ['×1', '×0.5', '×2', '×0'];
+      cells.push({ emoji: sym.emoji, mult: pick(fakes) });
+    }
+  }
+
+  const winAmount = winMult > 0 ? Math.round(cost * winMult) : 0;
+  return { cells, winIndices, winAmount, winMult };
+}
+
+app.post('/api/user/scratchcard', requireAuth, async (req, res) => {
+  const cost = req.body?.cost;
+  if (!SCRATCH_COSTS.includes(cost)) {
+    return res.status(400).json({ error: 'Montant invalide' });
+  }
+
+  try {
+    const newBal = await deductBalance(req.user.id, cost, { burnBonus: true });
+    const card = generateScratchCard(cost);
+
+    let finalBalance = newBal;
+    if (card.winAmount > 0) {
+      finalBalance = await addBalance(req.user.id, card.winAmount, { nonTransferable: card.winAmount });
+    }
+    _ucDel(req.user.id);
+
+    res.json({
+      success: true,
+      cost,
+      balanceAfterPurchase: newBal,
+      cells: card.cells,
+      winIndices: card.winIndices,
+      winAmount: card.winAmount,
+      newBalance: finalBalance,
+    });
+  } catch (e) {
+    return res.status(400).json({ error: 'Solde insuffisant' });
+  }
+});
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const _lbc = { data: null, exp: 0 };
 async function getLeaderboardData() {
@@ -1925,7 +2038,7 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
     gs.phase  = 'complete';
     gs.result = resolveGame(gs);
     bal = await addBalance(u.id, gs.result.totalWin) ?? bal;
-    recordGameStats(u.id, gs);
+    recordGameStats(u.id, gs).catch(() => {});
   }
 
   await setGame(u.id, gs);
@@ -1974,7 +2087,7 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   try { await deductBalance(u.id, extra, { burnBonus: true }); } catch { return res.status(400).json({ error: 'Solde insuffisant pour doubler' }); }
   gs.bets[idx] *= 2;
   gs.hands[idx].push(drawCard(gs.shoe));
-  getStats(u.id).doubles++;
+  supabase.rpc('increment_stat', { p_user_id: u.id, p_column: 'doubles' }).catch(() => {});
 
   if (idx < gs.hands.length - 1) gs.activeHandIndex++;
   else await _runDealer(gs, req.user.id);
@@ -2001,7 +2114,7 @@ app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
   gs.hands[idx] = [c1, drawCard(gs.shoe)];
   gs.hands.splice(idx + 1, 0, [c2, drawCard(gs.shoe)]);
   gs.bets.splice(idx + 1, 0, splitBet);
-  getStats(u.id).splits++;
+  supabase.rpc('increment_stat', { p_user_id: u.id, p_column: 'splits' }).catch(() => {});
 
   await _save(req.user.id, gs, res, req.user.balance);
 });
@@ -2035,7 +2148,7 @@ async function _save(userId, gs, res, balance) {
   const bal = newBal ?? balance ?? (await getUserById(userId, { fresh: true })).balance;
   // Record stats and broadcast leaderboard update when a game completes
   if (gs.phase === 'complete') {
-    recordGameStats(userId, gs);
+    recordGameStats(userId, gs).catch(() => {});
     _lbc.exp = 0; // bust the leaderboard cache
     for (const [, set] of _liveClients) {
       const body = `event: leaderboard:update\ndata: {}\n\n`;

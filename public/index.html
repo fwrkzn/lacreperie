@@ -454,7 +454,7 @@ body{
 .btn-username-cancel:hover{ color: var(--red); border-color: var(--red) }
 
 /* Bonus cards */
-.bonus-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.bonus-row{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px }
 .bonus-card{
   background: var(--surface);
   border: 1px solid var(--border);
@@ -607,6 +607,124 @@ body{
   .wheel-container{width:240px;height:240px}
   .wheel-canvas{width:240px;height:240px}
 }
+
+/* ── Scratch Card ──────────────────────────────────────────────────────── */
+.scratch-tier-btns{
+  display:flex;gap:6px;width:100%;
+}
+.btn-scratch-tier{
+  flex:1;
+  padding:9px 0;
+  border:1px solid var(--gold);
+  border-radius:8px;
+  background:transparent;
+  color:var(--gold);
+  font-size:11px;font-weight:bold;letter-spacing:.5px;
+  cursor:pointer;transition:all .2s;
+  font-family:sans-serif;
+}
+.btn-scratch-tier:hover{ background:rgba(201,168,76,.1) }
+.btn-scratch-tier:disabled{
+  border-color:var(--border);color:var(--muted);cursor:not-allowed;
+}
+.scratch-overlay{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(0,0,0,.75);
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+  animation:fadeIn .3s ease;
+}
+.scratch-card-container{
+  background:linear-gradient(135deg,#1a1a24,#12121a);
+  border:2px solid var(--gold);
+  border-radius:16px;
+  padding:20px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  box-shadow:0 0 40px rgba(201,168,76,.25);
+  width:min(92vw,340px);
+  animation:fadeIn .4s ease;
+}
+.scratch-card-title{
+  font-size:11px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;font-family:sans-serif;
+}
+.scratch-card-cost{
+  font-size:14px;font-weight:bold;color:var(--gold2);font-family:sans-serif;
+}
+.scratch-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  width:100%;
+}
+.scratch-cell{
+  aspect-ratio:1;
+  border-radius:10px;
+  border:2px solid rgba(201,168,76,.2);
+  background:linear-gradient(135deg,#2a2a3a,#1e1e2e);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.scratch-cell:hover:not(.revealed){ border-color:var(--gold) }
+.scratch-cell .scratch-cover{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,#c9a84c,#a88a3a,#d4b45c,#b89840);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  border-radius:8px;
+  transition:opacity .35s, transform .35s;
+  cursor:pointer;
+}
+.scratch-cell.revealed .scratch-cover{
+  opacity:0;transform:scale(.7);pointer-events:none;
+}
+.scratch-cell .scratch-prize{
+  font-size:13px;font-weight:bold;color:var(--text);
+  font-family:sans-serif;text-align:center;
+  line-height:1.2;
+}
+.scratch-cell .scratch-prize .scratch-emoji{
+  font-size:24px;display:block;margin-bottom:2px;
+}
+.scratch-cell.winner{
+  border-color:var(--gold)!important;
+  animation:glow 1.5s ease infinite;
+}
+.scratch-result{
+  font-size:20px;font-weight:bold;color:var(--gold2);
+  text-shadow:0 0 16px rgba(201,168,76,.6);
+  font-family:sans-serif;
+  min-height:28px;
+  opacity:0;transition:opacity .4s;
+}
+.scratch-result.show{ opacity:1 }
+.scratch-result.lose{ color:var(--muted);text-shadow:none }
+.btn-scratch-close{
+  padding:10px 28px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:transparent;
+  color:var(--text);
+  font-size:12px;letter-spacing:1px;
+  cursor:pointer;font-family:sans-serif;
+  transition:all .2s;
+}
+.btn-scratch-close:hover{ border-color:var(--gold);color:var(--gold) }
+.btn-scratch-reveal-all{
+  padding:8px 20px;
+  border:1px solid rgba(201,168,76,.3);
+  border-radius:8px;
+  background:rgba(201,168,76,.08);
+  color:var(--gold2);
+  font-size:11px;letter-spacing:1px;
+  cursor:pointer;font-family:sans-serif;font-weight:bold;
+  text-transform:uppercase;
+  transition:all .2s;
+}
+.btn-scratch-reveal-all:hover{ background:rgba(201,168,76,.15) }
+.btn-scratch-reveal-all:disabled{ opacity:.4;cursor:not-allowed }
 
 /* Play button */
 .play-section{
@@ -1123,6 +1241,9 @@ body{
   .bonus-row{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .bonus-row .bonus-card:first-child{
+    grid-column: 1 / -1;
+  }
   .lobby-card-grid{
     grid-template-columns: 1fr;
   }
@@ -1546,7 +1667,7 @@ body{
 }
 @media(max-width:360px){
   :root{ --card-w: 50px; --card-h: 74px }
-  .bonus-row{ grid-template-columns: 1fr }
+  .bonus-row{ grid-template-columns: repeat(2, minmax(0, 1fr)) }
   .lobby-bottom-nav{
     gap: 6px;
     padding: 8px;
@@ -2656,10 +2777,12 @@ body{
       <div class="panel-body">
         <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
         <div class="stat-row-mini"><span class="srm-label">Roue de Fortune</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Carte à Gratter</span><span class="srm-val">×1.5–×10</span></div>
         <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
         <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
           Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
-          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
+          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.<br>
+          Cartes à gratter : achat illimité.
         </p>
       </div>
     </div>
@@ -2853,7 +2976,7 @@ body{
           <div class="stat-detail"><span class="sd-icon" style="color:var(--gold2)">⇔</span><span class="sd-label">Splits</span><span class="sd-val" id="stat-splits">0</span></div>
         </div>
       </div>
-      <p class="stats-note">Les statistiques sont comptées depuis le dernier redémarrage du serveur.</p>
+      <p class="stats-note">Les statistiques sont sauvegardées en permanence.</p>
     </div>
   </div>
 
@@ -2897,6 +3020,21 @@ body{
       <button class="btn-bonus" id="btn-minigame">Tourner la Roue</button>
       <div class="countdown" id="minigame-countdown"></div>
     </div>
+
+    <!-- Scratch Card -->
+    <div class="bonus-card">
+      <div class="icon">🎟️</div>
+      <h3>Carte à Gratter</h3>
+      <div class="reward">Jusqu'à ×10 🥞</div>
+      <div class="bonus-meta">
+        <div class="bonus-note">Achetez une carte et grattez !<br>3 symboles identiques = gain</div>
+      </div>
+      <div class="scratch-tier-btns">
+        <button class="btn-scratch-tier" data-cost="100">100 🥞</button>
+        <button class="btn-scratch-tier" data-cost="500">500 🥞</button>
+        <button class="btn-scratch-tier" data-cost="2000">2K 🥞</button>
+      </div>
+    </div>
   </div>
 
   <!-- mobile-only: prize info cards -->
@@ -2906,10 +3044,12 @@ body{
       <div class="panel-body">
         <div class="stat-row-mini"><span class="srm-label">Bonus quotidien</span><span class="srm-val">+2 000</span></div>
         <div class="stat-row-mini"><span class="srm-label">Roue de Fortune</span><span class="srm-val">30–5K</span></div>
+        <div class="stat-row-mini"><span class="srm-label">Carte à Gratter</span><span class="srm-val">×1.5–×10</span></div>
         <div class="stat-row-mini"><span class="srm-label">Solde de départ</span><span class="srm-val">3 000</span></div>
         <p style="font-family:sans-serif;font-size:11px;color:var(--muted);line-height:1.65;margin-top:10px">
           Bonus disponible une fois par <strong style="color:var(--text)">jour serveur</strong>.<br>
-          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.
+          Mini-jeu toutes les <strong style="color:var(--text)">2 minutes</strong>.<br>
+          Cartes à gratter : achat illimité.
         </p>
       </div>
     </div>
@@ -4576,6 +4716,140 @@ async function playMinigame() {
 }
 $('spatula-emoji').addEventListener('click', playMinigame);
 $('btn-minigame').addEventListener('click', playMinigame);
+
+// ── Scratch Card mini-game ──────────────────────────────────────────────────────
+const SCRATCH_SYMBOLS = [
+  { emoji:'🥞', label:'Crêpe' },
+  { emoji:'🍒', label:'Cerise' },
+  { emoji:'💎', label:'Diamant' },
+  { emoji:'🍀', label:'Trèfle' },
+  { emoji:'⭐', label:'Étoile' },
+  { emoji:'🔔', label:'Cloche' },
+  { emoji:'👑', label:'Couronne' },
+  { emoji:'🎰', label:'Jackpot' },
+];
+
+function showScratchCard(cardData) {
+  const overlay = document.createElement('div');
+  overlay.className = 'scratch-overlay';
+
+  const container = document.createElement('div');
+  container.className = 'scratch-card-container';
+
+  const title = document.createElement('div');
+  title.className = 'scratch-card-title';
+  title.textContent = 'Carte à Gratter';
+
+  const costEl = document.createElement('div');
+  costEl.className = 'scratch-card-cost';
+  costEl.textContent = `Mise : ${cardData.cost.toLocaleString('fr-FR')} 🥞`;
+
+  const grid = document.createElement('div');
+  grid.className = 'scratch-grid';
+
+  let revealed = 0;
+  const totalCells = cardData.cells.length;
+  const winIndices = new Set(cardData.winIndices || []);
+
+  cardData.cells.forEach((cell, i) => {
+    const cellEl = document.createElement('div');
+    cellEl.className = 'scratch-cell';
+
+    const cover = document.createElement('div');
+    cover.className = 'scratch-cover';
+    cover.textContent = '?';
+
+    const prize = document.createElement('div');
+    prize.className = 'scratch-prize';
+    prize.innerHTML = `<span class="scratch-emoji">${cell.emoji}</span>${cell.mult}`;
+
+    cellEl.appendChild(prize);
+    cellEl.appendChild(cover);
+    grid.appendChild(cellEl);
+
+    const revealCell = () => {
+      if (cellEl.classList.contains('revealed')) return;
+      cellEl.classList.add('revealed');
+      revealed++;
+      if (winIndices.has(i)) cellEl.classList.add('winner');
+      if (revealed === totalCells) finishCard();
+    };
+    cellEl.addEventListener('click', revealCell);
+  });
+
+  const revealAllBtn = document.createElement('button');
+  revealAllBtn.className = 'btn-scratch-reveal-all';
+  revealAllBtn.textContent = 'Tout Gratter';
+  revealAllBtn.addEventListener('click', () => {
+    revealAllBtn.disabled = true;
+    const cells = grid.querySelectorAll('.scratch-cell:not(.revealed)');
+    let delay = 0;
+    cells.forEach(c => {
+      setTimeout(() => c.click(), delay);
+      delay += 120;
+    });
+  });
+
+  const resultEl = document.createElement('div');
+  resultEl.className = 'scratch-result';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn-scratch-close';
+  closeBtn.textContent = 'Fermer';
+  closeBtn.style.display = 'none';
+  closeBtn.addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity .3s';
+    setTimeout(() => overlay.remove(), 300);
+  });
+
+  container.appendChild(title);
+  container.appendChild(costEl);
+  container.appendChild(grid);
+  container.appendChild(revealAllBtn);
+  container.appendChild(resultEl);
+  container.appendChild(closeBtn);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+
+  function finishCard() {
+    revealAllBtn.disabled = true;
+    closeBtn.style.display = '';
+    resultEl.classList.add('show');
+    if (cardData.winAmount > 0) {
+      resultEl.textContent = `+${cardData.winAmount.toLocaleString('fr-FR')} 🥞`;
+      setBalance(cardData.newBalance);
+      toast(`🎟️ Gagné ! +${cardData.winAmount.toLocaleString('fr-FR')} Crêpes !`, cardData.winAmount >= cardData.cost * 5 ? 'gold' : 'success', 3500);
+    } else {
+      resultEl.textContent = 'Pas de chance…';
+      resultEl.classList.add('lose');
+      setBalance(cardData.newBalance);
+    }
+    loadLeaderboard();
+  }
+}
+
+async function buyScratchCard(cost) {
+  if (S.busy) return;
+  if (!S.user || S.user.balance < cost) {
+    toast('Solde insuffisant', 'error');
+    return;
+  }
+  S.busy = true;
+  try {
+    const d = await api('POST', '/api/user/scratchcard', { cost });
+    setBalance(d.balanceAfterPurchase);
+    showScratchCard(d);
+  } catch(e) {
+    toast(e.error || 'Erreur', 'error');
+  } finally {
+    S.busy = false;
+  }
+}
+
+document.querySelectorAll('.btn-scratch-tier').forEach(btn => {
+  btn.addEventListener('click', () => buyScratchCard(+btn.dataset.cost));
+});
 
 // ── Chips / bet ────────────────────────────────────────────────────────────────
 document.querySelectorAll('.chip').forEach(chip => {
