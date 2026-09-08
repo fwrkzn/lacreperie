@@ -1,4 +1,8 @@
-.env
 node_modules
 data
+.env
+.env.*
 .git
+.playwright-mcp
+AI_CONTEXT.md
+mobile-*.png

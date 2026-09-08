@@ -1,0 +1,54 @@
+PROPRIETARY SOFTWARE LICENSE
+Copyright (c) 2026 ZeroSix. All Rights Reserved.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NOTICE OF PROPRIETARY RIGHTS
+
+This software, including all associated source code, design assets, documentation,
+and any derivative works thereof (collectively, the "Software"), is the exclusive
+intellectual property of ZeroSix and is protected under applicable copyright,
+trade secret, and intellectual property laws, both domestic and international.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RESTRICTIONS
+
+All rights are strictly reserved. No part of this Software may be, without the
+prior express written authorization of ZeroSix:
+
+  1. Reproduced, copied, or duplicated in whole or in part, by any means or in
+     any form whatsoever;
+
+  2. Modified, adapted, translated, reverse-engineered, decompiled, disassembled,
+     or otherwise derived from;
+
+  3. Distributed, sublicensed, sold, transferred, assigned, or otherwise made
+     available to any third party;
+
+  4. Used for commercial or non-commercial purposes outside the scope explicitly
+     authorized by ZeroSix;
+
+  5. Published, displayed, or incorporated into any other product, service, or
+     repository, whether public or private.
+
+Any unauthorized use, reproduction, or distribution of this Software, or any
+portion thereof, constitutes a material violation of ZeroSix's intellectual
+property rights and may result in severe civil and criminal penalties, and will
+be prosecuted to the maximum extent permitted by applicable law.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DISCLAIMER
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL ZEROSIX BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+THEREOF.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For licensing inquiries, permissions, or authorized use requests, contact:
+ZeroSix — All correspondence must be submitted in writing.
+
+Copyright (c) 2026 ZeroSix. All Rights Reserved.

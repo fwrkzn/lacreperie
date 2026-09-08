@@ -4949,60 +4949,6 @@ const _catLaughSound = new Audio('/assets/sounds/cat-laughing-at-you.mp3');
 
 let _soundMuted = localStorage.getItem('muted') === '1';
 
-// ── Synced background music ─────────────────────────────────────────────────
-const _bgMusic = new Audio('/assets/sounds/jazz50min.mp3');
-_bgMusic.loop = true;
-_bgMusic.volume = 0.10;
-let _bgMusicStarted = false;
-
-function syncBgMusic() {
-  if (!_bgMusicStarted || !_bgMusic.duration) return;
-  const nowMs = _getBgSyncMs();
-  const durationMs = _bgMusic.duration * 1000;
-  const targetPos = (nowMs % durationMs) / 1000;
-  // Only seek if drifted more than 2 seconds
-  if (Math.abs(_bgMusic.currentTime - targetPos) > 2) {
-    _bgMusic.currentTime = targetPos;
-  }
-}
-
-function _getBgSyncMs() {
-  // Use server-synced clock if available, otherwise fall back to Date.now()
-  return (S.serverTimeOffsetMs != null) ? getServerNowMs() : Date.now();
-}
-
-function startBgMusic() {
-  if (_soundMuted) { _bgMusic.pause(); return; }
-  if (!_bgMusic.duration) {
-    _bgMusic.addEventListener('loadedmetadata', () => startBgMusic(), { once: true });
-    _bgMusic.load();
-    return;
-  }
-  const nowMs = _getBgSyncMs();
-  const durationMs = _bgMusic.duration * 1000;
-  _bgMusic.currentTime = (nowMs % durationMs) / 1000;
-  _bgMusic.play().catch(() => {
-    // Autoplay blocked — start on first user interaction
-    function _resumeBg() {
-      if (!_soundMuted) {
-        syncBgMusic();
-        _bgMusic.play().catch(() => {});
-      }
-      ['click','touchstart','keydown'].forEach(e => document.removeEventListener(e, _resumeBg));
-    }
-    ['click','touchstart','keydown'].forEach(e => document.addEventListener(e, _resumeBg, { once: false }));
-  });
-  _bgMusicStarted = true;
-  clearInterval(S._bgSyncInterval);
-  S._bgSyncInterval = setInterval(syncBgMusic, 30000);
-}
-
-function stopBgMusic() {
-  _bgMusic.pause();
-  _bgMusicStarted = false;
-  clearInterval(S._bgSyncInterval);
-}
-
 function _initMuteBtn() {
   const btn = $('btn-mute');
   if (!btn) return;
@@ -5010,13 +4956,6 @@ function _initMuteBtn() {
     btn.textContent = _soundMuted ? '🔇' : '🔊';
     btn.classList.toggle('muted', _soundMuted);
     btn.title = _soundMuted ? 'Activer le son' : 'Couper le son';
-    // Sync music mute state
-    if (_soundMuted) {
-      _bgMusic.pause();
-    } else if (_bgMusicStarted) {
-      syncBgMusic();
-      _bgMusic.play().catch(() => {});
-    }
   }
   update();
   btn.onclick = () => {
@@ -5025,15 +4964,6 @@ function _initMuteBtn() {
     update();
   };
 }
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    _bgMusic.pause();
-  } else if (_bgMusicStarted && !_soundMuted) {
-    syncBgMusic();
-    _bgMusic.play().catch(() => {});
-  }
-});
 
 function _playSound(src, vol = 0.5, rate = 1) {
   if (_soundMuted) return;
@@ -5658,7 +5588,6 @@ $('btn-gift').addEventListener('click', async () => {
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
-  startBgMusic();
   const loadingStart = Date.now();
   try {
     const [d, gd, pd] = await Promise.all([

@@ -2371,7 +2371,7 @@ async function checkDB() {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 checkDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n🥞  Blackjack Crêpes  →  http://localhost:${PORT}\n`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n🥞  Blackjack Crêpes  →  http://0.0.0.0:${PORT}\n`);
   });
 });

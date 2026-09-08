@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON users (LOWER(username));
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_streak INTEGER NOT NULL DEFAULT 0;
@@ -94,6 +96,14 @@ CREATE TABLE IF NOT EXISTS gift_log (
 );
 
 CREATE INDEX IF NOT EXISTS gift_log_to_user_idx ON gift_log (to_user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS session (
+  sid    TEXT PRIMARY KEY,
+  sess   JSONB NOT NULL,
+  expire TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS session_expire_idx ON session (expire);
 
 CREATE TABLE IF NOT EXISTS chat_messages (
   id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
