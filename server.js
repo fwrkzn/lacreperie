@@ -14,6 +14,29 @@ const helmet           = require('helmet');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// Express 4 does not forward rejected async route handlers to error middleware.
+// Wrap route callbacks once at registration so failed DB calls always terminate
+// with a controlled 500 response instead of leaving a request hanging.
+function wrapRouteHandler(handler) {
+  if (typeof handler !== 'function' || handler.length === 4) return handler;
+  return function wrappedRouteHandler(req, res, next) {
+    try {
+      return Promise.resolve(handler(req, res, next)).catch(next);
+    } catch (error) {
+      return next(error);
+    }
+  };
+}
+
+for (const method of ['get', 'post', 'put', 'patch', 'delete']) {
+  const register = app[method].bind(app);
+  app[method] = function registerSafeRoute(...args) {
+    // Preserve Express' app.get('setting') overload.
+    if (method === 'get' && args.length === 1) return register(...args);
+    return register(args[0], ...args.slice(1).map(wrapRouteHandler));
+  };
+}
+
 // ── Banned username words ────────────────────────────────────────────────────
 const BANNED_USERNAME_WORDS = [
   'penis', 'dick', 'cock', 'pussy', 'vagina', 'cunt', 'asshole',
@@ -64,10 +87,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc:  ["'self'", "'unsafe-inline'", "'unsafe-hashes'"],
-      styleSrc:   ["'self'", "'unsafe-inline'"],
+      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc:     ["'self'", "data:"],
       connectSrc: ["'self'"],
-      fontSrc:    ["'self'"],
+      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
       mediaSrc:   ["'self'"],
       objectSrc:  ["'none'"],
       frameSrc:   ["'none'"],
@@ -75,9 +98,26 @@ app.use(helmet({
   },
 }));
 app.use(express.json({ limit: '20kb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+const staticOptions = {
+  etag: true,
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+};
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), staticOptions));
 app.set('trust proxy', 1);
+
+// Lightweight production diagnostics. Only slow API calls are logged so the
+// normal 50–100 player workload does not become noisy.
+app.use('/api', (req, res, next) => {
+  const startedAt = process.hrtime.bigint();
+  res.once('finish', () => {
+    const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    if (elapsedMs >= 500) {
+      console.warn(`[SLOW] ${req.method} ${req.originalUrl} ${res.statusCode} ${elapsedMs.toFixed(0)}ms`);
+    }
+  });
+  next();
+});
 // ── Custom Supabase session store with in-memory cache ────────────────────────
 class SupabaseStore extends session.Store {
   constructor() {
@@ -97,7 +137,8 @@ class SupabaseStore extends session.Store {
     const cached = this._mc(sid);
     if (cached) return cb(null, cached);
     try {
-      const { data } = await supabase.from('session').select('sess,expire').eq('sid', sid).maybeSingle();
+      const { data, error } = await supabase.from('session').select('sess,expire').eq('sid', sid).maybeSingle();
+      if (error) throw error;
       if (!data) return cb(null, null);
       if (new Date(data.expire) < new Date()) { this.destroy(sid, () => {}); return cb(null, null); }
       this._mem.set(sid, { sess: data.sess, exp: Date.now() + 300_000 });
@@ -107,14 +148,20 @@ class SupabaseStore extends session.Store {
   async set(sid, sess, cb) {
     try {
       const expire = sess.cookie?.expires || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-      await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
+      const { error } = await supabase.from('session').upsert({ sid, sess, expire: new Date(expire).toISOString() }, { onConflict: 'sid' });
+      if (error) throw error;
       this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
       cb(null);
     } catch(e) { cb(e); }
   }
   async destroy(sid, cb) {
     this._mem.delete(sid);
-    try { await supabase.from('session').delete().eq('sid', sid); cb(null); } catch(e) { cb(e); }
+    this._touchWriteAt.delete(sid);
+    try {
+      const { error } = await supabase.from('session').delete().eq('sid', sid);
+      if (error) throw error;
+      cb(null);
+    } catch(e) { cb(e); }
   }
   async touch(sid, sess, cb) {
     this._mem.set(sid, { sess, exp: Date.now() + 300_000 });
@@ -123,7 +170,9 @@ class SupabaseStore extends session.Store {
     if (now - lastWrite < 15 * 60 * 1000) return cb(null);
     this._touchWriteAt.set(sid, now);
     const expire = sess.cookie?.expires || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-    supabase.from('session').update({ expire: new Date(expire).toISOString() }).eq('sid', sid).then(() => {}, () => {});
+    supabase.from('session').update({ expire: new Date(expire).toISOString() }).eq('sid', sid)
+      .then(({ error }) => { if (error) console.error('Session touch failed:', error.message); })
+      .catch(error => console.error('Session touch failed:', error.message));
     cb(null);
   }
 }
@@ -135,15 +184,28 @@ app.use(session({
   saveUninitialized: false,
   rolling: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    // Adapt to the actual connection so local HTTP and HTTPS behind Caddy
+    // both retain the session cookie across a full page reload.
+    secure: 'auto',
     httpOnly: true,
     sameSite: 'strict',
     maxAge: 365 * 24 * 60 * 60 * 1000,
   },
 }));
 
-const globalLimiter = rateLimit({ windowMs: 60 * 1000, max: 200,
-  message: { error: 'Trop de requêtes.' } });
+const anonymousLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  skip: req => !!req.session?.userId,
+  message: { error: 'Trop de requêtes.' },
+});
+const authenticatedLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 600,
+  skip: req => !req.session?.userId,
+  keyGenerator: req => `user:${req.session.userId}`,
+  message: { error: 'Trop de requêtes.' },
+});
 const authLimiter  = rateLimit({ windowMs: 15 * 60 * 1000, max: 30,
   message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
 const gameLimiter  = rateLimit({ windowMs: 2000, max: 15,
@@ -152,7 +214,50 @@ const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 60,
   message: { error: 'Trop de requêtes admin.' } });
 const inviteLimiter = rateLimit({ windowMs: 60 * 1000, max: 20,
   message: { error: 'Trop d’invitations. Réessayez dans une minute.' } });
-app.use(globalLimiter);
+app.get('/healthz', (_req, res) => {
+  res.json({ ok: true, uptimeSeconds: Math.floor(process.uptime()) });
+});
+
+app.use(anonymousLimiter, authenticatedLimiter);
+
+// A client normally prevents double taps, but the server must remain the
+// authority. Serialize state-changing solo actions per user.
+const _soloActionLocks = new Set();
+function soloActionGuard(req, res, next) {
+  const userId = req.user?.id;
+  if (!userId) return next();
+  if (_soloActionLocks.has(userId)) return res.status(409).json({ error: 'Action déjà en cours' });
+  _soloActionLocks.add(userId);
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    _soloActionLocks.delete(userId);
+  };
+  res.once('finish', release);
+  res.once('close', release);
+  next();
+}
+
+// Both PvP players mutate one shared game document. A short per-game lock
+// prevents two simultaneous actions from overwriting each other's snapshot.
+const _pvpActionLocks = new Set();
+function acquirePvpActionLock(gameId, res) {
+  if (_pvpActionLocks.has(gameId)) {
+    res.status(409).json({ error: 'Action adverse en cours, réessayez' });
+    return false;
+  }
+  _pvpActionLocks.add(gameId);
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    _pvpActionLocks.delete(gameId);
+  };
+  res.once('finish', release);
+  res.once('close', release);
+  return true;
+}
 
 function requireSession(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: 'Non authentifié' });
@@ -181,9 +286,14 @@ app.get('/admin', requireAdmin, (_req, res) => {
   res.sendFile(ADMIN_PANEL_FILE);
 });
 
-// ── User cache (10s TTL — avoids repeated DB lookups per request) ─────────────
+// ── User cache (60s TTL — invalidated immediately on writes) ─────────────────
 const _uc = new Map();
-function _ucGet(id)       { const e = _uc.get(id); return (e && e.exp > Date.now()) ? e.d : null; }
+function _ucGet(id) {
+  const e = _uc.get(id);
+  if (e && e.exp > Date.now()) return e.d;
+  _uc.delete(id);
+  return null;
+}
 function _ucSet(id, data) { _uc.set(id, { d: data, exp: Date.now() + 60_000 }); }
 function _ucDel(id)       { _uc.delete(id); }
 const _progressionSchema = { supported: null };
@@ -207,7 +317,8 @@ async function getUserByUsername(username) {
   const legacySelect = 'id, username, balance, non_transferable, password_hash, is_admin';
 
   if (_progressionSchema.supported === false) {
-    const { data } = await supabase.from('users').select(legacySelect).ilike('username', username).maybeSingle();
+    const { data, error } = await supabase.from('users').select(legacySelect).ilike('username', username).maybeSingle();
+    if (error) throw error;
     return withProgressionDefaults(data);
   }
 
@@ -215,8 +326,10 @@ async function getUserByUsername(username) {
   if (isMissingColumnError(error)) {
     _progressionSchema.supported = false;
     const fallback = await supabase.from('users').select(legacySelect).ilike('username', username).maybeSingle();
+    if (fallback.error) throw fallback.error;
     return withProgressionDefaults(fallback.data);
   }
+  if (error) throw error;
   if (!error) _progressionSchema.supported = true;
   return withProgressionDefaults(data);
 }
@@ -240,6 +353,7 @@ async function getUserById(id, { fresh = false } = {}) {
   }
 
   const out = withProgressionDefaults(data);
+  if (error) throw error;
   if (out) _ucSet(id, out);
   return out;
 }
@@ -254,9 +368,11 @@ async function createUser(username, passwordHash) {
 }
 
 async function updateUser(id, patch) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('users').update(patch).eq('id', id)
     .select().single();
+  if (error) throw error;
+  _ucDel(id);
   return data;
 }
 
@@ -295,9 +411,46 @@ async function addBalance(userId, amount, { nonTransferable = 0 } = {}) {
   return data;
 }
 
+async function transferBalance(senderId, recipientId, amount) {
+  const { data, error } = await supabase.rpc('transfer_balance', {
+    p_sender_id: senderId,
+    p_recipient_id: recipientId,
+    p_amount: amount,
+  });
+
+  if (!error) {
+    _ucDel(senderId);
+    _ucDel(recipientId);
+    _lbc.exp = 0;
+    emitToUser(senderId, 'balance:update', { balance: data });
+    return data;
+  }
+
+  // Backward-compatible path until the latest supabase_schema.sql migration
+  // has been run. Compensate the sender if any later operation fails.
+  if (!['42883', 'PGRST202'].includes(error.code)) {
+    if (/insuffisant/i.test(error.message || '')) throw { error: 'Solde transférable insuffisant' };
+    throw error;
+  }
+  const newBalance = await deductBalance(senderId, amount);
+  try {
+    await addBalance(recipientId, amount);
+  } catch (fallbackError) {
+    await addBalance(senderId, amount);
+    throw fallbackError;
+  }
+  const { error: logError } = await supabase.from('gift_log').insert({
+    from_user_id: senderId,
+    to_user_id: recipientId,
+    amount,
+  });
+  if (logError) console.error('Gift log failed after transfer:', logError.message);
+  return newBalance;
+}
+
 // ── Online presence (in-memory heartbeat map) ────────────────────────────────
 const _online = new Map(); // userId → timestamp
-const ONLINE_TIMEOUT = 60_000; // 60s without heartbeat → offline
+const ONLINE_TIMEOUT = 90_000; // tolerate timer jitter around the 60s heartbeat
 
 app.post('/api/heartbeat', requireSession, (req, res) => {
   _online.set(req.user.id, Date.now());
@@ -406,12 +559,34 @@ app.get('/api/user/stats', requireAuth, async (req, res) => {
 // ── Chat (Supabase-backed, 150-message cap) ──────────────────────────────────
 const CHAT_MAX = 150;
 const chatLimiter = rateLimit({ windowMs: 10_000, max: 8, keyGenerator: req => req.user?.id || req.ip, standardHeaders: false });
+let _chatTrimPromise = null;
+let _chatTrimmedAt = 0;
+
+function scheduleChatTrim() {
+  const now = Date.now();
+  if (_chatTrimPromise || now - _chatTrimmedAt < 30_000) return;
+  _chatTrimmedAt = now;
+  _chatTrimPromise = (async () => {
+    const { data: oldest, error } = await supabase
+      .from('chat_messages').select('id')
+      .order('created_at', { ascending: false })
+      .range(CHAT_MAX, CHAT_MAX + 100);
+    if (error) throw error;
+    if (oldest?.length) {
+      const { error: deleteError } = await supabase.from('chat_messages').delete().in('id', oldest.map(row => row.id));
+      if (deleteError) throw deleteError;
+    }
+  })()
+    .catch(error => console.error('Chat trim failed:', error.message))
+    .finally(() => { _chatTrimPromise = null; });
+}
 
 app.get('/api/chat/history', requireAuth, async (req, res) => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('chat_messages').select('id, user_id, username, text, created_at')
     .order('created_at', { ascending: true })
     .limit(CHAT_MAX);
+  if (error) throw error;
   const messages = (data || []).map(r => ({ id: r.id, userId: r.user_id, username: r.username, text: r.text, ts: r.created_at }));
   res.json({ messages });
 });
@@ -427,14 +602,10 @@ app.post('/api/chat/send', requireAuth, chatLimiter, async (req, res) => {
 
   const msg = { id: data.id, userId: req.user.id, username: req.user.username, text, ts: data.created_at };
 
-  // Trim to 150 messages — delete oldest beyond the cap
-  const { data: oldest } = await supabase
-    .from('chat_messages').select('id')
-    .order('created_at', { ascending: false })
-    .range(CHAT_MAX, CHAT_MAX + 100);
-  if (oldest?.length) {
-    await supabase.from('chat_messages').delete().in('id', oldest.map(r => r.id));
-  }
+  // Housekeeping is intentionally off the response path. At this scale, a
+  // throttled trim keeps the table bounded without adding two DB round trips
+  // to every chat message.
+  scheduleChatTrim();
 
   // Broadcast to all connected clients
   for (const [, set] of _liveClients) {
@@ -447,39 +618,69 @@ app.post('/api/chat/send', requireAuth, chatLimiter, async (req, res) => {
 
 // ── Game state cache (avoids re-reading 10KB shoe JSON from Supabase each action)
 const _gc = new Map();
-function _gcGet(uid) { const e = _gc.get(uid); return (e && e.exp > Date.now()) ? e.d : null; }
+function _gcGet(uid) {
+  const e = _gc.get(uid);
+  if (e && e.exp > Date.now()) return e.d;
+  _gc.delete(uid);
+  return null;
+}
 function _gcSet(uid, d) { _gc.set(uid, { d, exp: Date.now() + 120_000 }); }
 function _gcDel(uid) { _gc.delete(uid); }
 
 async function getGame(userId) {
   const cached = _gcGet(userId);
   if (cached) return cached;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('active_games').select('game_state')
     .eq('user_id', userId).maybeSingle();
+  if (error) throw error;
   const gs = data ? data.game_state : null;
   if (gs) _gcSet(userId, gs);
   return gs;
 }
 
 async function setGame(userId, gameState) {
-  _gcSet(userId, gameState); // update cache immediately — no need to wait for DB
-  await supabase.from('active_games').upsert(
+  const { error } = await supabase.from('active_games').upsert(
     { user_id: userId, game_state: gameState, updated_at: new Date().toISOString() },
     { onConflict: 'user_id' }
   );
+  if (error) throw error;
+  _gcSet(userId, gameState);
 }
 
 async function deleteGame(userId) {
   _gcDel(userId);
-  await supabase.from('active_games').delete().eq('user_id', userId);
+  const { error } = await supabase.from('active_games').delete().eq('user_id', userId);
+  if (error) throw error;
 }
 
 // ── Friendships / PvP ────────────────────────────────────────────────────────
 const _pgc = new Map();
-function _pgcGet(id) { const e = _pgc.get(id); return (e && e.exp > Date.now()) ? e.d : null; }
-function _pgcSet(id, d) { _pgc.set(id, { d, exp: Date.now() + 120_000 }); }
-function _pgcDel(id) { _pgc.delete(id); }
+const _pgu = new Map(); // userId -> gameId; avoids a DB search on every 4s poll
+function _pgcGet(id) {
+  const e = _pgc.get(id);
+  if (e && e.exp > Date.now()) return e.d;
+  _pgc.delete(id);
+  return null;
+}
+function _pgcSet(id, d) {
+  const exp = Date.now() + 120_000;
+  _pgc.set(id, { d, exp });
+  if (d?.playerOneId) _pgu.set(d.playerOneId, { gameId: id, exp });
+  if (d?.playerTwoId) _pgu.set(d.playerTwoId, { gameId: id, exp });
+}
+function _pguGet(userId) {
+  const e = _pgu.get(userId);
+  if (e && e.exp > Date.now()) return e.gameId;
+  _pgu.delete(userId);
+  return null;
+}
+function _pgcDel(id) {
+  const game = _pgc.get(id)?.d;
+  _pgc.delete(id);
+  if (game?.playerOneId && _pgu.get(game.playerOneId)?.gameId === id) _pgu.delete(game.playerOneId);
+  if (game?.playerTwoId && _pgu.get(game.playerTwoId)?.gameId === id) _pgu.delete(game.playerTwoId);
+}
 
 async function getFriends(userId) {
   const { data, error } = await supabase
@@ -560,8 +761,25 @@ async function getPendingFriendRequestBetween(userA, userB) {
 }
 
 const PVP_INVITE_TTL_MS = 60_000;
+const PVP_INVITE_SWEEP_MS = 10_000;
+let _inviteExpiryPromise = null;
+let _inviteExpiryCheckedAt = 0;
 
 async function expireStalePvpInvites() {
+  const now = Date.now();
+  if (_inviteExpiryPromise) return _inviteExpiryPromise;
+  if (now - _inviteExpiryCheckedAt < PVP_INVITE_SWEEP_MS) return [];
+  _inviteExpiryCheckedAt = now;
+
+  _inviteExpiryPromise = expireStalePvpInvitesNow();
+  try {
+    return await _inviteExpiryPromise;
+  } finally {
+    _inviteExpiryPromise = null;
+  }
+}
+
+async function expireStalePvpInvitesNow() {
   const cutoff = new Date(Date.now() - PVP_INVITE_TTL_MS).toISOString();
   const { data: staleInvites, error: selectError } = await supabase
     .from('pvp_invites')
@@ -643,6 +861,18 @@ async function getPvpGameById(gameId) {
 }
 
 async function getPvpGameByUser(userId, { includeDismissed = false } = {}) {
+  const cachedGameId = _pguGet(userId);
+  if (cachedGameId) {
+    const cachedGame = _pgcGet(cachedGameId);
+    if (cachedGame) {
+      await settlePvpTimeoutIfNeeded(cachedGame);
+      const dismissedBy = cachedGame.dismissedBy || [];
+      if (includeDismissed || cachedGame.phase !== 'complete' || !dismissedBy.includes(userId)) {
+        return cachedGame;
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from('pvp_games')
     .select('id')
@@ -664,7 +894,6 @@ async function getPvpGameByUser(userId, { includeDismissed = false } = {}) {
 }
 
 async function savePvpGame(game) {
-  _pgcSet(game.id, game);
   const payload = {
     id: game.id,
     player_one_id: game.playerOneId,
@@ -684,14 +913,17 @@ async function savePvpGame(game) {
     updated_at: new Date().toISOString(),
   };
 
-  await supabase
+  const { error } = await supabase
     .from('pvp_games')
     .upsert(payload, { onConflict: 'id' });
+  if (error) throw error;
+  _pgcSet(game.id, game);
 }
 
 async function deletePvpGame(gameId) {
   _pgcDel(gameId);
-  await supabase.from('pvp_games').delete().eq('id', gameId);
+  const { error } = await supabase.from('pvp_games').delete().eq('id', gameId);
+  if (error) throw error;
 }
 
 function pvpPlayerIndex(game, userId) {
@@ -822,33 +1054,48 @@ function resolvePvpGame(game) {
 }
 
 async function settlePvpGame(game) {
-  game.phase = 'complete';
-  game.result = resolvePvpGame(game);
-  game.dismissedBy = [];
+  return runPvpSettlementOnce(game, async () => {
+    game.phase = 'complete';
+    game.result = resolvePvpGame(game);
+    game.dismissedBy = [];
 
-  const payouts = Object.entries(game.result.payouts || {});
-  for (const [userId, amount] of payouts) await addBalance(userId, amount);
-  await savePvpGame(game);
-  await emitPvpState(game);
+    const payouts = Object.entries(game.result.payouts || {});
+    await Promise.all(payouts.map(([userId, amount]) => addBalance(userId, amount)));
+    await savePvpGame(game);
+    await emitPvpState(game);
+  });
 }
 
 async function settleTimedOutPvpGame(game, timeoutResult) {
-  game.phase = 'complete';
-  game.dismissedBy = [];
-  game.result = {
-    winnerId: timeoutResult.winnerId || null,
-    outcome: timeoutResult.type === 'push' ? 'push' : 'opponent_win',
-    reason: timeoutResult.reason,
-    payouts: timeoutResult.payouts,
-    totals: Object.fromEntries(game.players.map(player => [player.userId, handValue(player.hand)])),
-    loserId: timeoutResult.loserId || null,
-  };
+  return runPvpSettlementOnce(game, async () => {
+    game.phase = 'complete';
+    game.dismissedBy = [];
+    game.result = {
+      winnerId: timeoutResult.winnerId || null,
+      outcome: timeoutResult.type === 'push' ? 'push' : 'opponent_win',
+      reason: timeoutResult.reason,
+      payouts: timeoutResult.payouts,
+      totals: Object.fromEntries(game.players.map(player => [player.userId, handValue(player.hand)])),
+      loserId: timeoutResult.loserId || null,
+    };
 
-  for (const [userId, amount] of Object.entries(timeoutResult.payouts || {})) {
-    await addBalance(userId, amount);
-  }
-  await savePvpGame(game);
-  await emitPvpState(game);
+    await Promise.all(Object.entries(timeoutResult.payouts || {}).map(
+      ([userId, amount]) => addBalance(userId, amount)
+    ));
+    await savePvpGame(game);
+    await emitPvpState(game);
+  });
+}
+
+const _pvpSettlementPromises = new Map();
+function runPvpSettlementOnce(game, settle) {
+  const existing = _pvpSettlementPromises.get(game.id);
+  if (existing) return existing;
+  const promise = Promise.resolve()
+    .then(settle)
+    .finally(() => _pvpSettlementPromises.delete(game.id));
+  _pvpSettlementPromises.set(game.id, promise);
+  return promise;
 }
 
 async function settlePvpTimeoutIfNeeded(game) {
@@ -1644,11 +1891,7 @@ app.post('/api/user/transfer', requireAuth, transferLimiter, async (req, res) =>
       : `Montant transférable : ${transferable.toLocaleString('fr-FR')} 🥞 (les bonus non transférables sont exclus)` });
 
   try {
-    const newBal = await deductBalance(sender.id, amt);
-    await addBalance(recipient.id, amt);
-    // Log the gift
-    await supabase.from('gift_log').insert({ from_user_id: sender.id, to_user_id: recipient.id, amount: amt });
-    _lbc.exp = 0; // invalidate leaderboard cache
+    const newBal = await transferBalance(sender.id, recipient.id, amt);
     // Notify recipient in real time
     emitToUser(recipient.id, 'gift:received', { from: sender.username, amount: amt });
     res.json({ success: true, balance: newBal });
@@ -1846,63 +2089,70 @@ app.post('/api/pvp/invites/:id/accept', requireAuth, inviteLimiter, async (req, 
 app.get('/api/pvp/game/state', requireAuth, async (req, res) => {
   const game = await getPvpGameByUser(req.user.id);
   if (!game) return res.json({ game: null });
-  const user = await getUserById(req.user.id, { fresh: true });
-  res.json({ game: sanitizePvpGame(game, req.user.id), balance: user.balance });
+  // requireAuth already supplies an invalidation-aware cached user. Avoid a
+  // second forced DB read on this endpoint, which is polled while playing.
+  res.json({ game: sanitizePvpGame(game, req.user.id), balance: req.user.balance });
 });
 
 app.post('/api/pvp/game/hit', requireAuth, gameLimiter, async (req, res) => {
   const game = await getPvpGameByUser(req.user.id);
-  const user = await getUserById(req.user.id, { fresh: true });
-  if (!game) return res.json({ success: false, game: null, balance: user.balance, error: 'Aucun 1v1 en cours' });
+  if (!game) return res.json({ success: false, game: null, balance: req.user.balance, error: 'Aucun 1v1 en cours' });
+  if (!acquirePvpActionLock(game.id, res)) return;
   if (game.phase !== 'active') {
-    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: user.balance, error: 'Le 1v1 est terminé' });
+    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: req.user.balance, error: 'Le 1v1 est terminé' });
   }
 
   const idx = pvpPlayerIndex(game, req.user.id);
   if (idx < 0) return res.status(403).json({ error: 'Accès refusé' });
   const player = game.players[idx];
   if (player.stood || isBust(player.hand)) {
-    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: user.balance, error: 'Action impossible' });
+    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: req.user.balance, error: 'Action impossible' });
   }
 
   player.hand.push(drawCard(game.shoe));
   player.lastActionAt = Date.now();
   if (handValue(player.hand) >= 21) player.stood = true;
 
-  if (game.players.every(p => p.stood || isBust(p.hand))) await settlePvpGame(game);
+  const completed = game.players.every(p => p.stood || isBust(p.hand));
+  if (completed) await settlePvpGame(game);
   else {
     await savePvpGame(game);
     await emitPvpState(game);
   }
 
-  const freshUser = await getUserById(req.user.id, { fresh: true });
-  res.json({ success: true, game: sanitizePvpGame(game, req.user.id), balance: freshUser.balance });
+  const balance = completed
+    ? (await getUserById(req.user.id, { fresh: true })).balance
+    : req.user.balance;
+  res.json({ success: true, game: sanitizePvpGame(game, req.user.id), balance });
 });
 
 app.post('/api/pvp/game/stand', requireAuth, gameLimiter, async (req, res) => {
   const game = await getPvpGameByUser(req.user.id);
-  const user = await getUserById(req.user.id, { fresh: true });
-  if (!game) return res.json({ success: false, game: null, balance: user.balance, error: 'Aucun 1v1 en cours' });
+  if (!game) return res.json({ success: false, game: null, balance: req.user.balance, error: 'Aucun 1v1 en cours' });
+  if (!acquirePvpActionLock(game.id, res)) return;
   if (game.phase !== 'active') {
-    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: user.balance, error: 'Le 1v1 est terminé' });
+    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: req.user.balance, error: 'Le 1v1 est terminé' });
   }
 
   const idx = pvpPlayerIndex(game, req.user.id);
   if (idx < 0) return res.status(403).json({ error: 'Accès refusé' });
   if (game.players[idx].stood || isBust(game.players[idx].hand)) {
-    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: user.balance, error: 'Action impossible' });
+    return res.json({ success: false, game: sanitizePvpGame(game, req.user.id), balance: req.user.balance, error: 'Action impossible' });
   }
   game.players[idx].stood = true;
   game.players[idx].lastActionAt = Date.now();
 
-  if (game.players.every(player => player.stood || isBust(player.hand))) await settlePvpGame(game);
+  const completed = game.players.every(player => player.stood || isBust(player.hand));
+  if (completed) await settlePvpGame(game);
   else {
     await savePvpGame(game);
     await emitPvpState(game);
   }
 
-  const freshUser = await getUserById(req.user.id, { fresh: true });
-  res.json({ success: true, game: sanitizePvpGame(game, req.user.id), balance: freshUser.balance });
+  const balance = completed
+    ? (await getUserById(req.user.id, { fresh: true })).balance
+    : req.user.balance;
+  res.json({ success: true, game: sanitizePvpGame(game, req.user.id), balance });
 });
 
 app.post('/api/pvp/game/dismiss', requireAuth, async (req, res) => {
@@ -2008,7 +2258,7 @@ app.post('/api/pvp/game/rematch', requireAuth, inviteLimiter, async (req, res) =
 });
 
 // ── Game Routes ───────────────────────────────────────────────────────────────
-app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
+app.post('/api/game/start', requireAuth, gameLimiter, soloActionGuard, async (req, res) => {
   const existingPvp = await getPvpGameByUser(req.user.id);
   if (existingPvp && existingPvp.phase !== 'complete') {
     return res.status(400).json({ error: 'Terminez votre 1v1 avant une partie solo' });
@@ -2045,7 +2295,7 @@ app.post('/api/game/start', requireAuth, gameLimiter, async (req, res) => {
   res.json({ success: true, game: sanitize(gs), balance: bal });
 });
 
-app.post('/api/game/hit', requireAuth, gameLimiter, async (req, res) => {
+app.post('/api/game/hit', requireAuth, gameLimiter, soloActionGuard, async (req, res) => {
   const gs = await getGame(req.user.id);
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   if (gs.phase !== 'player_turn') return res.status(400).json({ error: 'Action impossible' });
@@ -2062,7 +2312,7 @@ app.post('/api/game/hit', requireAuth, gameLimiter, async (req, res) => {
   await _save(req.user.id, gs, res, req.user.balance);
 });
 
-app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
+app.post('/api/game/stand', requireAuth, gameLimiter, soloActionGuard, async (req, res) => {
   const gs = await getGame(req.user.id);
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   if (gs.phase !== 'player_turn') return res.status(400).json({ error: 'Action impossible' });
@@ -2073,7 +2323,7 @@ app.post('/api/game/stand', requireAuth, gameLimiter, async (req, res) => {
   await _save(req.user.id, gs, res, req.user.balance);
 });
 
-app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
+app.post('/api/game/double', requireAuth, gameLimiter, soloActionGuard, async (req, res) => {
   const gs  = await getGame(req.user.id);
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   const idx = gs.activeHandIndex;
@@ -2095,7 +2345,7 @@ app.post('/api/game/double', requireAuth, gameLimiter, async (req, res) => {
   await _save(req.user.id, gs, res, req.user.balance);
 });
 
-app.post('/api/game/split', requireAuth, gameLimiter, async (req, res) => {
+app.post('/api/game/split', requireAuth, gameLimiter, soloActionGuard, async (req, res) => {
   const gs   = await getGame(req.user.id);
   if (!gs) return res.status(400).json({ error: 'Aucune partie en cours' });
   const idx  = gs.activeHandIndex;
@@ -2125,7 +2375,7 @@ app.get('/api/game/state', requireAuth, async (req, res) => {
   res.json({ game: sanitize(gs), balance: req.user.balance });
 });
 
-app.post('/api/game/clear', requireAuth, async (req, res) => {
+app.post('/api/game/clear', requireAuth, soloActionGuard, async (req, res) => {
   await deleteGame(req.user.id);
   res.json({ success: true });
 });
@@ -2332,10 +2582,34 @@ app.delete('/api/admin/users/:id', requireAdmin, adminLimiter, async (req, res) 
   res.json({ success: true });
 });
 
-// ── Session cleanup — purge expired sessions every hour ───────────────────────
-setInterval(async () => {
-  await supabase.from('session').delete().lt('expire', new Date().toISOString());
+// ── Periodic housekeeping ────────────────────────────────────────────────────
+function pruneExpiringMap(map, now = Date.now()) {
+  for (const [key, value] of map) {
+    if (!value || value.exp <= now) map.delete(key);
+  }
+}
+
+const memoryCleanupInterval = setInterval(() => {
+  const now = Date.now();
+  pruneExpiringMap(_uc, now);
+  pruneExpiringMap(_gc, now);
+  pruneExpiringMap(_pgc, now);
+  pruneExpiringMap(_pgu, now);
+  for (const [userId, lastSeen] of _online) {
+    if (now - lastSeen > ONLINE_TIMEOUT * 2) _online.delete(userId);
+  }
+}, 10 * 60 * 1000);
+memoryCleanupInterval.unref();
+
+const sessionCleanupInterval = setInterval(async () => {
+  try {
+    const { error } = await supabase.from('session').delete().lt('expire', new Date().toISOString());
+    if (error) throw error;
+  } catch (error) {
+    console.error('Session cleanup failed:', error.message);
+  }
 }, 60 * 60 * 1000);
+sessionCleanupInterval.unref();
 
 // ── Global error handler ──────────────────────────────────────────────────────
 app.use((err, req, res, _next) => {
@@ -2370,8 +2644,29 @@ async function checkDB() {
 }
 
 // ── Start ─────────────────────────────────────────────────────────────────────
+let httpServer = null;
 checkDB().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🥞  Blackjack Crêpes  →  http://0.0.0.0:${PORT}\n`);
   });
 });
+
+function shutdown(signal) {
+  console.log(`\n${signal} reçu, arrêt propre…`);
+  clearInterval(memoryCleanupInterval);
+  clearInterval(sessionCleanupInterval);
+  for (const [, clients] of _liveClients) {
+    for (const response of clients) response.end();
+  }
+  _liveClients.clear();
+  if (!httpServer) return process.exit(0);
+  const forceExit = setTimeout(() => process.exit(1), 10_000);
+  forceExit.unref();
+  httpServer.close(() => {
+    clearTimeout(forceExit);
+    process.exit(0);
+  });
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));

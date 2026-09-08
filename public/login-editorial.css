@@ -1,0 +1,140 @@
+/* Pancakes — editorial login experiment. Scoped to the authentication screen. */
+#screen-auth {
+  background: #161c19;
+  padding: 0;
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(390px, 1fr);
+  align-items: stretch;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+#screen-auth::before, #screen-auth::after { display: none; }
+#screen-auth .auth-film {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px clamp(28px, 4vw, 70px);
+  min-height: 720px;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f0eee5;
+}
+#screen-auth .auth-film::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, #09110e55, #09110e10 35%, #09110ec9);
+}
+#screen-auth .auth-bg-video {
+  z-index: -2;
+  filter: brightness(.81) saturate(.4);
+  object-position: 48% center;
+}
+.auth-film-top, .auth-film-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.auth-film-top { padding-bottom: 21px; border-bottom: 1px solid #ffffff35; }
+.auth-film-symbol { font: 25px Georgia, serif; }
+.auth-film-name {
+  margin: auto 0 40px;
+  padding-top: 130px;
+  animation: auth-arrive 1.2s .1s both;
+}
+.auth-film-name h1 {
+  font: 400 clamp(64px, 8.6vw, 150px)/.95 'DM Serif Display', Georgia, serif;
+  letter-spacing: -.055em;
+  margin: 0 0 26px;
+}
+.auth-film-name p { font-size: 10px; line-height: 1.8; letter-spacing: 3px; text-transform: uppercase; }
+.auth-film-bottom { color: #d0d4ce; padding-top: 22px; border-top: 1px solid #ffffff35; }
+#auth-video-toggle {
+  border: 1px solid #ffffff70;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  background: #10171030;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .2s;
+}
+#auth-video-toggle:hover { background: #ffffff25; }
+#screen-auth .auth-layout {
+  position: relative;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  padding: 84px clamp(32px, 5vw, 88px);
+  background: #eeeae0;
+  color: #24382f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-panel-index { position: absolute; top: 46px; left: clamp(32px, 5vw, 88px); font-size: 9px; letter-spacing: 2px; color: #646e63; }
+.auth-panel-footer { position: absolute; bottom: 40px; left: clamp(32px, 5vw, 88px); right: clamp(32px, 5vw, 88px); display: flex; justify-content: space-between; color: #6e766b; font-size: 9px; letter-spacing: 1px; }
+#screen-auth .auth-card {
+  padding: 0;
+  max-width: 360px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: #24382f;
+  animation: auth-arrive .9s .2s both;
+}
+.auth-entry-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 22px; color: #6a7669; }
+#screen-auth .auth-card .auth-welcome { font: 400 clamp(35px, 3.2vw, 49px)/1.1 'DM Serif Display', Georgia, serif; letter-spacing: -1.5px; color: #24382f; margin: 0 0 34px; }
+#screen-auth .auth-tabs { border-bottom: 1px solid #233d3026; margin-bottom: 34px; }
+#screen-auth .auth-tabs::before { background: #294734; height: 1px; }
+#screen-auth .auth-tab { color: #747c70; padding: 13px 0 16px; font-size: 11px; }
+#screen-auth .auth-tab.active { color: #24382f; font-weight: 600; }
+#screen-auth .field { margin-bottom: 27px; }
+#screen-auth .field label { color: #475847; font-size: 10px; font-weight: 500; margin-bottom: 8px; }
+#screen-auth .field input { border: none; border-bottom: 1px solid #273e3547; border-radius: 0; background: transparent; color: #24382f; padding: 10px 0 13px; font-size: 13px; min-height: 46px; }
+#screen-auth .field input::placeholder { color: #888e82; }
+#screen-auth .field input:focus { background: #ffffff30; border-color: #294734; box-shadow: 0 1px 0 #294734; outline: none; }
+#screen-auth .password-wrap input { padding-right: 64px; }
+#screen-auth .btn-toggle-pw { color: #53644f; right: 0; }
+#screen-auth .btn-primary { border-radius: 0; min-height: 55px; margin-top: 12px; background: #263e31; color: #f1eee3; box-shadow: none; font-size: 11px; letter-spacing: .4px; }
+#screen-auth .btn-primary:not(:disabled):hover { background: #385440; box-shadow: 0 8px 20px #24382f1a; transform: translateY(-2px); }
+#screen-auth .auth-error { color: #953f32; background: #953f3208; border: none; border-left: 2px solid #953f32; border-radius: 0; font-size: 12px; }
+#screen-auth button:focus-visible { outline: 2px solid #80957a; outline-offset: 5px; }
+@media (min-width: 1600px) { #screen-auth { grid-template-columns: minmax(0, 1.55fr) minmax(500px, 1fr); } }
+@media (max-width: 900px) {
+  #screen-auth { grid-template-columns: minmax(0, 1fr) minmax(350px, 1fr); }
+  #screen-auth .auth-film { padding: 32px 28px; }
+  #screen-auth .auth-layout { padding: 86px 32px; }
+  .auth-panel-index { left: 32px; }
+  .auth-panel-footer { left: 32px; right: 32px; }
+}
+@media (max-width: 700px) {
+  #screen-auth { display: flex; flex-direction: column; padding: 0; }
+  #screen-auth .auth-film { min-height: 250px; padding: 24px; flex-shrink: 0; }
+  .auth-film-top { font-size: 8px; padding-bottom: 14px; }
+  .auth-film-name { margin: 30px 0 0; padding: 0; }
+  .auth-film-name h1 { font-size: 70px; margin-bottom: 12px; }
+  .auth-film-name p { font-size: 8px; letter-spacing: 2px; }
+  .auth-film-bottom { position: absolute; right: 24px; bottom: 24px; padding: 0; border: none; }
+  .auth-film-bottom > span { display: none; }
+  #screen-auth .auth-layout { padding: 38px 28px 62px; flex: 1; }
+  .auth-panel-index, .auth-entry-label { display: none; }
+  .auth-panel-footer { bottom: 22px; left: 28px; right: 28px; font-size: 8px; }
+  #screen-auth .auth-card { max-width: 400px; padding: 0; }
+  #screen-auth .auth-card .auth-welcome { font-size: 35px; margin-bottom: 20px; }
+  #screen-auth .auth-tabs { margin-bottom: 24px; }
+  #screen-auth .field { margin-bottom: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #screen-auth *, #screen-auth *::before { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,223 @@
+/* Shared authenticated UI polish — lobby, leaderboard, dialogs and feedback. */
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) button,
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) input{
+  -webkit-tap-highlight-color:transparent
+}
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) button{
+  transition:color .18s ease,background-color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease
+}
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) button:focus-visible,
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) input:focus-visible{
+  outline:3px solid rgba(170,135,70,.25);outline-offset:2px
+}
+:where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) button:disabled{
+  cursor:not-allowed;transform:none!important;box-shadow:none!important
+}
+
+/* The table handoff repeats the startup mark: a lone pancake settles into the wordmark. */
+#brand-transition{
+  position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;pointer-events:none;visibility:hidden;opacity:0;background:#101713
+}
+#brand-transition.is-active{
+  visibility:visible;opacity:1;animation:brand-handoff-out .28s ease 1.28s forwards
+}
+#brand-transition .brand-transition-brand{
+  --brand-mark-size:72px;position:relative;display:flex;align-items:center;justify-content:center;
+  height:var(--brand-mark-size);transform:translateX(0)
+}
+#brand-transition.is-active .brand-transition-brand{
+  animation:brand-handoff-shift .72s .48s cubic-bezier(.22,1,.36,1) both
+}
+#brand-transition .brand-transition-mark{
+  position:relative;z-index:2;display:block;width:var(--brand-mark-size);height:var(--brand-mark-size);object-fit:contain;
+  filter:drop-shadow(0 10px 24px rgba(0,0,0,.28));opacity:0;transform:scale(.84)
+}
+#brand-transition.is-active .brand-transition-mark{
+  animation:brand-handoff-mark .52s cubic-bezier(.2,.8,.2,1) both
+}
+#brand-transition .brand-transition-name-mask{
+  position:absolute;left:calc(var(--brand-mark-size) - 6px);top:50%;width:245px;overflow:hidden;transform:translateY(-50%)
+}
+#brand-transition .brand-transition-name{
+  display:block;padding-left:18px;white-space:nowrap;color:#f2efe6;font:400 52px/1 'DM Serif Display',Georgia,serif;
+  letter-spacing:-1.6px;opacity:0;transform:translateX(-105%)
+}
+#brand-transition .brand-transition-name span{color:#d5b77b}
+#brand-transition.is-active .brand-transition-name{
+  animation:brand-handoff-name .72s .55s cubic-bezier(.22,1,.36,1) both
+}
+@keyframes brand-handoff-mark{0%{opacity:0;transform:scale(.84)}65%{opacity:1;transform:scale(1.035)}100%{opacity:1;transform:scale(1)}}
+@keyframes brand-handoff-shift{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+@keyframes brand-handoff-name{0%{opacity:0;transform:translateX(-105%)}12%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+@keyframes brand-handoff-out{to{visibility:hidden;opacity:0}}
+
+/* Full leaderboard now belongs to the same editorial world as the lobby. */
+body:has(#screen-leaderboard.screen-visible){background:#e9e9e1;color:#27392f}
+body:has(#screen-leaderboard.screen-visible) #app{background:#e9e9e1}
+body:has(#screen-leaderboard.screen-visible) #casino-bg{display:none}
+body:has(#screen-leaderboard.screen-visible) #header{
+  min-height:74px;padding:14px clamp(22px,4vw,64px);background:#f5f2e9;border-bottom:1px solid #253c3020;
+  box-shadow:none;color:#263b30
+}
+body:has(#screen-leaderboard.screen-visible) #header-logo img{width:54px;height:42px;object-position:left center;filter:none}
+body:has(#screen-leaderboard.screen-visible) #header-right{width:auto;gap:10px}
+body:has(#screen-leaderboard.screen-visible) #balance-display{
+  min-width:auto;height:36px;padding:0 14px;border:1px solid #2d473727;border-radius:7px;background:transparent;
+  color:#294334;font:600 13px/1 'Montserrat',sans-serif
+}
+body:has(#screen-leaderboard.screen-visible) #balance-display .icon{font-size:15px}
+body:has(#screen-leaderboard.screen-visible) .theme-toggle,
+body:has(#screen-leaderboard.screen-visible) #btn-logout{
+  display:inline-flex;align-items:center;justify-content:center;height:36px;border:1px solid #2d473727;border-radius:7px;
+  background:transparent;color:#657268;box-shadow:none;font:500 11px 'Montserrat',sans-serif
+}
+body:has(#screen-leaderboard.screen-visible) .theme-toggle{width:36px;padding:0;cursor:pointer}
+body:has(#screen-leaderboard.screen-visible) .theme-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+body:has(#screen-leaderboard.screen-visible) .theme-icon-moon{display:none}
+body:has(#screen-leaderboard.screen-visible) #btn-logout{gap:8px;padding:0 13px}
+body:has(#screen-leaderboard.screen-visible) .logout-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body:has(#screen-leaderboard.screen-visible) .theme-toggle:hover,
+body:has(#screen-leaderboard.screen-visible) #btn-logout:hover{border-color:#294334;color:#294334;background:#fffaf0}
+
+#screen-leaderboard{
+  flex:1;max-width:1040px;min-height:calc(100dvh - 74px);padding:clamp(30px,4vw,56px) clamp(18px,4vw,50px) 60px;
+  gap:24px;color:#27392f;font-family:'Montserrat',sans-serif
+}
+#screen-leaderboard .leaderboard-topbar{align-items:flex-end;gap:20px}
+#screen-leaderboard .leaderboard-topbar h2{
+  color:#27392f;font:400 clamp(34px,4vw,52px)/1.05 'DM Serif Display',Georgia,serif;letter-spacing:-1.2px
+}
+#screen-leaderboard .leaderboard-topbar p{margin-top:8px;color:#778078;font:500 10px/1.5 'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase}
+#screen-leaderboard .leaderboard-shell{overflow:hidden;background:#f7f4eb;border:1px solid #2d47371e;border-radius:12px;box-shadow:none}
+#screen-leaderboard .leaderboard-full-head,
+#screen-leaderboard .leaderboard-full-row{grid-template-columns:80px minmax(0,1fr) 180px;gap:16px;padding:15px 20px}
+#screen-leaderboard .leaderboard-full-head{
+  background:#ecebe3;border-color:#2d47371e;color:#68746c;font:600 9px 'Montserrat',sans-serif;letter-spacing:1.4px
+}
+#screen-leaderboard .leaderboard-full-row{min-height:58px;border-color:#2d473712;font-family:'Montserrat',sans-serif}
+#screen-leaderboard .leaderboard-full-row:hover{background:#fffaf0}
+#screen-leaderboard .leaderboard-full-row.me{background:#aa874612;box-shadow:inset 3px 0 #aa8746}
+#screen-leaderboard .leaderboard-full-rank{color:#8f784c;font:600 13px 'Montserrat',sans-serif}
+#screen-leaderboard .leaderboard-full-name,
+#screen-leaderboard .leaderboard-full-row.me .leaderboard-full-name{color:#27392f;font:600 13px 'Montserrat',sans-serif}
+#screen-leaderboard .leaderboard-full-balance,
+#screen-leaderboard .leaderboard-full-row.me .leaderboard-full-balance{color:#637068;font:600 13px 'Montserrat',sans-serif;font-variant-numeric:tabular-nums}
+#screen-leaderboard .leaderboard-full-empty{color:#778078;font:500 12px 'Montserrat',sans-serif}
+#screen-leaderboard .btn-secondary{
+  min-height:42px;padding:0 16px;border:1px solid #2948383b;border-radius:7px;background:transparent;color:#294838;
+  font:600 9px 'Montserrat',sans-serif;letter-spacing:.8px;box-shadow:none
+}
+#screen-leaderboard .btn-secondary:hover{border-color:#294838;background:#294838;color:#f8f4e8;transform:translateY(-1px)}
+#screen-leaderboard .btn-back-bottom{margin:18px auto;padding-inline:24px}
+
+/* One consistent dialog treatment for social/PvP actions. */
+#modal-overlay{background:rgba(14,28,21,.54);backdrop-filter:blur(6px)}
+#challenge-modal{
+  width:min(92vw,440px);padding:28px;gap:15px;border:1px solid #2d47372b;border-radius:12px;background:#f7f4eb;
+  box-shadow:0 28px 80px rgba(24,45,34,.24);color:#27392f;font-family:'Montserrat',sans-serif
+}
+#challenge-modal h3{color:#27392f;font:400 27px/1.1 'DM Serif Display',Georgia,serif;letter-spacing:-.3px}
+#challenge-modal h3 span{color:#aa8746}
+#challenge-modal .pvp-compose-target{color:#778078;font:500 11px/1.5 'Montserrat',sans-serif}
+#challenge-modal .pvp-chip-btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;width:100%}
+#challenge-modal .chip{
+  width:auto;height:40px;padding:0 6px;border:1px solid #2948382e;border-radius:6px;background:transparent;color:#43564a;
+  font:600 10px 'Montserrat',sans-serif;box-shadow:none
+}
+#challenge-modal .chip:hover{border-color:#294838;background:#ecece3;color:#294838;transform:translateY(-1px);box-shadow:none}
+#challenge-modal .chip.callin{width:auto;color:#92743c}
+#challenge-modal .chip.clear{font-size:14px;color:#7a847d}
+#challenge-modal .bet-input-row{width:100%;gap:8px}
+#challenge-modal .bet-input{
+  height:50px;background:#fffdf7;border:1px solid #2d473723;border-radius:7px;color:#27392f;
+  font:600 16px 'Montserrat',sans-serif;box-shadow:none
+}
+#challenge-modal .friend-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+#challenge-modal .btn-friend,#challenge-modal .btn-gift{
+  min-height:44px;padding:0 12px;border-radius:7px;font:600 9px 'Montserrat',sans-serif;letter-spacing:.8px;box-shadow:none
+}
+#challenge-modal .btn-friend{border:1px solid #29483838;background:transparent;color:#53645a}
+#challenge-modal .btn-gift{border:1px solid #294838;background:#294838;color:#f8f4e8}
+#challenge-modal .btn-friend:hover{border-color:#294838;color:#294838;background:#ecece3}
+#challenge-modal .btn-gift:hover{background:#355a46;filter:none;transform:translateY(-1px)}
+
+/* Feedback uses the same shapes, type and semantic colors everywhere. */
+#toast-container{bottom:clamp(18px,4vh,34px);gap:7px}
+.toast-item{
+  max-width:min(90vw,440px);padding:11px 17px;border:1px solid #ffffff24;border-radius:8px;background:#1b2c23;
+  box-shadow:0 14px 38px rgba(7,20,13,.3);color:#f3eee2;font:600 11px/1.4 'Montserrat',sans-serif;white-space:normal
+}
+.toast-item.success{border-color:#82ad8e66;color:#d8eadc}
+.toast-item.error{border-color:#d27d7466;color:#f0b5ae}
+.toast-item.gold{border-color:#d5b77b70;color:#f0d9a3}
+
+/* Normalize lobby controls without flattening their hierarchy. */
+#screen-lobby :where(.btn-bonus,.btn-scratch-tier,.btn-secondary,.btn-gift,.btn-friend,.btn-pvp-mini,.btn-chat-send){font-family:'Montserrat',sans-serif}
+#screen-lobby :where(.btn-secondary,.btn-gift,.btn-friend,.btn-pvp-mini){min-height:38px;border-radius:7px;box-shadow:none}
+#screen-lobby :where(.btn-friend,.btn-pvp-mini):hover{transform:translateY(-1px)}
+#screen-lobby :where(.btn-friend,.btn-pvp-mini):active{transform:translateY(0) scale(.98)}
+
+body.dark-mode:has(#screen-leaderboard.screen-visible){background:#101713;color:#edf0e7}
+body.dark-mode:has(#screen-leaderboard.screen-visible) #app{background:#101713}
+body.dark-mode:has(#screen-leaderboard.screen-visible) #header{background:#151e19;border-color:#eef2e71c;color:#edf0e7}
+body.dark-mode:has(#screen-leaderboard.screen-visible) #balance-display,
+body.dark-mode:has(#screen-leaderboard.screen-visible) .theme-toggle,
+body.dark-mode:has(#screen-leaderboard.screen-visible) #btn-logout{border-color:#eef2e726;color:#d7ddd5}
+body.dark-mode:has(#screen-leaderboard.screen-visible) .theme-icon-sun{display:none}
+body.dark-mode:has(#screen-leaderboard.screen-visible) .theme-icon-moon{display:block}
+body.dark-mode #screen-leaderboard{color:#edf0e7}
+body.dark-mode #screen-leaderboard .leaderboard-topbar h2,
+body.dark-mode #screen-leaderboard .leaderboard-full-name,
+body.dark-mode #screen-leaderboard .leaderboard-full-row.me .leaderboard-full-name{color:#edf0e7}
+body.dark-mode #screen-leaderboard .leaderboard-topbar p,
+body.dark-mode #screen-leaderboard .leaderboard-full-empty{color:#9aa79d}
+body.dark-mode #screen-leaderboard .leaderboard-shell{background:#17211b;border-color:#eef2e71f}
+body.dark-mode #screen-leaderboard .leaderboard-full-head{background:#1d2a22;border-color:#eef2e71f;color:#a7b2a8}
+body.dark-mode #screen-leaderboard .leaderboard-full-row{border-color:#eef2e712}
+body.dark-mode #screen-leaderboard .leaderboard-full-row:hover{background:#1d2a22}
+body.dark-mode #screen-leaderboard .leaderboard-full-row.me{background:#d5b77b12}
+body.dark-mode #screen-leaderboard .leaderboard-full-rank,
+body.dark-mode #screen-leaderboard .leaderboard-full-balance{color:#c6b17d}
+body.dark-mode #screen-leaderboard .btn-secondary{border-color:#eef2e72b;color:#d7ddd5}
+body.dark-mode #screen-leaderboard .btn-secondary:hover{background:#d5c69f;border-color:#d5c69f;color:#263b30}
+body.dark-mode #challenge-modal{background:#17211b;border-color:#eef2e72b;color:#edf0e7}
+body.dark-mode #challenge-modal h3{color:#edf0e7}
+body.dark-mode #challenge-modal .pvp-compose-target{color:#9aa79d}
+body.dark-mode #challenge-modal .chip{border-color:#eef2e724;color:#d7ddd5}
+body.dark-mode #challenge-modal .chip:hover{background:#1d2a22;border-color:#d5b77b;color:#e5d19c}
+body.dark-mode #challenge-modal .bet-input{background:#101713;border-color:#eef2e724;color:#edf0e7}
+body.dark-mode #challenge-modal .btn-friend{border-color:#eef2e72b;color:#d7ddd5}
+
+@media(max-width:760px){
+  #brand-transition .brand-transition-brand{--brand-mark-size:58px}
+  #brand-transition.is-active .brand-transition-brand{animation-name:brand-handoff-shift-mobile}
+  #brand-transition .brand-transition-name-mask{width:190px}
+  #brand-transition .brand-transition-name{padding-left:13px;font-size:40px;letter-spacing:-1.2px}
+  body:has(#screen-leaderboard.screen-visible) #header{position:sticky;top:0;z-index:60;min-height:64px;padding:10px 14px;flex-wrap:nowrap}
+  body:has(#screen-leaderboard.screen-visible) #header-logo img{width:43px;height:38px}
+  body:has(#screen-leaderboard.screen-visible) #balance-display{height:36px;padding:0 10px}
+  body:has(#screen-leaderboard.screen-visible) .theme-toggle,
+  body:has(#screen-leaderboard.screen-visible) #btn-logout{width:36px;padding:0;flex:none}
+  body:has(#screen-leaderboard.screen-visible) #btn-logout span{display:none}
+  #screen-leaderboard{min-height:calc(100dvh - 64px);padding:28px 14px calc(30px + env(safe-area-inset-bottom,0px));gap:20px}
+  #screen-leaderboard .leaderboard-topbar{align-items:stretch;flex-direction:column}
+  #screen-leaderboard .leaderboard-topbar h2{font-size:38px}
+  #screen-leaderboard .leaderboard-topbar .btn-secondary{width:100%}
+  #screen-leaderboard .leaderboard-full-head,
+  #screen-leaderboard .leaderboard-full-row{grid-template-columns:44px minmax(0,1fr) 90px;gap:8px;padding:13px 12px}
+  #screen-leaderboard .leaderboard-full-head{font-size:8px;letter-spacing:1px}
+  #screen-leaderboard .leaderboard-full-rank,
+  #screen-leaderboard .leaderboard-full-name,
+  #screen-leaderboard .leaderboard-full-balance{font-size:11px}
+  #challenge-modal{padding:22px 18px}
+  #challenge-modal .pvp-chip-btns{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+@keyframes brand-handoff-shift-mobile{from{transform:translateX(0)}to{transform:translateX(-92px)}}
+
+@media(prefers-reduced-motion:reduce){
+  #brand-transition{display:none}
+  :where(#screen-lobby,#screen-leaderboard,#screen-game,#screen-pvp,#challenge-modal) button{transition:none}
+  .toast-item{animation:none}
+}

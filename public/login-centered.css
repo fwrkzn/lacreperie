@@ -1,0 +1,33 @@
+/* Centered Pancakes login — isolated from the game interface. */
+#screen-auth{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:44px 24px 56px;background:#101713;isolation:isolate}
+#screen-auth::before{inset:0;background:radial-gradient(ellipse at center,#11191430,#09100ccb 90%),linear-gradient(#09100c33,#09100c66);z-index:-1}
+#screen-auth::after{display:none}
+#screen-auth .auth-bg-video{z-index:-2;filter:brightness(.81) saturate(.45);object-position:center}
+#screen-auth .auth-layout{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:25px;width:100%;max-width:410px;margin:auto;padding:0;background:transparent}
+.auth-wordmark{font:400 66px/1 'DM Serif Display',Georgia,serif;color:#f7f2e6;letter-spacing:-3px;text-align:center;margin:0;text-shadow:0 2px 25px #0004;animation:auth-arrive .85s both}
+.auth-wordmark span{color:#ceb585}
+#screen-auth .auth-card{position:relative;max-width:none;width:100%;padding:32px 38px 38px;background:#f2efe6;color:#293c32;border:0;border-radius:18px;box-shadow:0 25px 90px #0006,0 1px 0 #fff9 inset;backdrop-filter:none;-webkit-backdrop-filter:none;animation:auth-arrive .9s .1s both}
+#screen-auth .auth-card .auth-welcome{font:400 30px/1.2 'DM Serif Display',Georgia,serif;letter-spacing:-.7px;color:#293c32;text-align:center;margin:0 0 26px}
+#screen-auth .auth-card .auth-welcome,#screen-auth .auth-card .auth-tabs,#screen-auth .auth-card .field,#screen-auth .auth-card .btn-primary{transition:opacity .2s ease,transform .2s ease}
+#screen-auth .auth-card.auth-switching .auth-welcome,#screen-auth .auth-card.auth-switching .auth-tabs,#screen-auth .auth-card.auth-switching .field,#screen-auth .auth-card.auth-switching .btn-primary{opacity:0;transform:translateY(7px)}
+#screen-auth .auth-tab{transition:color .25s ease,transform .25s ease}
+#screen-auth .auth-tab:active{transform:scale(.97)}
+#screen-auth .auth-tabs{background:#dedfd5;border:none;border-radius:8px;padding:4px;margin-bottom:26px;overflow:hidden;isolation:isolate}
+#screen-auth .auth-tabs::before{inset:4px auto 4px 4px;height:auto;width:calc(50% - 4px);background:#fbf9f1;border-radius:5px;box-shadow:0 1px 4px #263e3212;z-index:-1}
+#screen-auth .auth-tab{color:#6a7467;font-size:11px;padding:11px 4px}
+#screen-auth .auth-tab.active{color:#263e32;background:transparent}
+#screen-auth .field{margin-bottom:20px}
+#screen-auth .field label{color:#455646;font-size:10px;font-weight:500;margin-bottom:9px}
+#screen-auth .field input{min-height:48px;background:#faf8f0;color:#263e32;border:1px solid #314d3929;border-radius:7px;padding:13px 14px;font-size:13px}
+#screen-auth .field input::placeholder{color:#92978b}
+#screen-auth .field input:focus{border-color:#6e866c;background:#fffdf7;box-shadow:0 0 0 3px #53745312}
+#screen-auth .password-wrap input{padding-right:64px}
+#screen-auth .btn-toggle-pw{color:#60715a;right:13px;font-size:10px}
+#screen-auth .btn-primary{margin-top:6px;min-height:50px;border-radius:7px;background:#2a4736;color:#faf5e9;box-shadow:0 4px 10px #28463418;font-size:11px;letter-spacing:.2px}
+#screen-auth .btn-primary:not(:disabled):hover{background:#395c45;box-shadow:0 7px 18px #28463426;transform:translateY(-2px)}
+#screen-auth .auth-error{color:#963e32;background:#963e3209;border:1px solid #963e3226;border-radius:6px;font-size:12px}
+#screen-auth button:focus-visible{outline:2px solid #88a07b;outline-offset:4px}
+#auth-video-toggle{position:absolute;bottom:20px;right:22px;border:1px solid #ffffff50;background:#15201a70;color:#f7f2e6;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:11px;transition:background .2s}
+#auth-video-toggle:hover{background:#ffffff25}
+@media(max-width:650px){#screen-auth{padding:30px 22px 65px}#screen-auth .auth-layout{gap:23px;max-width:390px}.auth-wordmark{font-size:57px}#screen-auth .auth-card{padding:27px 26px 31px;border-radius:14px}#screen-auth .auth-card .auth-welcome{font-size:28px}}
+@media(prefers-reduced-motion:reduce){#screen-auth *,#screen-auth *::before{animation:none!important;transition:none!important}}

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON users (LOWER(username));
+CREATE INDEX IF NOT EXISTS users_leaderboard_idx ON users (is_admin, balance DESC);
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_streak INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS minigame_pity INTEGER NOT NULL DEFAULT 0;
@@ -52,6 +53,10 @@ CREATE TABLE IF NOT EXISTS friend_requests (
 CREATE INDEX IF NOT EXISTS friend_requests_from_idx ON friend_requests (from_user_id);
 CREATE INDEX IF NOT EXISTS friend_requests_to_idx ON friend_requests (to_user_id);
 CREATE INDEX IF NOT EXISTS friend_requests_status_idx ON friend_requests (status);
+CREATE INDEX IF NOT EXISTS friend_requests_to_pending_idx
+  ON friend_requests (to_user_id, created_at DESC) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS friend_requests_from_pending_idx
+  ON friend_requests (from_user_id, created_at DESC) WHERE status = 'pending';
 
 CREATE TABLE IF NOT EXISTS pvp_games (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -67,6 +72,10 @@ CREATE TABLE IF NOT EXISTS pvp_games (
 CREATE INDEX IF NOT EXISTS pvp_games_player_one_idx ON pvp_games (player_one_id);
 CREATE INDEX IF NOT EXISTS pvp_games_player_two_idx ON pvp_games (player_two_id);
 CREATE INDEX IF NOT EXISTS pvp_games_status_idx ON pvp_games (status);
+CREATE INDEX IF NOT EXISTS pvp_games_player_one_recent_idx
+  ON pvp_games (player_one_id, updated_at DESC) WHERE status IN ('active', 'complete');
+CREATE INDEX IF NOT EXISTS pvp_games_player_two_recent_idx
+  ON pvp_games (player_two_id, updated_at DESC) WHERE status IN ('active', 'complete');
 
 CREATE TABLE IF NOT EXISTS pvp_invites (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -84,6 +93,12 @@ CREATE TABLE IF NOT EXISTS pvp_invites (
 CREATE INDEX IF NOT EXISTS pvp_invites_from_idx ON pvp_invites (from_user_id);
 CREATE INDEX IF NOT EXISTS pvp_invites_to_idx ON pvp_invites (to_user_id);
 CREATE INDEX IF NOT EXISTS pvp_invites_status_idx ON pvp_invites (status);
+CREATE INDEX IF NOT EXISTS pvp_invites_to_pending_idx
+  ON pvp_invites (to_user_id, created_at DESC) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS pvp_invites_from_pending_idx
+  ON pvp_invites (from_user_id, created_at DESC) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS pvp_invites_expiry_idx
+  ON pvp_invites (created_at) WHERE status = 'pending';
 
 CREATE TABLE IF NOT EXISTS gift_log (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -157,7 +172,7 @@ BEGIN
 
   RETURN v_new_balance;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Ajoute un montant au solde
 -- p_non_transferable > 0 → ajoute aussi ce montant au compteur non transférable
@@ -178,7 +193,7 @@ BEGIN
 
   RETURN v_new_balance;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Batch-update game stats after a hand completes
 CREATE OR REPLACE FUNCTION update_stats(
@@ -203,12 +218,79 @@ BEGIN
     biggest_bet   = GREATEST(biggest_bet, p_biggest_bet)
   WHERE id = p_user_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Increment a single stat column by 1 (for doubles/splits)
 CREATE OR REPLACE FUNCTION increment_stat(p_user_id UUID, p_column TEXT)
 RETURNS VOID AS $$
 BEGIN
+  IF p_column NOT IN ('doubles', 'splits') THEN
+    RAISE EXCEPTION 'Statistique non autorisée';
+  END IF;
   EXECUTE format('UPDATE users SET %I = %I + 1 WHERE id = $1', p_column, p_column) USING p_user_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Transfer and audit log are committed as one transaction. The transferable
+-- balance excludes rewards marked as non-transferable.
+CREATE OR REPLACE FUNCTION transfer_balance(
+  p_sender_id UUID,
+  p_recipient_id UUID,
+  p_amount INTEGER
+)
+RETURNS INTEGER AS $$
+DECLARE
+  v_new_balance INTEGER;
+BEGIN
+  IF p_sender_id = p_recipient_id OR p_amount < 1 THEN
+    RAISE EXCEPTION 'Transfert invalide';
+  END IF;
+
+  -- Lock both accounts in deterministic order to avoid opposite-transfer deadlocks.
+  PERFORM id FROM users
+    WHERE id IN (p_sender_id, p_recipient_id)
+    ORDER BY id
+    FOR UPDATE;
+
+  UPDATE users
+    SET balance = balance - p_amount
+    WHERE id = p_sender_id
+      AND balance - non_transferable >= p_amount
+    RETURNING balance INTO v_new_balance;
+
+  IF v_new_balance IS NULL THEN
+    RAISE EXCEPTION 'Solde transférable insuffisant';
+  END IF;
+
+  UPDATE users SET balance = balance + p_amount WHERE id = p_recipient_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Destinataire introuvable'; END IF;
+
+  INSERT INTO gift_log (from_user_id, to_user_id, amount)
+  VALUES (p_sender_id, p_recipient_id, p_amount);
+
+  RETURN v_new_balance;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- The browser never calls database functions directly. Keep privileged balance
+-- operations executable only by the backend service key.
+REVOKE ALL ON FUNCTION deduct_balance(UUID, INTEGER, BOOLEAN) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION add_balance(UUID, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION update_stats(UUID, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, BIGINT, BIGINT, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION increment_stat(UUID, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION transfer_balance(UUID, UUID, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION deduct_balance(UUID, INTEGER, BOOLEAN) TO service_role;
+GRANT EXECUTE ON FUNCTION add_balance(UUID, INTEGER, INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION update_stats(UUID, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, BIGINT, BIGINT, INTEGER, INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION increment_stat(UUID, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION transfer_balance(UUID, UUID, INTEGER) TO service_role;
+
+-- This application authenticates through Express, not Supabase Auth. Prevent
+-- browser-facing Supabase roles from reading sessions, password hashes or game
+-- balances directly even if a public project key becomes known.
+REVOKE ALL ON TABLE users, active_games, friendships, friend_requests, pvp_games,
+  pvp_invites, gift_log, session, chat_messages FROM anon, authenticated;
+GRANT ALL ON TABLE users, active_games, friendships, friend_requests, pvp_games,
+  pvp_invites, gift_log, session, chat_messages TO service_role;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;

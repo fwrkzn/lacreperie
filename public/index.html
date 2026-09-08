@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>🥞 Le Casino des Crêpes</title>
+<title>Le Casino des Crêpes</title>
 <link rel="manifest" href="/manifest.json"/>
-<link rel="icon" type="image/png" href="/favicon.png"/>
+<link rel="icon" type="image/png" href="/pancakes-logo.png"/>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="Casino Crêpes"/>
@@ -91,6 +96,7 @@ body{
   text-shadow: 0 0 20px rgba(201,168,76,.5);
 }
 #header-logo span{ color: var(--text); font-size:14px; opacity:.7 }
+#header-logo img{display:block;width:92px;height:38px;object-fit:contain;object-position:left center}
 #header-right{
   display: flex;
   align-items: center;
@@ -1550,39 +1556,84 @@ body{
 /* ── Loading screen ────────────────────────────────────────────────────── */
 #loading-screen{
   position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg);
-  display: flex; flex-direction: column;
+  background: #101713;
+  display: flex;
   align-items: center; justify-content: center;
-  gap: 20px;
-  transition: opacity .4s ease, visibility .4s ease;
+  overflow: hidden;
+  transition: opacity .55s cubic-bezier(.4,0,.2,1), visibility .55s ease;
 }
 #loading-screen.fade-out{
   opacity: 0; visibility: hidden;
 }
-#loading-screen .loader-logo{
-  font-size: 56px;
-  animation: pop 1s ease infinite;
+#loading-screen .loader-brand{
+  --loader-logo-size: 72px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--loader-logo-size);
+  transform: translateX(0);
+  animation: loaderBrandShift .72s .48s cubic-bezier(.22,1,.36,1) both;
 }
-#loading-screen h2{
-  color: var(--gold);
-  letter-spacing: 4px;
-  font-size: 18px;
-  text-transform: uppercase;
+#loading-screen .loader-mark{
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: var(--loader-logo-size);
+  height: var(--loader-logo-size);
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.28));
+  animation: loaderMarkIn .52s cubic-bezier(.2,.8,.2,1) both;
 }
-#loading-screen .loader-bar{
-  width: 160px; height: 3px;
-  background: var(--border);
-  border-radius: 3px;
+#loading-screen .loader-name-mask{
+  position: absolute;
+  left: calc(var(--loader-logo-size) - 6px);
+  top: 50%;
+  width: 245px;
+  transform: translateY(-50%);
   overflow: hidden;
+  pointer-events: none;
 }
-#loading-screen .loader-bar-fill{
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--gold), var(--gold2));
-  border-radius: 3px;
-  animation: loaderFill .8s ease forwards;
+#loading-screen .loader-name{
+  display: block;
+  padding-left: 18px;
+  color: #f2efe6;
+  white-space: nowrap;
+  font: 400 52px/1 'DM Serif Display', Georgia, serif;
+  letter-spacing: -1.6px;
+  transform: translateX(-105%);
+  opacity: 0;
+  animation: loaderNameReveal .72s .55s cubic-bezier(.22,1,.36,1) both;
 }
-@keyframes loaderFill { to { width: 100% } }
+#loading-screen .loader-name span{ color:#d5b77b }
+@keyframes loaderMarkIn{
+  0%{opacity:0;transform:scale(.82)}
+  65%{opacity:1;transform:scale(1.035)}
+  100%{opacity:1;transform:scale(1)}
+}
+@keyframes loaderBrandShift{
+  from{transform:translateX(0)}
+  to{transform:translateX(-120px)}
+}
+@keyframes loaderNameReveal{
+  0%{opacity:0;transform:translateX(-105%)}
+  12%{opacity:1}
+  100%{opacity:1;transform:translateX(0)}
+}
+@media(max-width:520px){
+  #loading-screen .loader-brand{--loader-logo-size:58px;animation-name:loaderBrandShiftMobile}
+  #loading-screen .loader-name-mask{width:190px}
+  #loading-screen .loader-name{padding-left:13px;font-size:40px;letter-spacing:-1.2px}
+}
+@keyframes loaderBrandShiftMobile{
+  from{transform:translateX(0)}
+  to{transform:translateX(-92px)}
+}
+@media(prefers-reduced-motion:reduce){
+  #loading-screen .loader-brand{animation:none;transform:translateX(-120px)}
+  #loading-screen .loader-mark{animation:none}
+  #loading-screen .loader-name{animation:none;opacity:1;transform:none}
+}
 
 /* ── Screen transitions ───────────────────────────────────────────────── */
 .screen{
@@ -2674,27 +2725,107 @@ body{
   }
   .leaderboard-full-balance{ font-size: 13px; }
 }
+/* Auth: a quiet, late-night card club */
+#screen-auth{--auth-ink:#f3eee2;--auth-muted:#a6afa5;--auth-brass:#d5b77b;min-height:100%;padding:40px 6vw;background:#091510;color:var(--auth-ink);isolation:isolate;overflow:hidden;flex-shrink:0;position:relative}
+#screen-auth::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#05080799,#05080755 45%,#05080788),linear-gradient(0deg,#05080799,#05080722 50%,#05080777);pointer-events:none;z-index:-1}
+#screen-auth::after{content:'';position:absolute;inset:18px;border:1px solid #d5b77b20;pointer-events:none;z-index:2}
+.auth-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;filter:brightness(.9) saturate(.72) contrast(1.08)}
+.auth-layout{width:100%;max-width:1120px;display:grid;grid-template-columns:1fr;align-items:center;justify-items:center;margin:auto}
+.auth-story{position:relative;padding:24px 0;animation:auth-arrive 1s ease both}
+.auth-brand{display:flex;align-items:center;gap:12px;font:600 11px/1.6 'Avenir Next',Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:var(--auth-brass)}
+.auth-brand-mark{font:30px 'Montserrat',Arial,sans-serif;border:1px solid #d5b77b55;width:44px;height:44px;display:grid;place-items:center;border-radius:50%}
+.auth-story h1{font:normal clamp(48px,5.5vw,76px)/1.04 'DM Serif Display',Georgia,serif;letter-spacing:-2px;margin:48px 0 22px;max-width:530px}
+.auth-story h1 em{font:inherit;font-style:normal;color:var(--auth-brass)}
+.auth-story-copy{font:15px/1.8 'Avenir Next',Arial,sans-serif;color:var(--auth-muted);max-width:320px}
+.auth-tableau{height:225px;position:relative;margin-top:30px;width:310px;perspective:800px}
+.auth-playing-card{position:absolute;width:132px;height:184px;left:80px;top:12px;background:#eee9dc;border-radius:10px;color:#183528;box-shadow:0 18px 35px #0005;border:1px solid #fff9;display:grid;place-items:center;transform:rotate(var(--tilt));animation:auth-card-float 7s ease-in-out infinite;animation-delay:var(--delay)}
+.auth-playing-card::before,.auth-playing-card::after{content:attr(data-rank);position:absolute;left:12px;top:10px;font:24px/1 Georgia,serif;white-space:pre;text-align:center}
+.auth-playing-card::after{left:auto;top:auto;right:12px;bottom:10px;transform:rotate(180deg)}
+.auth-playing-card>span{font:68px Georgia,serif}
+.auth-playing-card.back{--tilt:-19deg;--delay:-2s;left:38px;top:18px;background:repeating-linear-gradient(45deg,#284a39 0 3px,#345442 3px 4px);border:7px solid #ded8c7;outline:1px solid #ded8c7}
+.auth-playing-card.ace{--tilt:-6deg;--delay:-1s;left:84px}
+.auth-playing-card.king{--tilt:14deg;--delay:0s;left:160px;top:28px;color:#a34437}
+.auth-table-caption{display:flex;gap:16px;align-items:center;font:10px 'Avenir Next',Arial,sans-serif;letter-spacing:2px;color:var(--auth-muted);text-transform:uppercase}
+.auth-table-caption::before{content:'';width:32px;height:1px;background:var(--auth-brass)}
+#screen-auth .auth-card{width:100%;max-width:440px;padding:44px 38px;background:rgba(10,18,15,.58);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 28px 80px #0008,0 0 0 1px rgba(255,255,255,.04) inset;backdrop-filter:blur(18px) saturate(.85);-webkit-backdrop-filter:blur(18px) saturate(.85);color:#f3eee2;animation:auth-arrive 1s .15s ease both}
+.auth-eyebrow{font:600 10px 'Avenir Next',Arial,sans-serif;letter-spacing:2.5px;color:#748073;text-transform:uppercase;margin-bottom:16px}
+.auth-welcome{font:normal 34px/1.15 Georgia,serif;letter-spacing:-1px;margin:0 0 12px;color:#f3eee2}
+.auth-intro{font:13px/1.7 'Avenir Next',Arial,sans-serif;color:#697266;margin-bottom:28px;min-height:44px}
+#screen-auth .auth-tabs{position:relative;border:0;border-bottom:1px solid rgba(243,238,226,.22);border-radius:0;margin-bottom:28px;overflow:visible}
+#screen-auth .auth-tabs::before{content:'';position:absolute;width:50%;height:2px;bottom:-1px;left:0;background:#234832;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+#screen-auth .auth-tabs:has([data-tab="register"].active)::before{transform:translateX(100%)}
+#screen-auth .auth-tab{padding:13px 6px;color:rgba(243,238,226,.58);font:500 13px 'Avenir Next',Arial,sans-serif;letter-spacing:0;background:none}
+#screen-auth .auth-tab.active{color:#e8c97d;background:none;font-weight:600}
+#screen-auth .field{margin-bottom:21px}
+#screen-auth .field label{font:600 11px 'Avenir Next',Arial,sans-serif;letter-spacing:.4px;text-transform:none;color:rgba(243,238,226,.72);margin-bottom:9px}
+#screen-auth .field input{background:rgba(255,255,255,.1);border:1px solid rgba(243,238,226,.24);border-radius:5px;color:#f3eee2;font:14px 'Avenir Next',Arial,sans-serif;padding:14px;min-height:48px;transition:border-color .2s,box-shadow .2s,background .2s}
+#screen-auth .field input::placeholder{color:rgba(243,238,226,.45)}
+#screen-auth .field input:focus{background:rgba(255,255,255,.15);border-color:#d5b77b;box-shadow:0 0 0 3px rgba(213,183,123,.16)}
+#screen-auth .password-wrap input{padding-right:64px}
+#screen-auth .btn-toggle-pw{opacity:1;font:11px 'Avenir Next',Arial,sans-serif;color:#e8c97d;right:10px;padding:7px 2px}
+#screen-auth .btn-primary{position:relative;min-height:51px;border-radius:4px;background:#234832;color:#f4eedf;font:600 13px 'Avenir Next',Arial,sans-serif;letter-spacing:.4px;margin-top:7px;box-shadow:0 5px 12px #173d2615;transition:background .2s,transform .2s,box-shadow .2s}
+#screen-auth .btn-primary:not(:disabled):hover{background:#315d42;transform:translateY(-2px);box-shadow:0 8px 18px #173d262b}
+#screen-auth .btn-primary:not(:disabled):active{transform:translateY(0)}
+#screen-auth .btn-primary:disabled{opacity:.7;cursor:wait}
+#screen-auth .btn-primary[aria-busy="true"]::after{content:'';display:inline-block;width:12px;height:12px;border:1.5px solid #fff5;border-top-color:#fff;border-radius:50%;margin-left:12px;vertical-align:middle;animation:spin .7s linear infinite}
+#screen-auth button:focus-visible{outline:2px solid #a78243;outline-offset:4px}
+#screen-auth .auth-error{background:#a344370d;border:1px solid #a3443740;color:#9b352b;border-radius:4px;padding:11px;font:12px/1.5 'Avenir Next',Arial,sans-serif;text-align:left;margin-bottom:20px;animation:auth-arrive .25s ease}
+.auth-note{text-align:center;margin-top:24px;padding-top:21px;border-top:1px solid #243d281a;font:11px/1.7 'Avenir Next',Arial,sans-serif;color:#7c8375}
+.auth-note span{display:block;color:#42583f;font-weight:600;letter-spacing:.3px}
+#screen-auth .auth-card,#screen-auth .auth-card *{font-family:'Montserrat',Arial,sans-serif}
+#screen-auth .auth-card .auth-welcome{font-family:Georgia,serif}
+@keyframes auth-arrive{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes auth-card-float{0%,100%{transform:translateY(0) rotate(var(--tilt))}50%{transform:translateY(-9px) rotate(calc(var(--tilt) + 2deg))}}
+@media(max-width:900px){.auth-layout{gap:40px}#screen-auth .auth-card{padding:34px 28px}}
+@media(max-width:650px){#screen-auth{padding:40px 24px 30px}#screen-auth::after{inset:10px}.auth-layout{gap:26px;max-width:400px}#screen-auth .auth-card{max-width:none;padding:28px 24px}.auth-welcome{font-size:30px}}
+@media(prefers-reduced-motion:reduce){#screen-auth *,#screen-auth *::before,#screen-auth *::after{animation:none!important;transition:none!important}}
 </style>
+<link rel="stylesheet" href="/login-centered.css">
+<link rel="stylesheet" href="/lobby-elegant.css">
+<link rel="stylesheet" href="/game-elegant.css">
+<link rel="stylesheet" href="/app-uniform.css">
 </head>
 <body>
 
 <!-- Loading Screen -->
 <div id="loading-screen">
-  <div class="loader-logo">🥞</div>
-  <h2>Casino des Crêpes</h2>
-  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  <div class="loader-brand" role="img" aria-label="Pancakes">
+    <img class="loader-mark" src="/pancakes-logo.png" alt="">
+    <div class="loader-name-mask" aria-hidden="true">
+      <span class="loader-name">Pancakes<span>.</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Reusable brand handoff between the lobby and a table. -->
+<div id="brand-transition" aria-hidden="true">
+  <div class="brand-transition-brand">
+    <img class="brand-transition-mark" src="/pancakes-logo.png" alt="">
+    <div class="brand-transition-name-mask">
+      <span class="brand-transition-name">Pancakes<span>.</span></span>
+    </div>
+  </div>
 </div>
 
 <!-- Header (always visible when logged in) -->
 <div id="header" class="hidden">
-  <div id="header-logo">🥞 <span>LE CASINO DES</span> CRÊPES</div>
+  <div id="header-logo"><img src="/pancakes-logo.png" alt="Pancakes"></div>
   <div id="header-right">
     <div id="balance-display">
       <span class="icon">🥞</span>
       <span class="amount" id="header-balance">0</span>
     </div>
-    <button id="btn-mute" class="mute-btn" title="Couper le son">🔊</button>
-    <button id="btn-logout">Déconnexion</button>
+    <button id="btn-theme-toggle" class="theme-toggle" type="button" aria-label="Activer le mode sombre" aria-pressed="false" title="Activer le mode sombre">
+      <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+      <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></svg>
+    </button>
+    <button id="btn-logout" class="logout-button" type="button" aria-label="Déconnexion" title="Déconnexion">
+      <svg class="logout-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M10 4H5.8A1.8 1.8 0 0 0 4 5.8v12.4A1.8 1.8 0 0 0 5.8 20H10"/>
+        <path d="M13 8l4 4-4 4M8 12h9"/>
+      </svg>
+      <span>Déconnexion</span>
+    </button>
   </div>
 </div>
 
@@ -2704,46 +2835,45 @@ body{
 
 <!-- AUTH ──────────────────────────────────────────────────────────────────── -->
 <div id="screen-auth" class="screen hidden">
+ <video class="auth-bg-video" id="auth-background-video" muted loop playsinline preload="metadata" aria-hidden="true">
+  <source src="/login-bg.mp4" type="video/mp4">
+ </video>
+ <div class="auth-layout">
+  <h1 class="auth-wordmark">Pancakes<span>.</span></h1>
   <div class="auth-card">
-    <div class="auth-card-corners"></div>
-    <div class="auth-card-corners-br"></div>
-    <div class="auth-card-accent"></div>
-    <div class="auth-logo">
-      <span class="big">🥞</span>
-      <h1>Casino des Crêpes</h1>
-      <p>Blackjack en monnaie de crêpe</p>
-    </div>
+    <h2 class="auth-welcome" id="auth-heading">Heureux de vous revoir.</h2>
     <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="login">Connexion</button>
-      <button class="auth-tab" data-tab="register">Inscription</button>
+      <button class="auth-tab active" data-tab="login" aria-pressed="true">Connexion</button>
+      <button class="auth-tab" data-tab="register" aria-pressed="false">Inscription</button>
     </div>
-    <div id="auth-error" class="auth-error hidden"></div>
+    <div id="auth-error" class="auth-error hidden" role="alert"></div>
     <div class="field">
-      <label>Nom d'utilisateur</label>
+      <label for="auth-username">Votre pseudo</label>
       <input id="auth-username" type="text" placeholder="votre_pseudo" autocomplete="username" readonly data-unlock-edit/>
     </div>
     <div class="field">
-      <label>Mot de passe</label>
+      <label for="auth-password">Mot de passe</label>
       <div class="password-wrap">
         <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" readonly data-unlock-edit/>
-        <button type="button" class="btn-toggle-pw" id="btn-toggle-pw" tabindex="-1">👁</button>
+        <button type="button" class="btn-toggle-pw" id="btn-toggle-pw" aria-label="Afficher le mot de passe" aria-pressed="false">Voir</button>
       </div>
     </div>
-    <button class="btn-primary" id="auth-submit">Se connecter</button>
+    <button class="btn-primary" id="auth-submit">Rejoindre la table</button>
   </div>
+ </div>
 </div>
 
 <!-- LOBBY ─────────────────────────────────────────────────────────────────── -->
 <div id="screen-lobby" class="screen hidden">
 
   <div class="lobby-greeting">
-    <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username" class="editable-username" title="Cliquer pour modifier">Joueur</span> 👋</h2>
+    <h2><span id="lobby-greeting-text">Bonsoir</span>, <span id="lobby-username" class="editable-username" title="Cliquer pour modifier">Joueur</span>.</h2>
     <div id="username-edit-row" class="username-edit-row hidden">
       <input id="username-edit-input" type="text" maxlength="20" placeholder="Nouveau pseudo" autocomplete="off"/>
       <button id="username-edit-save" class="btn-username-save">✓</button>
       <button id="username-edit-cancel" class="btn-username-cancel">✗</button>
     </div>
-    <p>Bienvenue au Casino des Crêpes</p>
+    <p>La table est à vous</p>
   </div>
 
   <div class="lobby-content">
@@ -2800,9 +2930,8 @@ body{
   <div class="lobby-main">
   <div class="lobby-tab-panels">
   <div class="lobby-tab-panel" id="tab-play">
-  <h2>Jouer au Blackjack</h2>
+  <h2>À votre table</h2>
   <div class="play-section">
-    <h3>6 Jeux · Croupier S’arrête sur 17 · Blackjack 3:2</h3>
     <div class="chip-btns">
       <div class="chip c10"  data-add="10">10</div>
       <div class="chip c50"  data-add="50">50</div>
@@ -2815,7 +2944,6 @@ body{
     </div>
     <div class="bet-input-row">
       <input class="bet-input" id="bet-input" type="number" min="10" max="999999999" value="100" placeholder="Mise" autocomplete="off" inputmode="numeric" name="bet_amt" data-1p-ignore data-lpignore="true"/>
-      <span style="color:var(--gold2);font-size:18px">🥞</span>
     </div>
     <button class="btn-deal" id="btn-deal">Jouer</button>
   </div>
@@ -2848,7 +2976,7 @@ body{
   </div>
 
   <div class="lobby-tab-panel hidden" id="tab-social">
-  <h2>Social 🤝</h2>
+  <h2>Social</h2>
 
   <!-- Chat -->
   <div class="chat-panel">
@@ -2936,7 +3064,7 @@ body{
   </div>
 
   <div class="lobby-tab-panel hidden" id="tab-stats">
-    <h2>Statistiques 📊</h2>
+    <h2>Statistiques</h2>
     <div class="stats-dashboard" id="stats-dashboard">
       <div class="stats-grid">
         <div class="stat-card">
@@ -2981,7 +3109,7 @@ body{
   </div>
 
   <div class="lobby-tab-panel hidden" id="tab-leaderboard">
-    <h2>Classement 🏆</h2>
+    <h2>Classement</h2>
     <div class="leaderboard" id="leaderboard">
       <div class="lb-empty">Chargement…</div>
     </div>
@@ -2993,9 +3121,9 @@ body{
   <div class="bonus-row">
     <!-- Daily -->
     <div class="bonus-card">
-      <div class="icon">🌅</div>
+      <div class="icon"><img class="reward-icon reward-icon-wide" src="/reward-daily.png" alt=""></div>
       <h3>Bonus Quotidien</h3>
-      <div class="reward">+2 000 🥞</div>
+      <div class="reward">+2 000 crêpes</div>
       <div class="bonus-meta">
         <div class="bonus-note" id="daily-streak-note"></div>
         <div class="bonus-note" id="daily-milestone-note"></div>
@@ -3007,10 +3135,10 @@ body{
     <!-- Spatula minigame / Wheel -->
     <div class="bonus-card">
       <div class="icon">
-        <span class="spatula-btn" id="spatula-emoji">🎡</span>
+        <img class="reward-icon spatula-btn" id="spatula-emoji" src="/reward-wheel.png" alt="">
       </div>
       <h3>Roue de Fortune</h3>
-      <div class="reward">30–5 000 🥞</div>
+      <div class="reward">30–5 000 crêpes</div>
       <div class="bonus-meta">
         <div class="bonus-note" id="minigame-pity-note"></div>
         <div class="progress-track" aria-hidden="true">
@@ -3023,17 +3151,18 @@ body{
 
     <!-- Scratch Card -->
     <div class="bonus-card">
-      <div class="icon">🎟️</div>
+      <div class="icon"><img class="reward-icon reward-icon-wide" src="/reward-scratch.png" alt=""></div>
       <h3>Carte à Gratter</h3>
-      <div class="reward">Jusqu'à ×10 🥞</div>
+      <div class="reward">Jusqu'à ×10</div>
       <div class="bonus-meta">
         <div class="bonus-note">Achetez une carte et grattez !<br>3 symboles identiques = gain</div>
       </div>
       <div class="scratch-tier-btns">
-        <button class="btn-scratch-tier" data-cost="100">100 🥞</button>
-        <button class="btn-scratch-tier" data-cost="500">500 🥞</button>
-        <button class="btn-scratch-tier" data-cost="2000">2K 🥞</button>
+        <button class="btn-scratch-tier" data-cost="100">100</button>
+        <button class="btn-scratch-tier" data-cost="500">500</button>
+        <button class="btn-scratch-tier" data-cost="2000">2K</button>
       </div>
+      <div class="countdown" aria-hidden="true"></div>
     </div>
   </div>
 
@@ -3104,11 +3233,11 @@ body{
   </div>
 
   <div class="lobby-bottom-nav">
-    <button class="lobby-nav-btn" data-lobby-tab="prizes"><span>🎁</span><span>Primes</span></button>
-    <button class="lobby-nav-btn active" data-lobby-tab="play"><span>🂡</span><span>Jouer</span></button>
-    <button class="lobby-nav-btn" data-lobby-tab="social"><span>✦</span><span>Social</span></button>
-    <button class="lobby-nav-btn" data-lobby-tab="stats"><span>📊</span><span>Stats</span></button>
-    <button class="lobby-nav-btn" data-lobby-tab="leaderboard"><span>🏆</span><span>Classement</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="prizes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h14v12H5zM8 8V5.8A1.8 1.8 0 0 1 9.8 4c1.7 0 2.2 2 2.2 4M16 8V5.8A1.8 1.8 0 0 0 14.2 4C12.5 4 12 6 12 8M3 8h18v3H3z"/></svg></span><span>Primes</span></button>
+    <button class="lobby-nav-btn active" data-lobby-tab="play"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4h10v16H7zM10 7h4M10 17h4"/></svg></span><span>Jouer</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="social"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></span><span>Social</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="stats"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V11M12 19V5M19 19v-8M3 19h18"/></svg></span><span>Stats</span></button>
+    <button class="lobby-nav-btn" data-lobby-tab="leaderboard"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5h10v3a5 5 0 0 1-10 0zM12 13v5M8 20h8M5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4"/></svg></span><span>Classement</span></button>
   </div>
   </div><!-- /.lobby-content -->
 
@@ -3258,6 +3387,23 @@ const $ = id => document.getElementById(id);
 function show(id)    { $(id).classList.remove('hidden') }
 function hide(id)    { $(id).classList.add('hidden') }
 function toggle(id,v){ v ? show(id) : hide(id) }
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('dark-mode', isDark);
+  const btn = $('btn-theme-toggle');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', String(isDark));
+  btn.setAttribute('aria-label', isDark ? 'Activer le mode clair' : 'Activer le mode sombre');
+  btn.title = isDark ? 'Activer le mode clair' : 'Activer le mode sombre';
+}
+
+applyTheme(localStorage.getItem('pancakes-theme') || 'light');
+$('btn-theme-toggle')?.addEventListener('click', () => {
+  const next = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+  localStorage.setItem('pancakes-theme', next);
+  applyTheme(next);
+});
 
 function toast(msg, type='info', dur=2800) {
   const container = $('toast-container');
@@ -3530,7 +3676,7 @@ function startSocialRefresh() {
       loadFriends();
       loadPvpInvites();
     }
-  }, 30000);
+  }, 60000);
 }
 
 function stopSocialRefresh() {
@@ -3558,8 +3704,27 @@ function stopPvpRefresh() {
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
 let screenTransitionTimer = null;
+let brandTransitionTimer = null;
+
+function getVisibleScreenId() {
+  return ['screen-auth', 'screen-lobby', 'screen-leaderboard', 'screen-game', 'screen-pvp']
+    .find(id => !$(id).classList.contains('hidden') && $(id).classList.contains('screen-visible')) || null;
+}
+
+function playBrandTransition() {
+  const overlay = $('brand-transition');
+  if (!overlay || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  clearTimeout(brandTransitionTimer);
+  overlay.classList.remove('is-active');
+  void overlay.offsetWidth;
+  overlay.classList.add('is-active');
+  brandTransitionTimer = setTimeout(() => overlay.classList.remove('is-active'), 1550);
+}
+
 function transitionTo(screenId, { smooth = false } = {}) {
   const screens = ['screen-auth', 'screen-lobby', 'screen-leaderboard', 'screen-game', 'screen-pvp'];
+  const isGameScreen = screenId === 'screen-game' || screenId === 'screen-pvp';
+  document.body.classList.toggle('game-view', isGameScreen);
   const current = screens
     .map(id => $(id))
     .find(el => !el.classList.contains('hidden') && el.classList.contains('screen-visible'));
@@ -3583,7 +3748,9 @@ function transitionTo(screenId, { smooth = false } = {}) {
   clearTimeout(screenTransitionTimer);
   if (smooth && current && current.id !== screenId) {
     current.classList.remove('screen-visible');
-    screenTransitionTimer = setTimeout(enterTarget, 140);
+    // A game table is already rendered behind the transition. Keep the motion
+    // perceptible, but short enough that it never feels like a loading gap.
+    screenTransitionTimer = setTimeout(enterTarget, isGameScreen ? 55 : 140);
     return;
   }
 
@@ -3643,11 +3810,12 @@ function showAuth() {
 }
 
 function showLobby() {
+  const fromGame = ['screen-game', 'screen-pvp'].includes(getVisibleScreenId());
+  if (fromGame) playBrandTransition();
   show('header');
   transitionTo('screen-lobby', { smooth: true });
   $('lobby-greeting-text').textContent = getGreetingForLocalTime();
   $('lobby-username').textContent = S.user.username;
-  _initMuteBtn();
   setLobbyTab(S.lobbyTab || 'play');
   renderCooldowns();
   startLiveUpdates();
@@ -3669,6 +3837,7 @@ function showLeaderboardScreen() {
 }
 
 function showGame() {
+  if (getVisibleScreenId() === 'screen-lobby') playBrandTransition();
   show('header');
   transitionTo('screen-game', { smooth: true });
   startLiveUpdates();
@@ -3678,6 +3847,7 @@ function showGame() {
 }
 
 function showPvpGame() {
+  if (getVisibleScreenId() === 'screen-lobby') playBrandTransition();
   show('header');
   transitionTo('screen-pvp', { smooth: true });
   startLiveUpdates();
@@ -4178,7 +4348,7 @@ function renderPvpGame() {
       btn.className = `btn-action ${item.cls}`;
       btn.textContent = item.label;
       btn.disabled = !canPlay;
-      btn.addEventListener('click', () => doPvpAction(item.action));
+      btn.addEventListener('click', () => doPvpAction(item.action, btn));
       bar.appendChild(btn);
     });
   } else {
@@ -4226,11 +4396,20 @@ function renderPvpGame() {
 // Auth tabs
 document.querySelectorAll('.auth-tab').forEach(btn => {
   btn.addEventListener('click', () => {
+    if ($('auth-submit').disabled) return;
     S.currentTab = btn.dataset.tab;
-    document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.auth-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     const isLogin = S.currentTab === 'login';
-    $('auth-submit').textContent = isLogin ? 'Se connecter' : "S'inscrire";
+    const card = document.querySelector('#screen-auth .auth-card');
+    card.classList.add('auth-switching');
+    setTimeout(() => {
+      $('auth-submit').textContent = isLogin ? 'Rejoindre la table' : 'Créer mon compte';
+      $('auth-heading').textContent = isLogin ? 'Heureux de vous revoir.' : 'Bienvenue à la table.';
+      $('auth-password').autocomplete = isLogin ? 'current-password' : 'new-password';
+      card.classList.remove('auth-switching');
+    }, 180);
     hide('auth-error');
   });
 });
@@ -4251,6 +4430,8 @@ $('auth-submit').addEventListener('click', async () => {
   }
 
   $('auth-submit').disabled = true;
+  $('auth-submit').setAttribute('aria-busy', 'true');
+  $('auth-submit').textContent = 'Un instant';
   hide('auth-error');
 
   try {
@@ -4266,6 +4447,8 @@ $('auth-submit').addEventListener('click', async () => {
     show('auth-error');
   } finally {
     $('auth-submit').disabled = false;
+    $('auth-submit').removeAttribute('aria-busy');
+    $('auth-submit').textContent = S.currentTab === 'login' ? 'Rejoindre la table' : 'Créer mon compte';
   }
 });
 
@@ -4278,7 +4461,9 @@ $('btn-toggle-pw').addEventListener('click', () => {
   const inp = $('auth-password');
   const show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
-  $('btn-toggle-pw').textContent = show ? '🙈' : '👁';
+  $('btn-toggle-pw').textContent = show ? 'Masquer' : 'Voir';
+  $('btn-toggle-pw').setAttribute('aria-pressed', String(show));
+  $('btn-toggle-pw').setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
 });
 
 $('btn-logout').addEventListener('click', async () => {
@@ -4886,8 +5071,8 @@ async function startGameFromInput(bet) {
   S.game = { phase: 'loading', dealerHand: [], hands: [], bets: [bet] };
   S._prevDealerCount = 0;
   S._prevHandCounts = [];
-  showGame();
   renderGameLoading();
+  showGame();
   try {
     const d = await api('POST', '/api/game/start', { bet });
     S.game = d.game;
@@ -5191,7 +5376,7 @@ function renderGame() {
       btn.className = `btn-action ${a.cls}`;
       btn.textContent = a.label;
       btn.disabled = a.disabled || false;
-      btn.addEventListener('click', () => doAction(a.action));
+      btn.addEventListener('click', () => doAction(a.action, btn));
       actionBar.appendChild(btn);
     });
   }
@@ -5223,22 +5408,16 @@ function renderGame() {
         autocomplete="off" inputmode="numeric" name="replay_amt" data-1p-ignore data-lpignore="true" />
       <span style="color:var(--gold2);font-size:16px">🥞</span>
       <button class="btn-new-game" id="btn-replay">Rejouer</button>
-      <button class="chip chalf replay-chip" id="btn-replay-half" type="button">HALF</button>
-      <button class="chip callin replay-chip" id="btn-replay-allin" type="button">ALL-IN</button>
     `;
     actionBar.appendChild(replayWrap);
 
     const replayBetInput = replayWrap.querySelector('#replay-bet');
     const replayBtn = replayWrap.querySelector('#btn-replay');
-    const replayHalfBtn = replayWrap.querySelector('#btn-replay-half');
-    const replayAllInBtn = replayWrap.querySelector('#btn-replay-allin');
     let homeLink;
 
     async function replayWithBet(bet) {
       if (!bet || bet < 10) { toast('Mise minimum : 10 🥞', 'error'); return; }
       replayBtn.disabled = true;
-      replayHalfBtn.disabled = true;
-      replayAllInBtn.disabled = true;
       if (homeLink) homeLink.disabled = true;
       playCardSound();
       S._prevDealerCount = 0;
@@ -5252,8 +5431,6 @@ function renderGame() {
       } catch(e) {
         toast(e.error || 'Erreur', 'error');
         replayBtn.disabled = false;
-        replayHalfBtn.disabled = false;
-        replayAllInBtn.disabled = false;
         if (homeLink) homeLink.disabled = false;
       }
     }
@@ -5261,18 +5438,6 @@ function renderGame() {
     replayBtn.addEventListener('click', async () => {
       const bet = parseInt(replayBetInput.value);
       await replayWithBet(bet);
-    });
-
-    replayHalfBtn.addEventListener('click', () => {
-      const cap = getBetCap();
-      replayBetInput.value = Math.max(10, Math.floor(cap / 2));
-      replayBetInput.focus();
-    });
-
-    replayAllInBtn.addEventListener('click', async () => {
-      const bet = getAllInBet();
-      replayBetInput.value = bet || '';
-      replayBetInput.focus();
     });
 
     replayBetInput.addEventListener('keydown', e => {
@@ -5292,10 +5457,15 @@ function renderGame() {
 }
 
 // ── Game actions ───────────────────────────────────────────────────────────────
-async function doAction(endpoint) {
+async function doAction(endpoint, sourceButton) {
   if (S.busy) return;
   S.busy = true;
   playCardSound();
+
+  const table = document.querySelector('#screen-game .game-table');
+  table?.classList.add('action-pending');
+  sourceButton?.classList.add('is-pending');
+  sourceButton?.setAttribute('aria-busy', 'true');
 
   // Disable all action buttons
   document.querySelectorAll('.btn-action').forEach(b => b.disabled = true);
@@ -5311,13 +5481,20 @@ async function doAction(endpoint) {
     // Re-enable buttons on error
     document.querySelectorAll('.btn-action').forEach(b => b.disabled = false);
   } finally {
+    table?.classList.remove('action-pending');
+    sourceButton?.classList.remove('is-pending');
+    sourceButton?.removeAttribute('aria-busy');
     S.busy = false;
   }
 }
 
-async function doPvpAction(endpoint) {
+async function doPvpAction(endpoint, sourceButton) {
   if (S.busy) return;
   S.busy = true;
+  const table = document.querySelector('#screen-pvp .game-table');
+  table?.classList.add('action-pending');
+  sourceButton?.classList.add('is-pending');
+  sourceButton?.setAttribute('aria-busy', 'true');
   document.querySelectorAll('#pvp-action-bar .btn-action').forEach(btn => btn.disabled = true);
 
   try {
@@ -5347,6 +5524,9 @@ async function doPvpAction(endpoint) {
       document.querySelectorAll('#pvp-action-bar .btn-action').forEach(btn => btn.disabled = false);
     }
   } finally {
+    table?.classList.remove('action-pending');
+    sourceButton?.classList.remove('is-pending');
+    sourceButton?.removeAttribute('aria-busy');
     S.busy = false;
   }
 }
@@ -5590,11 +5770,18 @@ $('btn-gift').addEventListener('click', async () => {
 async function init() {
   const loadingStart = Date.now();
   try {
-    const [d, gd, pd] = await Promise.all([
+    // The user session is the source of truth. A transient failure while
+    // loading a game panel must not look like an authentication failure.
+    const [userResult, gameResult, pvpResult] = await Promise.allSettled([
       api('GET', '/api/user/me'),
       api('GET', '/api/game/state'),
       api('GET', '/api/pvp/game/state'),
     ]);
+    if (userResult.status === 'rejected') throw userResult.reason;
+
+    const d = userResult.value;
+    const gd = gameResult.status === 'fulfilled' ? gameResult.value : { game: null };
+    const pd = pvpResult.status === 'fulfilled' ? pvpResult.value : { game: null };
     S.user = { id: d.user.id, username: d.user.username, nonTransferable: d.user.nonTransferable || 0 };
     setBalance(d.user.balance);
     applyCooldownState({ serverNow: d.serverNow, ...d.user });
@@ -5602,7 +5789,7 @@ async function init() {
 
     // Wait for minimum loading time
     const elapsed = Date.now() - loadingStart;
-    if (elapsed < 800) await new Promise(r => setTimeout(r, 800 - elapsed));
+    if (elapsed < 1350) await new Promise(r => setTimeout(r, 1350 - elapsed));
 
     dismissLoading();
 
@@ -5619,7 +5806,7 @@ async function init() {
     }
   } catch(e) {
     const elapsed = Date.now() - loadingStart;
-    if (elapsed < 800) await new Promise(r => setTimeout(r, 800 - elapsed));
+    if (elapsed < 1350) await new Promise(r => setTimeout(r, 1350 - elapsed));
     dismissLoading();
     showAuth();
   }
@@ -5629,7 +5816,7 @@ function dismissLoading() {
   const ls = $('loading-screen');
   if (ls) {
     ls.classList.add('fade-out');
-    setTimeout(() => ls.remove(), 400);
+    setTimeout(() => ls.remove(), 550);
   }
 }
 
@@ -5665,5 +5852,6 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js');
 }
 </script>
+<script src="/login-editorial.js"></script>
 </body>
 </html>

@@ -1,0 +1,289 @@
+/* Pancakes game table — restrained private-club styling, isolated from game logic. */
+body:has(#screen-game.screen-visible),
+body:has(#screen-pvp.screen-visible){
+  --game-ink:#f6f0e3;
+  --game-muted:#aab6aa;
+  --game-gold:#d4b66f;
+  --game-felt:#214536;
+  --game-felt-deep:#142f25;
+  --game-line:rgba(245,238,220,.15);
+  --game-panel:rgba(12,28,22,.48);
+  background:#101b16;
+  color:var(--game-ink);
+}
+body:has(#screen-game.screen-visible) #app,
+body:has(#screen-pvp.screen-visible) #app{background:#101b16}
+body:has(#screen-game.screen-visible) #casino-bg,
+body:has(#screen-pvp.screen-visible) #casino-bg{display:none}
+
+/* Header: same product language as the lobby, adapted to the dark table. */
+body:has(#screen-game.screen-visible) #header,
+body:has(#screen-pvp.screen-visible) #header{
+  min-height:66px;padding:10px clamp(18px,3vw,46px);background:#f5f2e9;
+  border-bottom:1px solid #182d2424;box-shadow:0 8px 30px rgba(7,18,13,.14);color:#263b30
+}
+body:has(#screen-game.screen-visible) #header-logo img,
+body:has(#screen-pvp.screen-visible) #header-logo img{width:48px;height:38px;object-position:left center;filter:none}
+body:has(#screen-game.screen-visible) #header-right,
+body:has(#screen-pvp.screen-visible) #header-right{width:auto;gap:9px}
+body:has(#screen-game.screen-visible) #balance-display,
+body:has(#screen-pvp.screen-visible) #balance-display{
+  min-width:auto;height:38px;padding:0 13px;border:1px solid #2d473727;border-radius:8px;background:transparent;
+  color:#294334;font:600 13px/1 'Montserrat',sans-serif
+}
+body:has(#screen-game.screen-visible) #balance-display .icon,
+body:has(#screen-pvp.screen-visible) #balance-display .icon{font-size:15px}
+body:has(#screen-game.screen-visible) .theme-toggle,
+body:has(#screen-pvp.screen-visible) .theme-toggle,
+body:has(#screen-game.screen-visible) #btn-logout,
+body:has(#screen-pvp.screen-visible) #btn-logout{
+  display:inline-flex;align-items:center;justify-content:center;height:38px;border:1px solid #2d473727;border-radius:8px;
+  background:transparent;color:#657268;box-shadow:none;font:500 11px 'Montserrat',sans-serif
+}
+body:has(#screen-game.screen-visible) .theme-toggle,
+body:has(#screen-pvp.screen-visible) .theme-toggle{width:38px;padding:0;cursor:pointer}
+body:has(#screen-game.screen-visible) .theme-icon,
+body:has(#screen-pvp.screen-visible) .theme-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+body:has(#screen-game.screen-visible) .theme-icon-moon,
+body:has(#screen-pvp.screen-visible) .theme-icon-moon{display:none}
+body:has(#screen-game.screen-visible) #btn-logout,
+body:has(#screen-pvp.screen-visible) #btn-logout{gap:8px;padding:0 13px}
+body:has(#screen-game.screen-visible) .logout-icon,
+body:has(#screen-pvp.screen-visible) .logout-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body:has(#screen-game.screen-visible) .theme-toggle:hover,
+body:has(#screen-pvp.screen-visible) .theme-toggle:hover,
+body:has(#screen-game.screen-visible) #btn-logout:hover,
+body:has(#screen-pvp.screen-visible) #btn-logout:hover{border-color:#294334;color:#294334;background:#fffaf0}
+
+#screen-game,#screen-pvp{
+  --card-w:78px;--card-h:112px;
+  min-height:0;background:#101b16;color:var(--game-ink);font-family:'Montserrat',sans-serif;isolation:isolate
+}
+#screen-game .game-table,#screen-pvp .game-table{
+  position:relative;min-height:clamp(590px,calc(100dvh - 66px),920px);padding:clamp(24px,3vh,40px) clamp(18px,4vw,64px);
+  gap:clamp(13px,2vh,24px);overflow:auto;background:
+    radial-gradient(circle at 50% 46%,rgba(255,255,255,.055) 0,transparent 37%),
+    radial-gradient(circle at 50% 50%,transparent 0 39%,rgba(7,24,17,.14) 39.2% 39.6%,transparent 39.8%),
+    linear-gradient(135deg,var(--game-felt) 0%,#1a3c2e 52%,var(--game-felt-deep) 100%);
+}
+#screen-game .game-table::before,#screen-pvp .game-table::before{
+  content:'';position:absolute;inset:18px clamp(14px,2.5vw,38px);z-index:-1;border:1px solid var(--game-line);border-radius:34px;
+  box-shadow:inset 0 0 0 7px rgba(7,22,16,.09),inset 0 0 70px rgba(4,17,12,.2),0 24px 60px rgba(5,15,11,.15);pointer-events:none
+}
+#screen-game .game-table::after,#screen-pvp .game-table::after{
+  content:'P';position:absolute;left:50%;top:50%;z-index:-1;transform:translate(-50%,-50%);
+  color:rgba(242,234,214,.025);font:400 clamp(180px,27vw,380px)/1 'DM Serif Display',serif;pointer-events:none
+}
+
+#screen-game .dealer-zone,#screen-pvp .dealer-zone,
+#screen-game .player-zone,#screen-pvp .player-zone{position:relative;z-index:1;width:100%;max-width:720px;gap:9px}
+#screen-game .dealer-zone,#screen-pvp .dealer-zone{flex:1;justify-content:flex-start}
+#screen-game .player-zone,#screen-pvp .player-zone{flex:1;justify-content:flex-end}
+#screen-game .dealer-label,#screen-pvp .dealer-label,
+#screen-game .player-zone::before,#screen-pvp .player-zone::before{
+  color:var(--game-muted);font:600 9px/1 'Montserrat',sans-serif;letter-spacing:2px;text-transform:uppercase
+}
+#screen-game .player-zone::before,#screen-pvp .player-zone::before{content:'Votre main';display:block;margin-bottom:1px}
+#screen-game .hand-score,#screen-pvp .hand-score{
+  display:grid;place-items:center;min-width:36px;min-height:28px;padding:4px 10px;border:1px solid transparent;border-radius:20px;
+  color:#f2dfac;font:600 15px/1 'Montserrat',sans-serif;font-variant-numeric:tabular-nums
+}
+#screen-game .hand-score:not(:empty),#screen-pvp .hand-score:not(:empty){background:rgba(10,28,20,.34);border-color:rgba(242,223,172,.16)}
+#screen-game .hand-score.bust,#screen-pvp .hand-score.bust{color:#f0aaa2;border-color:rgba(219,104,94,.25);background:rgba(90,25,21,.22)}
+#screen-game .hand-score.bj,#screen-pvp .hand-score.bj{color:#ffe6a8;text-shadow:0 0 20px rgba(255,224,100,.35)}
+
+#screen-game .cards-row,#screen-pvp .cards-row{gap:clamp(7px,1vw,12px);min-height:calc(var(--card-h) + 7px);align-items:center}
+#screen-game .card,#screen-pvp .card{
+  border-radius:9px;font-family:'DM Serif Display',Georgia,serif;box-shadow:0 12px 24px rgba(3,12,8,.31),0 2px 3px rgba(3,12,8,.25);
+  transition:transform .22s ease,box-shadow .22s ease
+}
+#screen-game .card.face-up,#screen-pvp .card.face-up{background:#fbf7ed;border:1px solid rgba(255,255,255,.7);color:#1d2b24}
+#screen-game .card.face-up.red,#screen-pvp .card.face-up.red{color:#b23e38}
+#screen-game .card.face-down,#screen-pvp .card.face-down{
+  background:repeating-linear-gradient(45deg,rgba(237,220,174,.08) 0 2px,transparent 2px 7px),linear-gradient(145deg,#274c3b,#173528);
+  border:3px solid #e7d9b9;outline:1px solid rgba(18,44,32,.8);outline-offset:-6px
+}
+#screen-game .card.face-down::after,#screen-pvp .card.face-down::after{content:'P';font:400 34px/1 'DM Serif Display',serif;color:#e9d7aa;opacity:.42}
+#screen-game .card-rank,#screen-pvp .card-rank,
+#screen-game .card-rank-br,#screen-pvp .card-rank-br{font-size:15px}
+#screen-game .card-suit,#screen-pvp .card-suit{font-family:Georgia,serif;font-size:25px}
+#screen-game .hand-wrapper,#screen-pvp .hand-wrapper{
+  gap:7px;padding:9px 12px;border:1px solid transparent;border-radius:15px;transition:background .25s,border-color .25s,box-shadow .25s
+}
+#screen-game .hand-wrapper.active,#screen-pvp .hand-wrapper.active{
+  border-color:rgba(222,194,126,.4);background:rgba(246,238,218,.06);box-shadow:0 0 0 4px rgba(222,194,126,.05)
+}
+
+#screen-game .middle-zone,#screen-pvp .middle-zone{position:relative;z-index:2;min-height:42px;gap:7px;padding:0}
+#screen-game .bet-chips-display,#screen-pvp .bet-chips-display{
+  min-height:38px;padding:0 16px;gap:7px;border:1px solid rgba(237,220,174,.18);border-radius:9px;background:rgba(9,26,19,.5);
+  box-shadow:0 8px 24px rgba(3,14,9,.12);color:#efe1bd;font:600 11px/1 'Montserrat',sans-serif;letter-spacing:.3px;backdrop-filter:blur(8px)
+}
+#screen-game .bet-chips-display span:first-child,#screen-pvp .bet-chips-display span:first-child{color:#aeb9ae;font-weight:500}
+#screen-game .result-banner,#screen-pvp .result-banner{
+  margin:0;padding:8px 15px;border-radius:8px;font:700 10px/1.2 'Montserrat',sans-serif;letter-spacing:1px;box-shadow:none;backdrop-filter:blur(8px)
+}
+#screen-game .result-banner.win,#screen-pvp .result-banner.win,
+#screen-game .result-banner.blackjack,#screen-pvp .result-banner.blackjack{background:rgba(220,192,122,.12);border-color:rgba(235,207,139,.42);color:#f2daa1}
+#screen-game .result-banner.lose,#screen-pvp .result-banner.lose,
+#screen-game .result-banner.bust,#screen-pvp .result-banner.bust{background:rgba(111,39,34,.28);border-color:rgba(229,131,121,.4);color:#f0aaa2}
+#screen-game .result-banner.push,#screen-pvp .result-banner.push{background:rgba(235,239,232,.08);border-color:rgba(235,239,232,.2);color:#d3ddd3}
+
+#screen-game .hands-container,#screen-pvp .hands-container{gap:12px;flex-wrap:wrap}
+#screen-game .action-bar,#screen-pvp .action-bar{
+  width:min(100%,520px);max-width:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:4px;padding:9px;
+  border:1px solid rgba(245,238,220,.12);border-radius:13px;background:rgba(8,23,16,.42);box-shadow:0 14px 32px rgba(4,14,9,.16);backdrop-filter:blur(14px)
+}
+#screen-game .btn-action,#screen-pvp .btn-action{
+  min-width:0;min-height:46px;padding:0 10px;border:1px solid rgba(245,238,220,.17);border-radius:8px;background:rgba(248,241,223,.065);
+  color:#e8eee7;font:650 10px/1 'Montserrat',sans-serif;letter-spacing:.7px;box-shadow:none
+}
+#screen-game .btn-action:hover:not(:disabled),#screen-pvp .btn-action:hover:not(:disabled){transform:translateY(-2px);background:rgba(248,241,223,.13);border-color:rgba(239,216,159,.55);color:#fff6df}
+#screen-game .btn-action:active:not(:disabled),#screen-pvp .btn-action:active:not(:disabled){transform:translateY(0) scale(.98)}
+#screen-game .btn-action:focus-visible,#screen-pvp .btn-action:focus-visible,
+#screen-game .btn-new-game:focus-visible,#screen-pvp .btn-new-game:focus-visible{outline:3px solid rgba(232,201,125,.38);outline-offset:2px}
+#screen-game .btn-action:disabled,#screen-pvp .btn-action:disabled{opacity:.32;filter:saturate(.3);cursor:not-allowed}
+#screen-game .btn-action.hit,#screen-pvp .btn-action.hit{background:#eee4cd;border-color:#eee4cd;color:#203b2e}
+#screen-game .btn-action.hit:hover:not(:disabled),#screen-pvp .btn-action.hit:hover:not(:disabled){background:#fff6e2;border-color:#fff6e2;color:#203b2e}
+#screen-game .btn-action.stand,#screen-pvp .btn-action.stand{border-color:rgba(239,170,158,.3);color:#efb2a8}
+#screen-game .btn-action.double,#screen-pvp .btn-action.double{border-color:rgba(232,201,125,.34);color:#ead193}
+#screen-game .btn-new-game,#screen-pvp .btn-new-game{
+  min-height:46px;margin:0;padding:0 24px;border:0;border-radius:8px;background:#eee4cd;color:#203b2e;
+  font:700 10px/1 'Montserrat',sans-serif;letter-spacing:.9px;box-shadow:none
+}
+#screen-game .btn-new-game:hover,#screen-pvp .btn-new-game:hover{filter:none;transform:translateY(-2px);background:#fff6e2}
+
+#screen-game .replay-wrap,#screen-pvp .replay-wrap{grid-column:1/-1;display:grid;grid-template-columns:minmax(100px,1fr) auto auto;gap:7px;margin:0}
+#screen-game .replay-wrap input,#screen-pvp .replay-wrap input{
+  width:100%;height:46px;padding:0 12px;border:1px solid rgba(245,238,220,.17);border-radius:8px;background:rgba(6,20,14,.5);
+  color:#f2dfac;font:600 15px 'Montserrat',sans-serif;box-shadow:none
+}
+#screen-game .replay-wrap input:focus,#screen-pvp .replay-wrap input:focus{border-color:rgba(232,201,125,.6);outline:3px solid rgba(232,201,125,.12)}
+#screen-game .replay-wrap>span,#screen-pvp .replay-wrap>span{display:grid;place-items:center}
+#screen-game .action-bar>.btn-action:last-child:nth-child(2),
+#screen-pvp .action-bar>.btn-action:last-child:nth-child(2){grid-column:1/-1;justify-self:center;width:150px}
+
+#screen-pvp .pvp-status-line{min-height:16px;color:#aab6aa;font:500 10px/1.4 'Montserrat',sans-serif;letter-spacing:.3px}
+#screen-pvp .pvp-status-line.alert{color:#f1d18c}
+#screen-pvp .pvp-rematch-hint{color:#d6bd82;font:500 10px/1.4 'Montserrat',sans-serif}
+#screen-pvp .action-bar.pvp-complete{display:flex;padding:10px}
+#screen-pvp .action-bar.pvp-complete .btn-action,
+#screen-pvp .action-bar.pvp-complete .btn-new-game{max-width:260px}
+
+.taunt-overlay{background:rgba(6,16,11,.72);backdrop-filter:blur(5px)}
+.taunt-box{
+  width:min(90vw,420px);padding:34px;border:1px solid rgba(235,205,134,.28);border-radius:14px;background:#182a21;color:#f5efe1;
+  box-shadow:0 30px 90px rgba(0,0,0,.48);font-family:'Montserrat',sans-serif
+}
+.taunt-box .taunt-text{color:#efb2a8;font-family:'DM Serif Display',Georgia,serif;font-size:24px;font-weight:400}
+.taunt-box button{border-radius:7px;background:#eee4cd;color:#203b2e;font-family:'Montserrat',sans-serif}
+
+/* Dark mode retains the same table, while the utility header follows the chosen theme. */
+body.dark-mode:has(#screen-game.screen-visible) #header,
+body.dark-mode:has(#screen-pvp.screen-visible) #header{background:#151e19;border-color:#eef2e71c;color:#edf0e7}
+body.dark-mode:has(#screen-game.screen-visible) #balance-display,
+body.dark-mode:has(#screen-pvp.screen-visible) #balance-display,
+body.dark-mode:has(#screen-game.screen-visible) .theme-toggle,
+body.dark-mode:has(#screen-pvp.screen-visible) .theme-toggle,
+body.dark-mode:has(#screen-game.screen-visible) #btn-logout,
+body.dark-mode:has(#screen-pvp.screen-visible) #btn-logout{border-color:#eef2e726;color:#d7ddd5}
+body.dark-mode:has(#screen-game.screen-visible) .theme-icon-sun,
+body.dark-mode:has(#screen-pvp.screen-visible) .theme-icon-sun{display:none}
+body.dark-mode:has(#screen-game.screen-visible) .theme-icon-moon,
+body.dark-mode:has(#screen-pvp.screen-visible) .theme-icon-moon{display:block}
+
+@media(max-width:760px){
+  #screen-game,#screen-pvp{--card-w:62px;--card-h:92px}
+  body:has(#screen-game.screen-visible) #header,
+  body:has(#screen-pvp.screen-visible) #header{position:sticky;top:0;z-index:60;min-height:60px;padding:8px 12px;flex-wrap:nowrap}
+  body:has(#screen-game.screen-visible) #header-logo img,
+  body:has(#screen-pvp.screen-visible) #header-logo img{width:40px;height:34px}
+  body:has(#screen-game.screen-visible) #balance-display,
+  body:has(#screen-pvp.screen-visible) #balance-display{height:36px;padding:0 10px}
+  body:has(#screen-game.screen-visible) .theme-toggle,
+  body:has(#screen-pvp.screen-visible) .theme-toggle,
+  body:has(#screen-game.screen-visible) #btn-logout,
+  body:has(#screen-pvp.screen-visible) #btn-logout{width:36px;height:36px;padding:0;flex:none}
+  body:has(#screen-game.screen-visible) #btn-logout span,
+  body:has(#screen-pvp.screen-visible) #btn-logout span{display:none}
+
+  #screen-game .game-table,#screen-pvp .game-table{
+    min-height:calc(100dvh - 60px);padding:20px 12px calc(20px + env(safe-area-inset-bottom,0px));gap:10px;justify-content:space-between
+  }
+  #screen-game .game-table::before,#screen-pvp .game-table::before{inset:9px 7px;border-radius:22px;box-shadow:inset 0 0 0 4px rgba(7,22,16,.08),inset 0 0 45px rgba(4,17,12,.17)}
+  #screen-game .game-table::after,#screen-pvp .game-table::after{font-size:240px}
+  #screen-game .dealer-zone,#screen-pvp .dealer-zone,
+  #screen-game .player-zone,#screen-pvp .player-zone{max-width:none;gap:6px}
+  #screen-game .dealer-zone,#screen-pvp .dealer-zone{justify-content:flex-start}
+  #screen-game .player-zone,#screen-pvp .player-zone{justify-content:flex-end}
+  #screen-game .dealer-label,#screen-pvp .dealer-label,
+  #screen-game .player-zone::before,#screen-pvp .player-zone::before{font-size:8px;letter-spacing:1.6px}
+  #screen-game .hand-score,#screen-pvp .hand-score{min-height:25px;padding:3px 9px;font-size:13px}
+  #screen-game .hand-wrapper,#screen-pvp .hand-wrapper{padding:6px 7px}
+  #screen-game .middle-zone,#screen-pvp .middle-zone{min-height:36px}
+  #screen-game .bet-chips-display,#screen-pvp .bet-chips-display{min-height:34px;padding:0 13px;font-size:10px}
+  #screen-game .result-banner,#screen-pvp .result-banner{padding:7px 11px;font-size:9px}
+  #screen-game .action-bar,#screen-pvp .action-bar{position:relative;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:2px;padding:7px;border-radius:12px}
+  #screen-game .btn-action,#screen-pvp .btn-action{width:100%;min-height:44px;padding:0 8px;font-size:10px}
+  #screen-game .replay-wrap,#screen-pvp .replay-wrap{grid-template-columns:1fr 36px 1fr;gap:6px;width:100%}
+  #screen-game .replay-wrap input,#screen-pvp .replay-wrap input{min-width:0;height:44px}
+  #screen-game .replay-wrap .btn-new-game,#screen-pvp .replay-wrap .btn-new-game{height:44px;padding:0 13px}
+  #screen-game .action-bar>.btn-action:last-child:nth-child(2),
+  #screen-pvp .action-bar>.btn-action:last-child:nth-child(2){grid-column:1/-1;width:100%}
+}
+
+@media(max-width:390px){
+  #screen-game,#screen-pvp{--card-w:54px;--card-h:80px}
+  #screen-game .game-table,#screen-pvp .game-table{padding-inline:9px;gap:7px}
+  #screen-game .cards-row,#screen-pvp .cards-row{gap:5px}
+  #screen-game .action-bar,#screen-pvp .action-bar{gap:5px;padding:6px}
+  #screen-game .btn-action,#screen-pvp .btn-action{min-height:40px;font-size:9px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  #screen-game *,#screen-pvp *{scroll-behavior:auto}
+  #screen-game .card,#screen-pvp .card,
+  #screen-game .result-banner,#screen-pvp .result-banner{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
+/* Game entry: the global header becomes one quiet, centered balance marker. */
+body.game-view:not(.no-game-view) #header#header{
+  position:fixed;top:max(14px,env(safe-area-inset-top,0px));left:50%;z-index:100;
+  display:block;min-height:0;padding:0;transform:translateX(-50%);background:transparent;border:0;box-shadow:none;pointer-events:none
+}
+body.game-view:not(.no-game-view) #header-logo#header-logo{display:none}
+body.game-view:not(.no-game-view) #header-right#header-right{display:block;width:auto}
+body.game-view:not(.no-game-view) #header-right#header-right>:not(#balance-display){display:none}
+body.game-view:not(.no-game-view) #balance-display#balance-display{
+  display:flex;min-width:0;height:auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+  color:#f0dfad;font:600 13px/1 'Montserrat',sans-serif;letter-spacing:.3px
+}
+body.game-view:not(.no-game-view) #balance-display#balance-display .icon{font-size:15px}
+#screen-game.screen,#screen-pvp.screen{transition:opacity .16s ease}
+#screen-game .game-table,#screen-pvp .game-table{min-height:100dvh;padding-top:68px}
+
+@media(max-width:760px){
+  body.game-view:not(.no-game-view) #header#header{top:max(11px,env(safe-area-inset-top,0px))}
+  body.game-view:not(.no-game-view) #balance-display#balance-display{font-size:12px}
+  #screen-game .game-table,#screen-pvp .game-table{min-height:100dvh;padding-top:58px}
+}
+
+/* Server-authoritative actions still respond instantly to the tap. */
+@keyframes gameActionPulse{to{transform:rotate(1turn)}}
+#screen-game .game-table.action-pending .middle-zone::after,
+#screen-pvp .game-table.action-pending .middle-zone::after{
+  content:'';display:block;width:13px;height:13px;margin-top:2px;border:1.5px solid rgba(240,223,173,.22);
+  border-top-color:#f0dfad;border-radius:50%;animation:gameActionPulse .55s linear infinite
+}
+#screen-game .btn-action.is-pending,#screen-pvp .btn-action.is-pending{position:relative;color:transparent!important;opacity:1}
+#screen-game .btn-action.is-pending::after,#screen-pvp .btn-action.is-pending::after{
+  content:'';position:absolute;inset:50% auto auto 50%;width:13px;height:13px;margin:-7px 0 0 -7px;
+  border:1.5px solid rgba(240,223,173,.88);border-right-color:transparent;border-radius:50%;animation:gameActionPulse .55s linear infinite
+}
+#screen-game .game-table.action-pending .cards-row,#screen-pvp .game-table.action-pending .cards-row{transition:filter .16s ease;filter:brightness(.96)}
+
+@media(prefers-reduced-motion:reduce){
+  #screen-game .game-table.action-pending .middle-zone::after,
+  #screen-pvp .game-table.action-pending .middle-zone::after,
+  #screen-game .btn-action.is-pending::after,#screen-pvp .btn-action.is-pending::after{animation:none}
+}
